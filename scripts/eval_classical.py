@@ -18,7 +18,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from filseg.classical import Params, segment  # noqa: E402
-from filseg.data import encode_masks, load_gray, load_train  # noqa: E402
+from filseg.data import encode_masks, load_gray, load_train, split  # noqa: E402
 from filseg.metric import PQAccumulator  # noqa: E402
 
 SEARCH_SPACE = {
@@ -43,15 +43,6 @@ def _train():
     if _TRAIN is None:
         _TRAIN = load_train()
     return _TRAIN
-
-
-def split(items, which: str, seed: int = 42):
-    """Fixed 70/30 split by image; 'val' is held out from parameter search."""
-    idx = list(range(len(items)))
-    random.Random(seed).shuffle(idx)
-    cut = int(0.7 * len(idx))
-    sel = idx[:cut] if which == "train" else idx[cut:]
-    return [items[i] for i in sorted(sel)]
 
 
 def _eval_one(args):
