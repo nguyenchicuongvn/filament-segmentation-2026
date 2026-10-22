@@ -1,0 +1,15 @@
+{
+  "work_size": 1024,
+  "bg_kernel": 101,
+  "smooth_sigma": 1.0,
+  "thresh_high": 0.81,
+  "thresh_low": 0.94,
+  "disk_margin": 0.93,
+  "open_radius": 0,
+  "close_radius": 5,
+  "min_area": 100,
+  "group_radius": 12,
+  "sunspot_thresh": 0.45,
+  "sunspot_max_area": 1500,
+  "out_dilate": 0
+}

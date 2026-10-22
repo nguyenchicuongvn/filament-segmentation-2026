@@ -36,3 +36,9 @@ per-instance dilation → upsample to 2048².
 ```
 
 Tuned parameters are versioned in `configs/classical_best.json`.
+
+### Results (local, fixed split seed 42)
+
+| Version | train PQ (160 img) | val PQ (213 img) | Test inference |
+|---|---|---|---|
+| classical, tuned (`configs/classical_best.json`) | 0.246 | 0.235 | 13 s / 180 images, CPU |
