@@ -42,3 +42,7 @@ Tuned parameters are versioned in `configs/classical_best.json`.
 | Version | train PQ (160 img) | val PQ (213 img) | Test inference |
 |---|---|---|---|
 | classical, tuned (`configs/classical_best.json`) | 0.246 | 0.235 | 13 s / 180 images, CPU |
+
+## License
+
+Code: [MIT](LICENSE). The MAGFiLO data is not included and is subject to the competition's non-commercial data terms.
