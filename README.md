@@ -55,11 +55,29 @@ per-instance dilation → upsample to 2048².
 
 Tuned parameters are versioned in `configs/classical_best.json`.
 
-### Results (local, fixed split seed 42)
+### Results
 
-| Version | train PQ (160 img) | val PQ (213 img) | Test inference |
+Validation: fixed split by image (seed 42), 213 val images / 337 annotator-image entries,
+PQ pooled over all entries as in the host's notebook.
+
+| Version | val PQ | Public LB | Test inference |
 |---|---|---|---|
-| classical, tuned (`configs/classical_best.json`) | 0.246 | 0.235 | 13 s / 180 images, CPU |
+| classical, tuned (`configs/classical_best.json`) | 0.242 | 0.21 | 13 s / 180 images, CPU |
+| U-Net ResNet34 @512, 8x TTA, `configs/post_unet512.json` | 0.354 | 0.29 | 80 s / 180 images, Apple M5 MPS |
+
+## U-Net pipeline
+
+```bash
+.venv/bin/python scripts/train_unet.py --res 512 --epochs 30 --name unet512_r34       # ~1.5 h on Apple M5 (MPS)
+.venv/bin/python scripts/infer_probs.py --ckpt outputs/models/unet512_r34.pt --which val --tta
+.venv/bin/python scripts/infer_probs.py --ckpt outputs/models/unet512_r34.pt --which test --tta
+.venv/bin/python scripts/tune_post.py --probs outputs/probs/unet512_r34_val --out configs/post_unet512.json
+.venv/bin/python scripts/make_submission.py --probs outputs/probs/unet512_r34_test \
+    --post configs/post_unet512.json --out outputs/submission_unet512.csv
+```
+
+GPU training on Kaggle: `kaggle/make_kernel.py` builds a self-contained kernel (code embedded) that
+trains and writes val/test probability maps.
 
 ## License
 

@@ -1,0 +1,6 @@
+{
+  "thresh": 0.4,
+  "min_area": 25,
+  "group_radius": 4,
+  "out_dilate": 0
+}
