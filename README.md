@@ -12,6 +12,24 @@ uv pip install --python .venv -r requirements.txt
 kaggle competitions download filament-segmentation-2026 -p data && (cd data && unzip -q *.zip && rm *.zip)
 ```
 
+## Environment
+
+| | |
+|---|---|
+| Python | 3.12 (tested 3.12.14), packages pinned in `requirements.txt` |
+| Hardware | CPU only, no GPU needed for the classical baseline |
+| Reference machine | Apple M5, 10 cores, 32 GB RAM, macOS 27 |
+| Memory | < 1 GB per worker process (2048² images processed at 1024²) |
+
+Measured runtimes on the reference machine:
+
+| Step | Time |
+|---|---|
+| Segment + RLE-encode one image, single core | ~0.22 s |
+| Test set prediction (180 images, 10 processes, incl. image loading) | ~13 s |
+| Validation evaluation (213 images, 10 processes) | ~31 s |
+| One random-search iteration (160 images) | ~8–10 s |
+
 ## Layout
 
 | Path | Purpose |
