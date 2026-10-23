@@ -64,6 +64,8 @@ PQ pooled over all entries as in the host's notebook.
 |---|---|---|---|
 | classical, tuned (`configs/classical_best.json`) | 0.242 | 0.21 | 13 s / 180 images, CPU |
 | U-Net ResNet34 @512, 8x TTA, `configs/post_unet512.json` | 0.354 | 0.29 | 80 s / 180 images, Apple M5 MPS |
+| U-Net ResNet34 @768, 8x TTA, `configs/post_unet768.json` | 0.383 | 0.31 | 130 s / 180 images, Apple M5 MPS |
+| mean of 512 + 768 maps, `configs/post_ens_512_768.json` | 0.380 | – | – |
 
 ## U-Net pipeline
 
