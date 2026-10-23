@@ -47,6 +47,8 @@ def main() -> None:
     ap.add_argument("--workers", type=int, default=4)
     ap.add_argument("--name", default="unet")
     ap.add_argument("--out-dir", type=Path, default=Path("outputs/models"))
+    ap.add_argument("--resume", action="store_true",
+                    help="continue from <out-dir>/<name>.last.pt (written after every epoch)")
     args = ap.parse_args()
 
     torch.manual_seed(0)
@@ -70,10 +72,20 @@ def main() -> None:
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
     ckpt = args.out_dir / f"{args.name}.pt"
-    meta = dict(vars(args), out_dir=str(args.out_dir))
-    best = -1.0
+    last = args.out_dir / f"{args.name}.last.pt"
+    meta = {k: v for k, v in vars(args).items() if k not in ("out_dir", "resume")}
+    best, start = -1.0, 1
+    if args.resume and last.exists():
+        st = torch.load(last, map_location="cpu", weights_only=False)
+        model.load_state_dict(st["model"])
+        opt.load_state_dict(st["opt"])
+        sched.load_state_dict(st["sched"])
+        sched.total_steps = steps  # allows resuming with a larger --epochs
+        scaler.load_state_dict(st["scaler"])
+        best, start = st["best"], st["epoch"] + 1
+        print(f"resumed from {last} at epoch {start} (best val pq {best:.4f})", flush=True)
     post = PostParams()
-    for ep in range(1, args.epochs + 1):
+    for ep in range(start, args.epochs + 1):
         t0, losses = time.time(), []
         for x, y in loader:
             x, y = x.to(dev, non_blocking=True), y.to(dev, non_blocking=True)
@@ -94,6 +106,11 @@ def main() -> None:
                 best = acc.pq
                 torch.save({"model": model.state_dict(), "meta": meta}, ckpt)
                 msg += " *"
+        # full training state, written atomically so a session cut mid-write leaves the previous one
+        tmp = last.with_suffix(".tmp")
+        torch.save({"model": model.state_dict(), "opt": opt.state_dict(), "sched": sched.state_dict(),
+                    "scaler": scaler.state_dict(), "epoch": ep, "best": best}, tmp)
+        tmp.replace(last)
         print(msg, flush=True)
     if not va_items:
         torch.save({"model": model.state_dict(), "meta": meta}, ckpt)

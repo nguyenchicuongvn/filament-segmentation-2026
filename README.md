@@ -76,8 +76,20 @@ PQ pooled over all entries as in the host's notebook.
     --post configs/post_unet512.json --out outputs/submission_unet512.csv
 ```
 
-GPU training on Kaggle: `kaggle/make_kernel.py` builds a self-contained kernel (code embedded) that
-trains and writes val/test probability maps.
+### GPU training on Colab
+
+`colab/train_unet.ipynb` trains the runs listed in its parameters cell, writes 8x-TTA val/test
+probability maps and uploads each finished run to a private Kaggle dataset
+`nguyenchicuong/filseg-<run>`. Training state is saved to Drive every epoch (`--resume`).
+
+```bash
+.venv/bin/python scripts/package_colab.py          # then upload build/colab/filseg-colab.zip to MyDrive/filseg/
+# ... run the notebook on a GPU runtime (Colab secret KAGGLE_API_TOKEN) ...
+kaggle datasets download nguyenchicuong/filseg-unet1024-r34 -p outputs/colab/unet1024_r34 --unzip
+.venv/bin/python scripts/tune_post.py --probs outputs/colab/unet1024_r34/probs_val --out configs/post_unet1024.json
+```
+
+`kaggle/make_kernel.py` does the same on a Kaggle GPU kernel (code embedded, no dataset upload).
 
 ## License
 
