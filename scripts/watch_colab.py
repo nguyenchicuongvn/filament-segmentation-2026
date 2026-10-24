@@ -84,34 +84,52 @@ def list_files(ref: str) -> list[str]:
             return names
 
 
+def run_dir(run: str) -> Path:
+    return ROOT / "outputs" / "colab" / run
+
+
+def maps_complete(out: Path) -> bool:
+    """Test maps for all 180 images (and val maps for all 213 val images, when present)."""
+    n_val = len(list((out / "probs_val").glob("*.npy")))
+    n_test = len(list((out / "probs_test").glob("*.npy")))
+    return n_test == 180 and n_val in (0, 213)
+
+
 def download(owner: str, run: str) -> Path:
-    """Download every file of the run's dataset. Whole-dataset download returns 404 for
-    these datasets, so files are fetched one by one (16 at a time); kept files are skipped."""
+    """Fetch the run's dataset. New uploads hold probs_*.tar archives (a few files); older ones
+    hold every map as its own file, and whole-dataset download returns 404 for them, so files
+    are fetched one by one -- 4 at a time, backing off when Kaggle rate-limits (429).
+    Files already on disk are skipped, so an interrupted download resumes."""
+    import tarfile
     from concurrent.futures import ThreadPoolExecutor
 
     ref = f"{owner}/{slug(run)}"
-    out = ROOT / "outputs" / "colab" / run
+    out = run_dir(run)
     names = list_files(ref)
     todo = [n for n in names if not (out / n).exists()]
     log(f"{run}: {len(names)} files in {ref}, {len(todo)} to download")
 
     def fetch(name: str) -> str | None:
-        for _ in range(3):
+        wait = 10
+        for _ in range(8):
             r = subprocess.run(["kaggle", "datasets", "download", ref, "-f", name, "-p", str(out), "-q"],
                                capture_output=True, text=True)
             if (out / name).exists():
                 return None
-            time.sleep(2)
+            time.sleep(wait if "429" in r.stdout + r.stderr else 2)
+            wait = min(wait * 2, 300)
         return f"{name}: {(r.stdout + r.stderr).strip()[-200:]}"
 
-    with ThreadPoolExecutor(16) as pool:
+    with ThreadPoolExecutor(4) as pool:
         errors = [e for e in pool.map(fetch, todo) if e]
     if errors:
         raise RuntimeError(f"{len(errors)} files failed, e.g. {errors[0]}")
-    n_val = len(list((out / "probs_val").glob("*.npy")))
-    n_test = len(list((out / "probs_test").glob("*.npy")))
-    if n_test != 180 or (n_val and n_val != 213):
-        raise RuntimeError(f"incomplete maps: {n_val} val / {n_test} test")
+    for t in out.glob("probs_*.tar"):
+        with tarfile.open(t) as tf:
+            tf.extractall(out, filter="data")
+        t.unlink()
+    if not maps_complete(out):
+        raise RuntimeError(f"incomplete maps in {out}")
     return out
 
 
@@ -181,9 +199,11 @@ def main() -> None:
             if rs.get("errors", 0) >= 3:
                 continue  # needs a look; fix, clear its entry in watch_state.json, restart
             try:
-                if "val_filtered" not in rs and dataset_ready(args.owner, run):
-                    log(f"{run}: dataset ready, processing")
-                    out = download(args.owner, run)
+                # maps inferred locally from a checkpoint: marked by an empty LOCAL file
+                local = (run_dir(run) / "LOCAL").exists() and maps_complete(run_dir(run))
+                if "val_filtered" not in rs and (local or dataset_ready(args.owner, run)):
+                    log(f"{run}: {'local maps' if local else 'dataset ready'}, processing")
+                    out = run_dir(run) if local else download(args.owner, run)
                     modes = ["cc", "group"] if (out / "probs_val" / "group").is_dir() else ["cc"]
                     rs.update(tune_and_filter(run, out / "probs_val", modes))
                     rs["csv"] = str(build_submission(run, out / "probs_test", rs["filter"]).relative_to(ROOT))

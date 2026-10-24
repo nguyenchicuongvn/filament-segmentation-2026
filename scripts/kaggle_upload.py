@@ -23,6 +23,18 @@ def main() -> None:
     ap.add_argument("--message", default="update")
     args = ap.parse_args()
 
+    # One tar per probs_* directory: Kaggle unpacks zips into one file per map, which then has to
+    # be downloaded file by file (whole-dataset download returns 404 for these datasets).
+    import shutil
+    import tarfile
+
+    for d in sorted(args.dir.glob("probs_*")):
+        if d.is_dir():
+            with tarfile.open(d.with_suffix(".tar"), "w") as tf:
+                tf.add(d, arcname=d.name)
+            shutil.rmtree(d)
+            print("packed", d.with_suffix(".tar").name, flush=True)
+
     ref = f"{args.owner}/{args.slug}"
     (args.dir / "dataset-metadata.json").write_text(json.dumps(
         {"title": args.slug, "id": ref, "licenses": [{"name": "other"}]}, indent=2))
