@@ -98,9 +98,22 @@ quét ngưỡng trên điểm out-of-fold.
 
 ## E7–E11: Hàng đợi trên Colab
 
-`colab/train_unet.ipynb`, dict `EXPERIMENTS` trong ô parameters; chọn bằng `RUN_NAMES`. Mỗi run
-xong được upload lên `nguyenchicuong/filseg-<run>` (dấu `_` đổi thành `-`). Quy trình sau khi tải
-về:
+`colab/train_unet.ipynb`, dict `EXPERIMENTS` trong ô parameters; `RUN_NAMES` mặc định chạy cả
+E7–E10 trong **một session** (~8 h A100 / ~16 h L4). Mỗi run xong được upload ngay lên
+`nguyenchicuong/filseg-<run>` (dấu `_` đổi thành `-`).
+
+**Tự động submit**: `scripts/watch_colab.py` chạy nền trên máy local, cứ 10 phút kiểm tra Kaggle;
+run nào có dataset thì tải về, tune post-processing (thêm mode `group` nếu có group map), train FP
+filter, tạo CSV và submit ngay. Khi có từ 2 run trở lên, nó thử trung bình map của các run; chỉ
+submit ensemble nếu val cao hơn mọi run đơn. Trạng thái nằm ở `outputs/colab/watch_state.json`,
+log tune/filter ở `docs/logs/`. Lượt submit bị từ chối do giới hạn 5/ngày sẽ được thử lại ở các lần
+kiểm tra sau.
+
+```bash
+.venv/bin/python scripts/watch_colab.py --runs unet1024_r34 unet1024_r34_grp unet1024_effb4 unet1024_cnxt unet1024_r34_e60
+```
+
+Các bước watcher làm, nếu cần chạy tay:
 
 ```bash
 kaggle datasets download nguyenchicuong/filseg-<run> -p outputs/colab/<run> --unzip

@@ -61,6 +61,7 @@ Measured runtimes on the reference machine:
 | `scripts/fp_filter.py` | train/evaluate the instance FP filter (5-fold CV on val maps) |
 | `scripts/make_submission.py` | cached test maps + post config (+ optional FP filter) → submission CSV |
 | `scripts/package_colab.py`, `scripts/kaggle_upload.py` | Colab code bundle; push results to a private Kaggle dataset |
+| `scripts/watch_colab.py` | poll for finished Colab runs; download, tune, filter and submit each automatically |
 | `colab/train_unet.ipynb` | GPU training on Colab |
 | `kaggle/make_kernel.py` | GPU training as a Kaggle kernel |
 | `configs/` | tuned parameters (classical, post-processing per model) |

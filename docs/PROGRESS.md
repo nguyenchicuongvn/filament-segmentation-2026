@@ -15,7 +15,7 @@ Mỗi phiên làm việc thêm một mục ở **đầu** phần "Nhật ký" (m
 | Deadline | Kaggle: **2026-11-15 06:00 UTC** (13:00 VN). Report + code (Google form): Nov 15 11:59 pm CDT |
 | Repo | https://github.com/nguyenchicuongvn/filament-segmentation-2026 (**private** đến khi cuộc thi đóng) |
 | GPU | Kaggle GPU quota tuần này đã hết → train GPU trên Colab (`colab/train_unet.ipynb`); Mac M5 (MPS) cho run nhỏ |
-| Đang chờ | Colab: người dùng chạy E7 `unet1024_r34`; E8–E11 đã dựng sẵn trong hàng đợi của notebook |
+| Đang chờ | Colab: một session chạy E7–E10 (`RUN_NAMES`); `scripts/watch_colab.py` chạy nền trên Mac, tự tune + lọc FP + submit từng run khi nó lên Kaggle (log: `outputs/colab_watch.log`) |
 
 ## Lịch sử submission
 
@@ -42,6 +42,8 @@ Val luôn cao hơn LB khoảng 0.03–0.07, nhưng thứ tự giữa các model 
   - Kênh group cho U-Net (`--targets group`, post `--mode group`), encoder EfficientNet-B4 /
     ConvNeXt-Tiny, run 60 epoch, run full-data: tất cả nằm trong hàng đợi `EXPERIMENTS` của notebook
     Colab (E8–E11). Đã smoke-test toàn bộ đường đi trên Mac (256 px, 2 epoch).
+- Notebook chạy cả E7–E10 trong một session; `scripts/watch_colab.py` tự submit từng run ngay khi
+  có kết quả, và submit ensemble nếu val tốt hơn. Đã test offline (giải nén, tune 2 mode, filter, CSV).
 
 ### 2026-10-23
 - U-Net @768 trên Mac (MPS, ~2.5 h): val PQ 0.362 thô → **0.383** sau tune post-processing.
