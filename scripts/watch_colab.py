@@ -23,7 +23,6 @@ import pickle
 import subprocess
 import sys
 import time
-import zipfile
 from datetime import datetime
 from pathlib import Path
 
@@ -54,8 +53,12 @@ def save_state(st: dict) -> None:
     STATE.write_text(json.dumps(st, indent=2))
 
 
+# runs whose default slug was taken (by a notebook) and were uploaded under another one
+SLUG_OVERRIDES = {"unet1024_r34": "filseg-unet1024-r34-ds"}
+
+
 def slug(run: str) -> str:
-    return "filseg-" + run.replace("_", "-")
+    return SLUG_OVERRIDES.get(run, "filseg-" + run.replace("_", "-"))
 
 
 def dataset_ready(owner: str, run: str) -> bool:
@@ -63,20 +66,52 @@ def dataset_ready(owner: str, run: str) -> bool:
     return r.returncode == 0 and "ready" in r.stdout.lower()
 
 
+def list_files(ref: str) -> list[str]:
+    """All file names of a dataset (the listing is paged, 200 per page)."""
+    names, token = [], None
+    while True:
+        cmd = ["kaggle", "datasets", "files", ref, "--csv", "--page-size", "200"]
+        if token:
+            cmd += ["--page-token", token]
+        out = subprocess.run(cmd, capture_output=True, text=True, check=True).stdout.splitlines()
+        token = None
+        for line in out:
+            if line.startswith("Next Page Token = "):
+                token = line.split("= ", 1)[1].strip()
+            elif line and not line.startswith("name,"):
+                names.append(line.split(",")[0])
+        if not token:
+            return names
+
+
 def download(owner: str, run: str) -> Path:
+    """Download every file of the run's dataset. Whole-dataset download returns 404 for
+    these datasets, so files are fetched one by one (16 at a time); kept files are skipped."""
+    from concurrent.futures import ThreadPoolExecutor
+
+    ref = f"{owner}/{slug(run)}"
     out = ROOT / "outputs" / "colab" / run
-    sh(["kaggle", "datasets", "download", f"{owner}/{slug(run)}", "-p", out, "--unzip", "-q"])
-    for z in list(out.glob("*.zip")):  # --dir-mode zip uploads sub-directories as archives
-        with zipfile.ZipFile(z) as f:
-            f.extractall(out / z.stem)
-        z.unlink()
-    # an archive may contain its own top directory: flatten probs_x/probs_x -> probs_x
-    for d in out.glob("probs_*"):
-        inner = d / d.name
-        if inner.is_dir():
-            for f in inner.iterdir():
-                f.rename(d / f.name)
-            inner.rmdir()
+    names = list_files(ref)
+    todo = [n for n in names if not (out / n).exists()]
+    log(f"{run}: {len(names)} files in {ref}, {len(todo)} to download")
+
+    def fetch(name: str) -> str | None:
+        for _ in range(3):
+            r = subprocess.run(["kaggle", "datasets", "download", ref, "-f", name, "-p", str(out), "-q"],
+                               capture_output=True, text=True)
+            if (out / name).exists():
+                return None
+            time.sleep(2)
+        return f"{name}: {(r.stdout + r.stderr).strip()[-200:]}"
+
+    with ThreadPoolExecutor(16) as pool:
+        errors = [e for e in pool.map(fetch, todo) if e]
+    if errors:
+        raise RuntimeError(f"{len(errors)} files failed, e.g. {errors[0]}")
+    n_val = len(list((out / "probs_val").glob("*.npy")))
+    n_test = len(list((out / "probs_test").glob("*.npy")))
+    if n_test != 180 or (n_val and n_val != 213):
+        raise RuntimeError(f"incomplete maps: {n_val} val / {n_test} test")
     return out
 
 

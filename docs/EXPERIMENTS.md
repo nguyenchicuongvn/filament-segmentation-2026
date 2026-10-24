@@ -20,10 +20,11 @@ bản gán nhãn; PQ gộp trên mọi bản gán nhãn, đúng cách của host
 | E6 | Trung bình map E4 + E5 | 768 | – | 0.380 | – | `configs/post_ens_512_768.json`, `logs/tune_ens.log` |
 | E5w | E5 + post-processing watershed | 768 | – | 0.384 | – | `configs/post_unet768_ws.json`, `logs/tune_768_watershed.log` |
 | E5f | E5 + lọc FP theo instance (GBM, CV 5 fold trên val) | 768 | – | 0.389 | **0.33** | `configs/fpfilter_unet768.pkl`, `logs/fpfilter_768.log` |
-| E7 | U-Net ResNet34 (Colab) | 1024 | đang chạy (người dùng) | | | Colab `unet1024_r34` |
-| E8 | U-Net R34 + kênh group | 1024 | chờ Colab | | | Colab `unet1024_r34_grp` |
-| E9 | EfficientNet-B4 / ConvNeXt-Tiny | 1024 | chờ Colab | | | Colab `unet1024_effb4`, `unet1024_cnxt` |
-| E10 | R34, 60 epoch | 1024 | chờ Colab | | | Colab `unet1024_r34_e60` |
+| E7 | U-Net ResNet34 (Colab L4) | 1024 | 0.357 | chờ tune | | Colab `unet1024_r34` (upload lỗi, xem dưới) |
+| E8 | U-Net R34 + kênh group | 1024 | 0.364 | chờ tune | | Colab `unet1024_r34_grp` |
+| E9a | U-Net EfficientNet-B4 | 1024 | **0.381** | chờ tune | | Colab `unet1024_effb4` |
+| E9b | U-Net ConvNeXt-Tiny (lr 5e-4) | 1024 | 0.342 | chờ tune | | Colab `unet1024_cnxt` |
+| E10 | R34, 60 epoch | 1024 | ≥0.364 (đang chạy) | | | Colab `unet1024_r34_e60` |
 | E11 | Model cuối, train trên toàn bộ ảnh | 1024 | sau E7–E10 | | | Colab `unet1024_final_full` |
 
 ## E1–E3: Classical baseline
@@ -97,6 +98,28 @@ quét ngưỡng trên điểm out-of-fold.
 **Kết luận**: giữ lại. Mỗi model mới cần chạy lại `fp_filter.py` trên map val của chính nó.
 
 ## E7–E11: Hàng đợi trên Colab
+
+**Kết quả train (session L4, 2026-10-24 18:48–23:30 UTC)**. Val PQ "thô" = cc mặc định, không
+TTA, đo trong lúc train (5 epoch/lần):
+
+| Run | Thời gian | Epoch | val PQ thô tốt nhất | Ghi chú |
+|---|---|---|---|---|
+| `unet1024_r34` | 37 min | 30 | 0.357 | 1 min/epoch, val ~1 min |
+| `unet1024_r34_grp` | 36 min | 30 | 0.364 | kênh group giúp nhẹ ngay cả khi đánh giá ở mode cc |
+| `unet1024_effb4` | 61 min | 30 | **0.381** | 1.8 min/epoch; tốt nhất |
+| `unet1024_cnxt` | 48 min | 30 | 0.342 | hội tụ chậm và dao động (val 0.21–0.34), lr 5e-4 có thể quá thấp/cao |
+| `unet1024_r34_e60` | ~1 h 10 | 60 | 0.364 tại ep 45 | so với 0.357 sau 30 epoch: thêm epoch giúp ít |
+
+So sánh: E5 (R34 @768 trên Mac) có val PQ thô 0.362. R34 @1024 (0.357) **không** hơn 768;
+cải thiện đến từ encoder (EfficientNet-B4) và kênh group.
+
+**Sự cố**:
+- Upload `unet1024_r34` lỗi: slug `filseg-unet1024-r34` đã bị một notebook chiếm (lần push kernel
+  Kaggle thất bại hôm 22/10), nhưng `kaggle datasets create` vẫn thoát với mã 0 nên notebook tưởng
+  là đã xong. Đã sửa `scripts/kaggle_upload.py` để báo lỗi; run này dùng slug
+  `filseg-unet1024-r34-ds` (`SLUG_OVERRIDES` trong watcher).
+- Kaggle trả 404 khi tải nguyên dataset các run này (tải từng file vẫn được) → watcher đã đổi sang
+  tải từng file, 16 luồng song song.
 
 `colab/train_unet.ipynb`, dict `EXPERIMENTS` trong ô parameters; `RUN_NAMES` mặc định chạy cả
 E7–E10 trong **một session** (~8 h A100 / ~16 h L4). Mỗi run xong được upload ngay lên

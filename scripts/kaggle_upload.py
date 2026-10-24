@@ -33,7 +33,12 @@ def main() -> None:
         # private by default (no --public flag)
         cmd = ["kaggle", "datasets", "create", "-p", str(args.dir), "--dir-mode", "zip"]
     print(">>", " ".join(cmd), flush=True)
-    subprocess.run(cmd, check=True)
+    r = subprocess.run(cmd, capture_output=True, text=True)
+    print(r.stdout[-3000:], r.stderr[-3000:], flush=True)
+    # the CLI exits 0 even when Kaggle refuses the dataset, so check what it said
+    if r.returncode != 0 or "error" in (r.stdout + r.stderr).lower():
+        raise SystemExit(f"upload of {ref} FAILED (see above). A slug already used by a notebook cannot be "
+                         f"reused; pass another --slug, e.g. {args.slug}-ds")
     print(f"uploaded -> https://www.kaggle.com/datasets/{ref}")
 
 
