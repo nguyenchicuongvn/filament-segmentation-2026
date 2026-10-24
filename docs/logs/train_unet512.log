@@ -1,0 +1,32 @@
+device=mps train=817 val=337
+ep   1 loss 1.6075 235s
+ep   2 loss 1.0463 173s
+ep   3 loss 0.6799 173s
+ep   4 loss 0.4666 168s
+ep   5 loss 0.4357 168s val {'pq': 0.28, 'sq': 0.6343, 'tp': 945, 'fp': 970, 'fn': 1421, 'gt_split': 166, 'pred_merge': 18} *
+ep   6 loss 0.4045 170s
+ep   7 loss 0.3930 170s
+ep   8 loss 0.4096 170s
+ep   9 loss 0.3894 172s
+ep  10 loss 0.3878 170s val {'pq': 0.3016, 'sq': 0.6439, 'tp': 976, 'fp': 826, 'fn': 1390, 'gt_split': 152, 'pred_merge': 23} *
+ep  11 loss 0.3763 172s
+ep  12 loss 0.3705 163s
+ep  13 loss 0.3697 161s
+ep  14 loss 0.3751 162s
+ep  15 loss 0.3631 161s val {'pq': 0.3198, 'sq': 0.6392, 'tp': 1095, 'fp': 917, 'fn': 1271, 'gt_split': 149, 'pred_merge': 40} *
+ep  16 loss 0.3678 173s
+ep  17 loss 0.3698 177s
+ep  18 loss 0.3604 175s
+ep  19 loss 0.3577 176s
+ep  20 loss 0.3526 179s val {'pq': 0.3321, 'sq': 0.6424, 'tp': 1104, 'fp': 801, 'fn': 1262, 'gt_split': 132, 'pred_merge': 37} *
+ep  21 loss 0.3493 175s
+ep  22 loss 0.3578 161s
+ep  23 loss 0.3463 161s
+ep  24 loss 0.3410 159s
+ep  25 loss 0.3409 160s val {'pq': 0.3371, 'sq': 0.6416, 'tp': 1105, 'fp': 735, 'fn': 1261, 'gt_split': 128, 'pred_merge': 40} *
+ep  26 loss 0.3414 161s
+ep  27 loss 0.3364 159s
+ep  28 loss 0.3384 161s
+ep  29 loss 0.3386 159s
+ep  30 loss 0.3385 158s val {'pq': 0.3353, 'sq': 0.6424, 'tp': 1127, 'fp': 825, 'fn': 1239, 'gt_split': 134, 'pred_merge': 42}
+saved outputs/models/unet512_r34.pt best val pq 0.3371386561048529

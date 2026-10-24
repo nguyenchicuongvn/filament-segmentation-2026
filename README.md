@@ -4,6 +4,19 @@ Instance segmentation of solar filaments in GONG H-alpha images (MAGFiLO dataset
 Competition: https://www.kaggle.com/competitions/filament-segmentation-2026 (PQ metric, deadline 2026-11-15).
 Prize conditions: [PRIZE_RULES.md](PRIZE_RULES.md).
 
+**Current best:** U-Net ResNet34 @768 — val PQ 0.383, public LB 0.31 (2026-10-23).
+
+## Documentation
+
+| Doc | What it holds |
+|---|---|
+| [docs/PROGRESS.md](docs/PROGRESS.md) | **start here**: status, submission history, dated work log |
+| [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md) | every experiment: config, val/LB, conclusion |
+| [docs/DATA_AND_METRIC.md](docs/DATA_AND_METRIC.md) | dataset facts, PQ details, validation split, val↔LB gap |
+| [docs/PLAN.md](docs/PLAN.md) | next steps, deadlines, prize-deliverables checklist |
+| [docs/logs/](docs/logs/) | training / tuning / search logs |
+| [PRIZE_RULES.md](PRIZE_RULES.md) | competition rules and prize conditions |
+
 ## Setup
 
 ```bash
@@ -37,8 +50,18 @@ Measured runtimes on the reference machine:
 | `src/filseg/data.py` | image/annotation loading, COCO RLE helpers |
 | `src/filseg/metric.py` | Panoptic Quality, same rules as the host's self-evaluation notebook |
 | `src/filseg/classical.py` | classical (no-learning) baseline |
+| `src/filseg/dl.py` | U-Net model, dataset/augmentation, TTA inference, instance post-processing |
 | `scripts/eval_classical.py` | evaluate / random-search baseline params on a fixed 70/30 train/val split |
 | `scripts/predict_classical.py` | write `outputs/submission.csv` for the test set |
+| `scripts/train_unet.py` | train the U-Net (resumable), keep the best checkpoint by val PQ |
+| `scripts/infer_probs.py` | cache probability maps (val/test, optional 8x TTA, ensembles of checkpoints) |
+| `scripts/tune_post.py` | grid-search instance post-processing on cached val maps |
+| `scripts/ensemble_probs.py` | average cached maps of several models |
+| `scripts/make_submission.py` | cached test maps + post config → submission CSV |
+| `scripts/package_colab.py`, `scripts/kaggle_upload.py` | Colab code bundle; push results to a private Kaggle dataset |
+| `colab/train_unet.ipynb` | GPU training on Colab |
+| `kaggle/make_kernel.py` | GPU training as a Kaggle kernel |
+| `configs/` | tuned parameters (classical, post-processing per model) |
 | `tests/` | metric and RLE unit tests |
 
 ## Classical baseline

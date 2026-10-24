@@ -1,0 +1,32 @@
+device=mps train=817 val=337
+ep   1 loss 1.5434 314s
+ep   2 loss 0.9478 305s
+ep   3 loss 0.5191 308s
+ep   4 loss 0.4274 295s
+ep   5 loss 0.4153 301s val {'pq': 0.1601, 'sq': 0.6296, 'tp': 1002, 'fp': 4510, 'fn': 1364, 'gt_split': 361, 'pred_merge': 13} *
+ep   6 loss 0.4075 297s
+ep   7 loss 0.3872 354s
+ep   8 loss 0.3870 363s
+ep   9 loss 0.3711 304s
+ep  10 loss 0.3747 309s val {'pq': 0.3343, 'sq': 0.6469, 'tp': 1379, 'fp': 1592, 'fn': 987, 'gt_split': 236, 'pred_merge': 44} *
+ep  11 loss 0.3709 282s
+ep  12 loss 0.3710 285s
+ep  13 loss 0.3620 300s
+ep  14 loss 0.3631 286s
+ep  15 loss 0.3623 277s val {'pq': 0.3492, 'sq': 0.655, 'tp': 1306, 'fp': 1227, 'fn': 1060, 'gt_split': 230, 'pred_merge': 31} *
+ep  16 loss 0.3549 297s
+ep  17 loss 0.3521 289s
+ep  18 loss 0.3493 275s
+ep  19 loss 0.3481 277s
+ep  20 loss 0.3432 275s val {'pq': 0.3534, 'sq': 0.6527, 'tp': 1307, 'fp': 1155, 'fn': 1059, 'gt_split': 216, 'pred_merge': 39} *
+ep  21 loss 0.3568 275s
+ep  22 loss 0.3470 299s
+ep  23 loss 0.3414 299s
+ep  24 loss 0.3419 297s
+ep  25 loss 0.3346 313s val {'pq': 0.3597, 'sq': 0.6534, 'tp': 1372, 'fp': 1246, 'fn': 994, 'gt_split': 212, 'pred_merge': 45} *
+ep  26 loss 0.3334 323s
+ep  27 loss 0.3350 314s
+ep  28 loss 0.3295 296s
+ep  29 loss 0.3303 293s
+ep  30 loss 0.3300 315s val {'pq': 0.3615, 'sq': 0.6536, 'tp': 1386, 'fp': 1259, 'fn': 980, 'gt_split': 201, 'pred_merge': 50} *
+saved outputs/models/unet768_r34.pt best val pq 0.3615400552980162
