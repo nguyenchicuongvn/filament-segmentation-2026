@@ -1,0 +1,11 @@
+{'pq': 0.3837, 'sq': 0.653, 'tp': 1401, 'fp': 1001, 'fn': 965, 'gt_split': 172, 'pred_merge': 50} {'thresh': 0.4, 'min_area': 50, 'group_radius': 8, 'out_dilate': 0, 'mode': 'watershed', 'seed_thresh': 0.9, 'group_thresh': 0.5}
+{'pq': 0.3805, 'sq': 0.6525, 'tp': 1411, 'fp': 1063, 'fn': 955, 'gt_split': 182, 'pred_merge': 51} {'thresh': 0.4, 'min_area': 50, 'group_radius': 8, 'out_dilate': 0, 'mode': 'watershed', 'seed_thresh': 0.8, 'group_thresh': 0.5}
+{'pq': 0.3801, 'sq': 0.6526, 'tp': 1411, 'fp': 1068, 'fn': 955, 'gt_split': 180, 'pred_merge': 51} {'thresh': 0.4, 'min_area': 50, 'group_radius': 4, 'out_dilate': 0, 'mode': 'watershed', 'seed_thresh': 0.8, 'group_thresh': 0.5}
+{'pq': 0.3801, 'sq': 0.653, 'tp': 1395, 'fp': 1033, 'fn': 971, 'gt_split': 189, 'pred_merge': 48} {'thresh': 0.4, 'min_area': 50, 'group_radius': 4, 'out_dilate': 0, 'mode': 'watershed', 'seed_thresh': 0.9, 'group_thresh': 0.5}
+{'pq': 0.3796, 'sq': 0.6523, 'tp': 1416, 'fp': 1085, 'fn': 950, 'gt_split': 182, 'pred_merge': 51} {'thresh': 0.4, 'min_area': 50, 'group_radius': 8, 'out_dilate': 0, 'mode': 'watershed', 'seed_thresh': 0.7, 'group_thresh': 0.5}
+{'pq': 0.3794, 'sq': 0.6523, 'tp': 1416, 'fp': 1087, 'fn': 950, 'gt_split': 181, 'pred_merge': 51} {'thresh': 0.4, 'min_area': 50, 'group_radius': 8, 'out_dilate': 0, 'mode': 'watershed', 'seed_thresh': 0.6, 'group_thresh': 0.5}
+{'pq': 0.3794, 'sq': 0.6543, 'tp': 1380, 'fp': 1014, 'fn': 986, 'gt_split': 190, 'pred_merge': 46} {'thresh': 0.5, 'min_area': 50, 'group_radius': 8, 'out_dilate': 0, 'mode': 'watershed', 'seed_thresh': 0.9, 'group_thresh': 0.5}
+{'pq': 0.3793, 'sq': 0.6523, 'tp': 1416, 'fp': 1089, 'fn': 950, 'gt_split': 183, 'pred_merge': 51} {'thresh': 0.4, 'min_area': 50, 'group_radius': 4, 'out_dilate': 0, 'mode': 'watershed', 'seed_thresh': 0.6, 'group_thresh': 0.5}
+{'pq': 0.379, 'sq': 0.6523, 'tp': 1416, 'fp': 1093, 'fn': 950, 'gt_split': 187, 'pred_merge': 51} {'thresh': 0.4, 'min_area': 50, 'group_radius': 4, 'out_dilate': 0, 'mode': 'watershed', 'seed_thresh': 0.7, 'group_thresh': 0.5}
+{'pq': 0.3782, 'sq': 0.6523, 'tp': 1416, 'fp': 1102, 'fn': 950, 'gt_split': 193, 'pred_merge': 50} {'thresh': 0.4, 'min_area': 50, 'group_radius': 2, 'out_dilate': 0, 'mode': 'watershed', 'seed_thresh': 0.6, 'group_thresh': 0.5}
+-> configs/post_unet768_ws.json

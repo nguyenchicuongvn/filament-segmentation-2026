@@ -1,0 +1,9 @@
+{
+  "thresh": 0.4,
+  "min_area": 50,
+  "group_radius": 8,
+  "out_dilate": 0,
+  "mode": "watershed",
+  "seed_thresh": 0.9,
+  "group_thresh": 0.5
+}

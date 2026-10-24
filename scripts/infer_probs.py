@@ -1,5 +1,8 @@
 """Save U-Net probability maps (uint8, prediction resolution) for val or test images.
 
+<out>/<stem>.npy is the filament map; <out>/group/<stem>.npy the group map of
+--targets group models.
+
 Post-processing is tuned on these cached maps, so the network runs only once.
 
 Usage:
@@ -19,7 +22,7 @@ import torch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from filseg.data import load_gray, load_train, split, test_paths  # noqa: E402
-from filseg.dl import build_model, device, predict_prob  # noqa: E402
+from filseg.dl import TARGET_CHANNELS, build_model, device, predict_prob  # noqa: E402
 
 
 def load_model(ckpts: list[Path], dev):
@@ -27,7 +30,8 @@ def load_model(ckpts: list[Path], dev):
     for c in ckpts:
         state = torch.load(c, map_location="cpu", weights_only=False)
         meta = state["meta"]
-        m = build_model(meta["encoder"], pretrained=False)
+        m = build_model(meta["encoder"], pretrained=False,
+                        classes=TARGET_CHANNELS[meta.get("targets", "mask")])
         m.load_state_dict(state["model"])
         models.append(m.to(dev).eval())
         assert res in (None, meta["res"]), "ensemble members must share resolution"
@@ -54,8 +58,12 @@ def main() -> None:
     t0 = time.time()
     for stem, path in sorted(paths.items()):
         gray = load_gray(path)
-        prob = np.mean([predict_prob(m, gray, res, dev, tta=args.tta) for m in models], axis=0)
-        np.save(out / f"{stem}.npy", np.round(prob * 255).astype(np.uint8))
+        maps = [predict_prob(m, gray, res, dev, tta=args.tta) for m in models]
+        np.save(out / f"{stem}.npy", np.round(np.mean([x[0] for x in maps], 0) * 255).astype(np.uint8))
+        groups = [x[1] for x in maps if len(x) > 1]
+        if groups:  # group map, from the members that have one
+            (out / "group").mkdir(exist_ok=True)
+            np.save(out / "group" / f"{stem}.npy", np.round(np.mean(groups, 0) * 255).astype(np.uint8))
     print(f"{len(paths)} images in {time.time() - t0:.1f}s -> {out}")
 
 

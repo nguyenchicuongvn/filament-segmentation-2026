@@ -4,7 +4,7 @@ Instance segmentation of solar filaments in GONG H-alpha images (MAGFiLO dataset
 Competition: https://www.kaggle.com/competitions/filament-segmentation-2026 (PQ metric, deadline 2026-11-15).
 Prize conditions: [PRIZE_RULES.md](PRIZE_RULES.md).
 
-**Current best:** U-Net ResNet34 @768 — val PQ 0.383, public LB 0.31 (2026-10-23).
+**Current best:** U-Net ResNet34 @768 + instance FP filter — val PQ 0.389, public LB 0.33 (2026-10-24).
 
 ## Documentation
 
@@ -50,14 +50,16 @@ Measured runtimes on the reference machine:
 | `src/filseg/data.py` | image/annotation loading, COCO RLE helpers |
 | `src/filseg/metric.py` | Panoptic Quality, same rules as the host's self-evaluation notebook |
 | `src/filseg/classical.py` | classical (no-learning) baseline |
-| `src/filseg/dl.py` | U-Net model, dataset/augmentation, TTA inference, instance post-processing |
+| `src/filseg/dl.py` | U-Net model (optional group channel), dataset/augmentation, TTA inference, instance post-processing (cc / watershed / group) |
+| `src/filseg/instfilter.py` | per-instance features for the false-positive filter |
 | `scripts/eval_classical.py` | evaluate / random-search baseline params on a fixed 70/30 train/val split |
 | `scripts/predict_classical.py` | write `outputs/submission.csv` for the test set |
 | `scripts/train_unet.py` | train the U-Net (resumable), keep the best checkpoint by val PQ |
 | `scripts/infer_probs.py` | cache probability maps (val/test, optional 8x TTA, ensembles of checkpoints) |
 | `scripts/tune_post.py` | grid-search instance post-processing on cached val maps |
 | `scripts/ensemble_probs.py` | average cached maps of several models |
-| `scripts/make_submission.py` | cached test maps + post config → submission CSV |
+| `scripts/fp_filter.py` | train/evaluate the instance FP filter (5-fold CV on val maps) |
+| `scripts/make_submission.py` | cached test maps + post config (+ optional FP filter) → submission CSV |
 | `scripts/package_colab.py`, `scripts/kaggle_upload.py` | Colab code bundle; push results to a private Kaggle dataset |
 | `colab/train_unet.ipynb` | GPU training on Colab |
 | `kaggle/make_kernel.py` | GPU training as a Kaggle kernel |
@@ -89,6 +91,8 @@ PQ pooled over all entries as in the host's notebook.
 | U-Net ResNet34 @512, 8x TTA, `configs/post_unet512.json` | 0.354 | 0.29 | 80 s / 180 images, Apple M5 MPS |
 | U-Net ResNet34 @768, 8x TTA, `configs/post_unet768.json` | 0.383 | 0.31 | 130 s / 180 images, Apple M5 MPS |
 | mean of 512 + 768 maps, `configs/post_ens_512_768.json` | 0.380 | – | – |
+| U-Net @768 + watershed instances, `configs/post_unet768_ws.json` | 0.384 | – | – |
+| U-Net @768 + instance FP filter, `configs/fpfilter_unet768.pkl` | 0.389 | 0.33 | +~60 s / 180 images, CPU |
 
 ## U-Net pipeline
 

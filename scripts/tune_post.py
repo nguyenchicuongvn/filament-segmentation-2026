@@ -2,6 +2,8 @@
 
 Usage:
   python scripts/tune_post.py --probs outputs/probs/unet512_r34_val --out configs/post_unet512.json
+  python scripts/tune_post.py --probs outputs/probs/unet768_r34_val --mode watershed
+  python scripts/tune_post.py --probs outputs/probs/<group model>_val --mode group
 """
 from __future__ import annotations
 
@@ -12,19 +14,31 @@ import sys
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
-import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from filseg.data import encode_masks, load_train, split  # noqa: E402
-from filseg.dl import PostParams, instances  # noqa: E402
+from filseg.dl import PostParams, instances, load_maps  # noqa: E402
 from filseg.metric import PQAccumulator  # noqa: E402
 
-GRID = {
-    "thresh": [0.3, 0.4, 0.5, 0.6],
-    "min_area": [10, 25, 50, 100],
-    "group_radius": [0, 2, 4, 8],
-    "out_dilate": [0, 1, 2],
+GRIDS = {
+    "cc": {
+        "thresh": [0.3, 0.4, 0.5, 0.6],
+        "min_area": [10, 25, 50, 100],
+        "group_radius": [0, 2, 4, 8],
+        "out_dilate": [0, 1, 2],
+    },
+    "watershed": {
+        "thresh": [0.3, 0.4, 0.5],
+        "seed_thresh": [0.6, 0.7, 0.8, 0.9],
+        "min_area": [25, 50, 100],
+        "group_radius": [0, 2, 4, 8],
+    },
+    "group": {
+        "thresh": [0.3, 0.4, 0.5],
+        "group_thresh": [0.3, 0.4, 0.5, 0.6, 0.7],
+        "min_area": [25, 50, 100],
+    },
 }
 
 _VAL = None
@@ -43,8 +57,8 @@ def _score(args):
     cache: dict[str, list] = {}
     for it in _val():
         if it.image_id not in cache:
-            prob = np.load(Path(probs_dir) / f"{it.image_id}.npy").astype(np.float32) / 255.0
-            cache[it.image_id] = encode_masks(instances(prob, p))
+            prob, group = load_maps(Path(probs_dir), it.image_id)
+            cache[it.image_id] = encode_masks(instances(prob, p, group=group))
         acc.add(it.gt_rles, cache[it.image_id])
     return p, acc
 
@@ -52,10 +66,12 @@ def _score(args):
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--probs", type=Path, required=True)
+    ap.add_argument("--mode", choices=list(GRIDS), default="cc")
     ap.add_argument("--out", type=Path)
     args = ap.parse_args()
 
-    cands = [PostParams(**dict(zip(GRID, v))) for v in itertools.product(*GRID.values())]
+    grid = GRIDS[args.mode]
+    cands = [PostParams(mode=args.mode, **dict(zip(grid, v))) for v in itertools.product(*grid.values())]
     results = []
     with ProcessPoolExecutor() as pool:
         for p, acc in pool.map(_score, [(str(args.probs), c) for c in cands]):

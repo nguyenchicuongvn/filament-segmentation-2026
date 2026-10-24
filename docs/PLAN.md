@@ -19,12 +19,15 @@ Nên chốt model trước ~2026-11-10 để còn thời gian viết report và 
 
 | # | Việc | Lý do | Trạng thái |
 |---|---|---|---|
-| 1 | U-Net R34 @1024 trên Colab (E7) | 512 → 768 tăng ~0.03; mask filament mảnh | chờ chạy Colab |
-| 2 | Tách instance tốt hơn: thêm kênh biên/tâm, hoặc watershed trên map xác suất | gt_split + pred_merge ~190 trên val; mỗi lỗi tách/gộp tốn TP | chưa làm |
-| 3 | Giảm FP: classifier theo từng instance (diện tích, độ tối, độ dài, độ tin cậy trung bình) | FP 965 ≈ FN 981 | chưa làm |
-| 4 | Encoder mạnh hơn (EfficientNet/ConvNeXt), train lâu hơn (E5 chưa bão hoà ở epoch 30) | | chưa làm |
-| 5 | Train trên toàn bộ ảnh (`--split all`) cho model cuối, giữ post-processing đã tune | thêm 30% dữ liệu | cuối cùng |
-| 6 | Ensemble các model cùng độ phân giải / khác kiến trúc | E6: trộn 512 + 768 không giúp | sau 1–4 |
+| 1 | U-Net R34 @1024 trên Colab (E7) | 512 → 768 tăng ~0.03; mask filament mảnh | người dùng đang chạy |
+| 2a | Watershed thay cho gom mảnh bằng dilation (E5w) | gt_split + pred_merge ~190 trên val | **xong**: 0.384 ≈ cc, không dùng |
+| 2b | Kênh group để model học gom mảnh (E8) | luật cố định chỉ đổi lỗi tách lấy lỗi gộp | dựng xong, chờ Colab |
+| 3 | Lọc FP bằng classifier theo instance (E5f) | FP 965 ≈ FN 981 | **xong**: val +0.006, LB +0.02, giữ lại |
+| 4 | Encoder mạnh hơn (E9), train 60 epoch (E10) | E5 chưa bão hoà ở epoch 30 | dựng xong, chờ Colab |
+| 5 | Train trên toàn bộ ảnh (`--split all`) cho model cuối (E11) | thêm 30% dữ liệu | cuối cùng, sau khi chọn công thức |
+| 6 | Ensemble các model 1024 cùng độ phân giải / khác kiến trúc | E6: trộn 512 + 768 không giúp | công cụ có sẵn, chờ model |
+
+Thứ tự đề xuất trên Colab: E7 (đang chạy) → E8 → E9 → E10 → E11 với công thức thắng.
 
 ## Hồ sơ nhận giải (bắt buộc)
 

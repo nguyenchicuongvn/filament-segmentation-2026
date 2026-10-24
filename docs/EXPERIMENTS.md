@@ -18,7 +18,13 @@ bản gán nhãn; PQ gộp trên mọi bản gán nhãn, đúng cách của host
 | E4 | U-Net ResNet34 | 512 | 0.337 | 0.354 | 0.29 | `configs/post_unet512.json`, `logs/train_unet512.log`, `logs/tune_512.log` |
 | E5 | U-Net ResNet34 | 768 | 0.362 | **0.383** | **0.31** | `configs/post_unet768.json`, `logs/train_unet768.log`, `logs/tune_768.log` |
 | E6 | Trung bình map E4 + E5 | 768 | – | 0.380 | – | `configs/post_ens_512_768.json`, `logs/tune_ens.log` |
-| E7 | U-Net ResNet34 (Colab) | 1024 | đang chờ | | | `colab/train_unet.ipynb` |
+| E5w | E5 + post-processing watershed | 768 | – | 0.384 | – | `configs/post_unet768_ws.json`, `logs/tune_768_watershed.log` |
+| E5f | E5 + lọc FP theo instance (GBM, CV 5 fold trên val) | 768 | – | 0.389 | **0.33** | `configs/fpfilter_unet768.pkl`, `logs/fpfilter_768.log` |
+| E7 | U-Net ResNet34 (Colab) | 1024 | đang chạy (người dùng) | | | Colab `unet1024_r34` |
+| E8 | U-Net R34 + kênh group | 1024 | chờ Colab | | | Colab `unet1024_r34_grp` |
+| E9 | EfficientNet-B4 / ConvNeXt-Tiny | 1024 | chờ Colab | | | Colab `unet1024_effb4`, `unet1024_cnxt` |
+| E10 | R34, 60 epoch | 1024 | chờ Colab | | | Colab `unet1024_r34_e60` |
+| E11 | Model cuối, train trên toàn bộ ảnh | 1024 | sau E7–E10 | | | Colab `unet1024_final_full` |
 
 ## E1–E3: Classical baseline
 
@@ -62,8 +68,53 @@ bỏ blob nhỏ và sunspot (vùng rất tối, nhỏ) → gom mảnh bằng dil
 Trung bình map xác suất (resize lên 768) → 0.380, kém E5 dùng một mình. Model 512 làm mờ chi tiết
 mảnh. Ensemble chỉ đáng thử giữa các model cùng độ phân giải hoặc khác kiến trúc.
 
-## E7: U-Net ResNet34 @1024 (Colab) — đang chờ
+## E5w: Watershed thay cho gom mảnh bằng dilation
 
-`colab/train_unet.ipynb`, run `unet1024_r34` (`--res 1024 --bs 8 --epochs 30`). Kết quả sẽ được
-upload lên private dataset `nguyenchicuong/filseg-unet1024-r34`; tải về rồi tune bằng
-`scripts/tune_post.py`.
+`PostParams(mode="watershed")`: seed = pixel có xác suất > `seed_thresh`, gom seed bằng dilation,
+mỗi pixel foreground nhận seed theo watershed trên −prob; thành phần không có seed bị bỏ.
+Tune 144 tổ hợp: tốt nhất 0.3837 (thresh 0.4, seed 0.9, group_radius 8, min_area 50), so với cc là
+0.3831.
+
+**Kết luận**: watershed giảm số filament bị gộp (pred_merge 86 → 50) nhưng cắt đôi nhiều hơn
+(gt_split 107 → 172), tổng gần như không đổi. Tách instance bằng luật cố định chỉ đổi lỗi này lấy
+lỗi kia, nên cần cho model **học** cách gom (E8).
+
+## E5f: Lọc FP theo instance
+
+`src/filseg/instfilter.py`, `scripts/fp_filter.py`. Mỗi instance (cc, config E5) có 14 đặc trưng:
+log diện tích, xác suất trung bình/max/p25, tỉ lệ pixel > 0.8, extent, độ thuôn, chiều dài trục
+chính, độ tương phản so với vành xung quanh, độ sáng, khoảng cách tới tâm đĩa, số instance trong
+ảnh, thứ hạng diện tích, giá trị group map (nếu có). Nhãn: khớp IoU > 0.5 với ít nhất một
+annotator. HistGradientBoosting, CV 5 fold theo ảnh trên **val** (net không thấy val khi train),
+quét ngưỡng trên điểm out-of-fold.
+
+- 1,477 instance, 66% dương. Ngưỡng 0.225: PQ 0.3831 → **0.3893** (FP 965 → 753, TP 1,385 →
+  1,321).
+- Submit → **LB 0.33** (0.31 khi không lọc). Trên LB lọc giúp nhiều hơn trên val.
+- Model cuối fit trên toàn bộ instance val, lưu ở `configs/fpfilter_unet768.pkl`; dùng với
+  `make_submission.py --filter`.
+
+**Kết luận**: giữ lại. Mỗi model mới cần chạy lại `fp_filter.py` trên map val của chính nó.
+
+## E7–E11: Hàng đợi trên Colab
+
+`colab/train_unet.ipynb`, dict `EXPERIMENTS` trong ô parameters; chọn bằng `RUN_NAMES`. Mỗi run
+xong được upload lên `nguyenchicuong/filseg-<run>` (dấu `_` đổi thành `-`). Quy trình sau khi tải
+về:
+
+```bash
+kaggle datasets download nguyenchicuong/filseg-<run> -p outputs/colab/<run> --unzip
+.venv/bin/python scripts/tune_post.py --probs outputs/colab/<run>/probs_val --out configs/post_<run>.json   # E8: --mode group
+.venv/bin/python scripts/fp_filter.py --probs outputs/colab/<run>/probs_val --post configs/post_<run>.json --out configs/fpfilter_<run>.pkl
+.venv/bin/python scripts/make_submission.py --probs outputs/colab/<run>/probs_test --filter configs/fpfilter_<run>.pkl --out outputs/submission_<run>.csv
+```
+
+- **E7** `unet1024_r34`: R34 @1024, so sánh với E5 để xem độ phân giải còn giúp không.
+- **E8** `unet1024_r34_grp`: thêm kênh group (mask mỗi filament dilate ~6 px ở thang 1024, bỏ phần
+  chồng giữa hai filament). Post-processing `--mode group`: instance = vùng liên thông của group map.
+- **E9** `unet1024_effb4` (bs 6), `unet1024_cnxt` (ConvNeXt-Tiny, bs 6, lr 5e-4).
+- **E10** `unet1024_r34_e60`: 60 epoch.
+- **E11** `unet1024_final_full`: công thức tốt nhất của E7–E10 với `--split all`; không còn val nên
+  dùng lại post config và FP filter của run tương ứng.
+- Ensemble (#6): `scripts/infer_probs.py --ckpt a.pt b.pt` (cùng độ phân giải) hoặc
+  `scripts/ensemble_probs.py`, rồi tune và lọc như trên.

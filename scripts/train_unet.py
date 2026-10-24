@@ -19,17 +19,21 @@ from torch.utils.data import DataLoader
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from filseg.data import encode_masks, load_gray, load_train, split  # noqa: E402
-from filseg.dl import (FilamentDataset, PostParams, bce_dice_loss, build_model, cached,  # noqa: E402
-                       device, instances, predict_prob)
+from filseg.dl import (TARGET_CHANNELS, FilamentDataset, PostParams, bce_dice_loss,  # noqa: E402
+                       build_model, cached, device, instances, predict_prob)
 from filseg.metric import PQAccumulator  # noqa: E402
 
 
 def validate(model, items, res, dev, post: PostParams) -> PQAccumulator:
+    """Quick PQ with fixed cc post-processing; one forward pass per image, scored per annotator."""
     model.eval()
     acc = PQAccumulator()
+    preds: dict[str, list] = {}
     for it in items:
-        prob = predict_prob(model, load_gray(it.path), res, dev, tta=False)
-        acc.add(it.gt_rles, encode_masks(instances(prob, post)))
+        if it.image_id not in preds:
+            prob = predict_prob(model, load_gray(it.path), res, dev, tta=False)[0]
+            preds[it.image_id] = encode_masks(instances(prob, post))
+        acc.add(it.gt_rles, preds[it.image_id])
     model.train()
     return acc
 
@@ -40,7 +44,10 @@ def main() -> None:
     ap.add_argument("--bs", type=int, default=8)
     ap.add_argument("--epochs", type=int, default=40)
     ap.add_argument("--lr", type=float, default=1e-3)
-    ap.add_argument("--encoder", default="resnet34")
+    ap.add_argument("--encoder", default="resnet34",
+                    help="any segmentation_models_pytorch encoder, e.g. resnet34, efficientnet-b4, tu-convnext_tiny")
+    ap.add_argument("--targets", choices=list(TARGET_CHANNELS), default="mask",
+                    help="'group' adds a second output channel (see filseg.dl)")
     ap.add_argument("--split", choices=["train", "all"], default="train",
                     help="'all' trains on every image (no held-out val)")
     ap.add_argument("--val-every", type=int, default=5)
@@ -60,10 +67,11 @@ def main() -> None:
     for it in tr_items:  # build cache up front (single process, avoids worker races)
         cached(it, args.res)
 
-    loader = DataLoader(FilamentDataset(tr_items, args.res, augment=True), batch_size=args.bs,
+    loader = DataLoader(FilamentDataset(tr_items, args.res, augment=True, targets=args.targets),
+                        batch_size=args.bs,
                         shuffle=True, num_workers=args.workers, drop_last=True,
                         persistent_workers=args.workers > 0)
-    model = build_model(args.encoder).to(dev)
+    model = build_model(args.encoder, classes=TARGET_CHANNELS[args.targets]).to(dev)
     opt = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=1e-4)
     steps = args.epochs * len(loader)
     sched = torch.optim.lr_scheduler.OneCycleLR(opt, max_lr=args.lr, total_steps=steps, pct_start=0.05)
