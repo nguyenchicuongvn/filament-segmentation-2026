@@ -4,7 +4,8 @@ Instance segmentation of solar filaments in GONG H-alpha images (MAGFiLO dataset
 Competition: https://www.kaggle.com/competitions/filament-segmentation-2026 (PQ metric, deadline 2026-11-15).
 Prize conditions: [PRIZE_RULES.md](PRIZE_RULES.md).
 
-**Current best:** U-Net ResNet34 @768 + instance FP filter — val PQ 0.389, public LB 0.33 (2026-10-24).
+**Current best:** public LB 0.34 — U-Net ResNet34 @1024 + instance FP filter (val PQ 0.394), and the
+768 + 1024 map ensemble + FP filter (val 0.399) (2026-10-24).
 
 ## Documentation
 

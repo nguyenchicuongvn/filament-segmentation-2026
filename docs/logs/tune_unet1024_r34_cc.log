@@ -1,0 +1,11 @@
+{'pq': 0.39, 'sq': 0.6635, 'tp': 1334, 'fp': 839, 'fn': 1032, 'gt_split': 113, 'pred_merge': 77} {'thresh': 0.5, 'min_area': 100, 'group_radius': 4, 'out_dilate': 0, 'mode': 'cc', 'seed_thresh': 0.7, 'group_thresh': 0.5}
+{'pq': 0.3897, 'sq': 0.6648, 'tp': 1320, 'fp': 818, 'fn': 1046, 'gt_split': 120, 'pred_merge': 71} {'thresh': 0.6, 'min_area': 100, 'group_radius': 4, 'out_dilate': 0, 'mode': 'cc', 'seed_thresh': 0.7, 'group_thresh': 0.5}
+{'pq': 0.3896, 'sq': 0.6652, 'tp': 1332, 'fp': 850, 'fn': 1034, 'gt_split': 137, 'pred_merge': 59} {'thresh': 0.6, 'min_area': 100, 'group_radius': 2, 'out_dilate': 0, 'mode': 'cc', 'seed_thresh': 0.7, 'group_thresh': 0.5}
+{'pq': 0.389, 'sq': 0.6629, 'tp': 1363, 'fp': 917, 'fn': 1003, 'gt_split': 158, 'pred_merge': 51} {'thresh': 0.5, 'min_area': 100, 'group_radius': 0, 'out_dilate': 0, 'mode': 'cc', 'seed_thresh': 0.7, 'group_thresh': 0.5}
+{'pq': 0.3883, 'sq': 0.6633, 'tp': 1342, 'fp': 876, 'fn': 1024, 'gt_split': 132, 'pred_merge': 67} {'thresh': 0.5, 'min_area': 100, 'group_radius': 2, 'out_dilate': 0, 'mode': 'cc', 'seed_thresh': 0.7, 'group_thresh': 0.5}
+{'pq': 0.388, 'sq': 0.6646, 'tp': 1343, 'fp': 892, 'fn': 1023, 'gt_split': 163, 'pred_merge': 48} {'thresh': 0.6, 'min_area': 100, 'group_radius': 0, 'out_dilate': 0, 'mode': 'cc', 'seed_thresh': 0.7, 'group_thresh': 0.5}
+{'pq': 0.3874, 'sq': 0.6658, 'tp': 1284, 'fp': 764, 'fn': 1082, 'gt_split': 88, 'pred_merge': 97} {'thresh': 0.6, 'min_area': 100, 'group_radius': 8, 'out_dilate': 0, 'mode': 'cc', 'seed_thresh': 0.7, 'group_thresh': 0.5}
+{'pq': 0.3874, 'sq': 0.6644, 'tp': 1299, 'fp': 791, 'fn': 1067, 'gt_split': 88, 'pred_merge': 100} {'thresh': 0.5, 'min_area': 100, 'group_radius': 8, 'out_dilate': 0, 'mode': 'cc', 'seed_thresh': 0.7, 'group_thresh': 0.5}
+{'pq': 0.3873, 'sq': 0.6619, 'tp': 1340, 'fp': 874, 'fn': 1026, 'gt_split': 116, 'pred_merge': 84} {'thresh': 0.4, 'min_area': 100, 'group_radius': 4, 'out_dilate': 0, 'mode': 'cc', 'seed_thresh': 0.7, 'group_thresh': 0.5}
+{'pq': 0.3868, 'sq': 0.6605, 'tp': 1372, 'fp': 948, 'fn': 994, 'gt_split': 164, 'pred_merge': 57} {'thresh': 0.4, 'min_area': 100, 'group_radius': 0, 'out_dilate': 0, 'mode': 'cc', 'seed_thresh': 0.7, 'group_thresh': 0.5}
+-> /Users/dybala/Working/Learning/kaggle/filament-segmentation-2026/configs/post_unet1024_r34.json

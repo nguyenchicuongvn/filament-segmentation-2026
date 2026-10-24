@@ -68,9 +68,10 @@ def main() -> None:
     ap.add_argument("--probs", type=Path, required=True)
     ap.add_argument("--mode", choices=list(GRIDS), default="cc")
     ap.add_argument("--out", type=Path)
+    ap.add_argument("--grid", help='JSON dict overriding the grid, e.g. \'{"thresh": [0.4, 0.5]}\'')
     args = ap.parse_args()
 
-    grid = GRIDS[args.mode]
+    grid = json.loads(args.grid) if args.grid else GRIDS[args.mode]
     cands = [PostParams(mode=args.mode, **dict(zip(grid, v))) for v in itertools.product(*grid.values())]
     results = []
     with ProcessPoolExecutor() as pool:

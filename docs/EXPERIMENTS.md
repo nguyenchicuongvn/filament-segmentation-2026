@@ -20,7 +20,8 @@ bản gán nhãn; PQ gộp trên mọi bản gán nhãn, đúng cách của host
 | E6 | Trung bình map E4 + E5 | 768 | – | 0.380 | – | `configs/post_ens_512_768.json`, `logs/tune_ens.log` |
 | E5w | E5 + post-processing watershed | 768 | – | 0.384 | – | `configs/post_unet768_ws.json`, `logs/tune_768_watershed.log` |
 | E5f | E5 + lọc FP theo instance (GBM, CV 5 fold trên val) | 768 | – | 0.389 | **0.33** | `configs/fpfilter_unet768.pkl`, `logs/fpfilter_768.log` |
-| E7 | U-Net ResNet34 (Colab L4) | 1024 | 0.357 | chờ tune | | Colab `unet1024_r34` (upload lỗi, xem dưới) |
+| E7 | U-Net ResNet34 (Colab L4) | 1024 | 0.357 | 0.391 → 0.396 (lọc FP) | 0.33–0.34 | `configs/post_unet1024_r34.json`, `configs/fpfilter_unet1024_r34.pkl` |
+| E5+E7 | Trung bình map 768 + 1024 | 1024 | – | 0.394 → 0.399 (lọc FP) | **0.34** (0.33 không lọc) | `configs/post_ens_768_1024r34.json`, `configs/fpfilter_ens_768_1024r34.pkl` |
 | E8 | U-Net R34 + kênh group | 1024 | 0.364 | chờ tune | | Colab `unet1024_r34_grp` |
 | E9a | U-Net EfficientNet-B4 | 1024 | **0.381** | chờ tune | | Colab `unet1024_effb4` |
 | E9b | U-Net ConvNeXt-Tiny (lr 5e-4) | 1024 | 0.342 | chờ tune | | Colab `unet1024_cnxt` |
