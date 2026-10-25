@@ -22,7 +22,7 @@ bản gán nhãn; PQ gộp trên mọi bản gán nhãn, đúng cách của host
 | E5f | E5 + lọc FP theo instance (GBM, CV 5 fold trên val) | 768 | – | 0.389 | **0.33** | `configs/fpfilter_unet768.pkl`, `logs/fpfilter_768.log` |
 | E7 | U-Net ResNet34 (Colab L4) | 1024 | 0.357 | 0.391 → 0.396 (lọc FP) | 0.33–0.34 | `configs/post_unet1024_r34.json`, `configs/fpfilter_unet1024_r34.pkl` |
 | E5+E7 | Trung bình map 768 + 1024 | 1024 | – | 0.394 → 0.399 (lọc FP) | **0.34** (0.33 không lọc) | `configs/post_ens_768_1024r34.json`, `configs/fpfilter_ens_768_1024r34.pkl` |
-| E8 | U-Net R34 + kênh group | 1024 | 0.364 | chờ tune | | Colab `unet1024_r34_grp` |
+| E8 | U-Net R34 + kênh group | 1024 | 0.364 | 0.394 (cc; mode group 0.393) → 0.399 (lọc FP) | chờ | Colab `unet1024_r34_grp` |
 | E9a | U-Net EfficientNet-B4 | 1024 | **0.381** | chờ tune | | Colab `unet1024_effb4` |
 | E9b | U-Net ConvNeXt-Tiny (lr 5e-4) | 1024 | 0.342 | chờ tune | | Colab `unet1024_cnxt` |
 | E10 | R34, 60 epoch | 1024 | ≥0.364 (đang chạy) | | | Colab `unet1024_r34_e60` |
@@ -162,3 +162,41 @@ kaggle datasets download nguyenchicuong/filseg-<run> -p outputs/colab/<run> --un
   dùng lại post config và FP filter của run tương ứng.
 - Ensemble (#6): `scripts/infer_probs.py --ckpt a.pt b.pt` (cùng độ phân giải) hoặc
   `scripts/ensemble_probs.py`, rồi tune và lọc như trên.
+
+## E12–E14: Hàng đợi Colab thứ hai — 5-fold, target mềm, crop ở độ phân giải gốc (R1–R3)
+
+`colab/train_unet.ipynb`, `RUN_NAMES` mặc định (11 run, ~12–14 h trên L4):
+
+| Run | Công thức | Mục đích |
+|---|---|---|
+| `r34_s1024_f0` | R34, target mềm, cả ảnh @1024, fold 0 | đối chứng: chỉ đổi sang target mềm |
+| `r34_c2048_f0` | R34, target mềm, crop 1024 từ ảnh 2048, infer full 2048, fold 0 | so với dòng trên: tác dụng của độ phân giải gốc |
+| `effb4_c2048_f0..f4` | EfficientNet-B4, target mềm, crop @2048, bs 6 | công thức chính, 5 fold |
+| `r34_c2048_f1..f4` | R34, như `r34_c2048_f0` | thành viên thứ hai của ensemble |
+
+- **Fold** (`filseg.data.fold_split`): 707 ảnh chia 5 fold theo ảnh (seed 42), khoảng 141 ảnh mỗi
+  fold. Run `--fold k` train trên 4 fold còn lại và ghi map cho các ảnh của fold k. Ghép 5 fold lại
+  được map out-of-fold (OOF) cho cả 707 ảnh.
+- **Target mềm** (`SoftDataset`): mỗi ảnh là một sample; target của pixel = tỉ lệ annotator vẽ pixel
+  đó. Ảnh được bốc theo trọng số bằng số bản gán nhãn (giống cách metric tính).
+- **Crop** 1024 từ ảnh 2048: 70% crop lấy tâm quanh một pixel filament. Validation và infer chạy trên
+  cả ảnh 2048 (mạng fully convolutional).
+- **Watcher**: với mỗi recipe, fold 0 được tune và submit riêng để có tín hiệu sớm. Khi đủ 5 fold,
+  watcher ghép map OOF, tune trên toàn bộ 707 ảnh (grid 36 điểm, scale theo độ phân giải), train
+  bộ lọc FP trên OOF, submit trung bình map test của 5 fold. Khi có từ 2 recipe trở lên, nó thử
+  ensemble các recipe trên OOF.
+
+## R4–R5: Tách instance và chọn instance trên map có sẵn (ensemble 768 + 1024, val 213 ảnh)
+
+| Cách | val PQ | Ghi chú |
+|---|---|---|
+| cc (gốc) | 0.3943 | thresh 0.5, min_area 90, group 6 |
+| cc + lấp lỗ | 0.3944 | map gần như không có lỗ, nên không đổi |
+| seed + gộp seed qua khoảng hở + watershed + lấp lỗ | 0.3943 | gộp ít hơn (81 → 80) nhưng tách nhiều hơn (106 → 120) |
+| + bộ lọc classifier, 14 đặc trưng (cũ) | 0.3992 | |
+| + bộ lọc classifier, 17 đặc trưng (thêm vị trí trên đĩa / kinh độ) | **0.4009** | dùng từ giờ |
+| + regressor IoU kỳ vọng ("luật PQ/2") | 0.3986 | kém classifier; ngưỡng tốt nhất 0.087, xa mức PQ/2 ≈ 0.2 |
+
+**Kết luận**: R4 không giúp trên map của mình (umerkang66 được +0.008, có lẽ vì model của họ cho map
+khác). R5 chỉ giữ phần đặc trưng vị trí (+0.002); regressor IoU kém hơn. Log: `docs/logs/r4_*`,
+`docs/logs/r5_*`. Lợi ích lớn hơn phải đến từ chất lượng map (R1–R3).

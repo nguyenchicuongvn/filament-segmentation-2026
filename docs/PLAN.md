@@ -26,11 +26,11 @@ holdout / 0.34 public.
 
 | # | Việc | Lý do / bằng chứng | Trạng thái |
 |---|---|---|---|
-| R1 | **5-fold CV theo ảnh**, chấm OOF PQ trên cả 707 ảnh; tune post/lọc FP trên OOF | holdout 213 ảnh quá nhiễu (SD ~0.014); mọi đội top dùng OOF | chưa làm |
-| R2 | **Target mềm đa annotator** (tỉ lệ annotator vẽ pixel), lấy mẫu theo số bản gán nhãn | umerkang66, +0.01–0.03 | chưa làm |
-| R3 | **Độ phân giải gần gốc**: train crop 1024 từ ảnh 2048 (hoặc full 1536), infer full 2048 + TTA 8 | mọi đội top; 768 → 1024 đã +0.01 | chưa làm |
-| R4 | **Tách instance**: seed + gộp seed gần + watershed + lấp lỗ | umerkang66 +0.008; GT không có lỗ | chưa làm (CPU, làm trên map có sẵn) |
-| R5 | **Bộ lọc → regressor IoU kỳ vọng, giữ nếu > PQ/2**; thêm đặc trưng góc so với kinh tuyến trung tâm (annotator bỏ qua > ±70°) | umerkang66, theainerd; paper MAGFiLO | chưa làm (CPU) |
+| R1 | **5-fold CV theo ảnh**, chấm OOF PQ trên cả 707 ảnh; tune post/lọc FP trên OOF | holdout 213 ảnh quá nhiễu (SD ~0.014); mọi đội top dùng OOF | dựng xong, chờ Colab |
+| R2 | **Target mềm đa annotator** (tỉ lệ annotator vẽ pixel), lấy mẫu theo số bản gán nhãn | umerkang66, +0.01–0.03 | dựng xong, chờ Colab |
+| R3 | **Độ phân giải gần gốc**: train crop 1024 từ ảnh 2048, infer full 2048 + TTA 8 | mọi đội top; 768 → 1024 đã +0.01 | dựng xong, chờ Colab |
+| R4 | **Tách instance**: seed + gộp seed gần + watershed + lấp lỗ | umerkang66 +0.008; GT không có lỗ | **xong**: không giúp (0.3943 → 0.3944) |
+| R5 | **Bộ lọc → regressor IoU kỳ vọng**; thêm đặc trưng vị trí so với kinh tuyến trung tâm | umerkang66, theainerd; paper MAGFiLO | **xong**: đặc trưng vị trí +0.002 (giữ); regressor kém hơn (bỏ) |
 | R6 | Ensemble encoder: EffNet-B4 (tốt nhất ở E9) + R34 + EffV2-S / RegNetY, theo fold | Dariush, umerkang66 | sau R1–R3 |
 | R7 | Head phụ skeleton/core + blob loss | +0.009 có CI | sau R6 |
 | R8 | (Nếu còn thời gian) detector + crop refiner làm thành viên ensemble | biconcavelens 0.40 → 0.461 | tuỳ thời gian |

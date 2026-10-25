@@ -9,9 +9,11 @@ stay apart.
 
 Instances are recovered from the maps by one of three modes (PostParams.mode):
   cc         threshold, drop small blobs, group fragments by a fixed dilation
-  watershed  seeds = confident pixels grouped by dilation; each foreground
-             pixel joins a seed by watershed on the probability; foreground
+  watershed  seeds = confident pixels; seeds closer than ~2*group_radius form one
+             filament even across gaps in the foreground; each foreground pixel
+             joins a seed group by watershed on the probability; foreground
              components without any seed are dropped (hysteresis-like)
+fill_holes closes holes inside each instance (annotations never have holes).
   group      instances = connected regions of the predicted group map;
              foreground outside every region forms its own instances
 Labels are finally upsampled to 2048x2048.
@@ -212,6 +214,7 @@ class PostParams:
     mode: str = "cc"           # cc | watershed | group (see module docstring)
     seed_thresh: float = 0.7   # watershed: seed pixels
     group_thresh: float = 0.5  # group: threshold on the group map
+    fill_holes: bool = False   # fill background enclosed by an instance
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -245,9 +248,10 @@ def instances_lowres(prob: np.ndarray, p: PostParams, group: np.ndarray | None =
         from skimage.segmentation import watershed
 
         seeds = ((prob > p.seed_thresh) & (fg > 0)).astype(np.uint8)
-        if p.group_radius > 0:
-            seeds = cv2.dilate(seeds, _disk(p.group_radius)) & fg
-        _, markers = cv2.connectedComponents(seeds, connectivity=8)
+        # group seeds by proximity (through background too), then label only the seed pixels
+        grouped = cv2.dilate(seeds, _disk(p.group_radius)) if p.group_radius > 0 else seeds
+        _, glab = cv2.connectedComponents(grouped, connectivity=8)
+        markers = np.where(seeds > 0, glab, 0).astype(np.int32)
         inst = watershed(-prob, markers, mask=fg > 0).astype(np.int32)
     elif p.mode == "group":
         if group is None:
@@ -268,7 +272,29 @@ def instances_lowres(prob: np.ndarray, p: PostParams, group: np.ndarray | None =
     if p.out_dilate > 0:
         grown = cv2.dilate(inst.astype(np.float32), _disk(p.out_dilate))
         inst = np.where(inst > 0, inst, grown).astype(np.int32)
+    if p.fill_holes:
+        inst = fill_instance_holes(inst)
     return _relabel(inst, p.min_area)
+
+
+def fill_instance_holes(inst: np.ndarray) -> np.ndarray:
+    """Background regions that do not reach the image border are holes; each is given to the
+    instance around it (grown inward from its edge)."""
+    bg = (inst == 0).astype(np.uint8)
+    n, lab = cv2.connectedComponents(bg, connectivity=4)
+    border = np.unique(np.concatenate([lab[0], lab[-1], lab[:, 0], lab[:, -1]]))
+    holes = (lab > 0) & ~np.isin(lab, border)
+    if not holes.any():
+        return inst
+    out = inst.copy()
+    k = np.ones((3, 3), np.uint8)
+    for _ in range(200):
+        todo = holes & (out == 0)
+        if not todo.any():
+            break
+        grown = cv2.dilate(out.astype(np.float32), k).astype(np.int32)
+        out = np.where(todo, grown, out)
+    return out
 
 
 def upsample_labels(inst: np.ndarray, out_size: int = W) -> np.ndarray:

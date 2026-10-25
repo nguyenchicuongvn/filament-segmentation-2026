@@ -22,7 +22,7 @@ from pathlib import Path
 
 import numpy as np
 from pycocotools import mask as mask_util
-from sklearn.ensemble import HistGradientBoostingClassifier
+from sklearn.ensemble import HistGradientBoostingClassifier, HistGradientBoostingRegressor
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
@@ -45,16 +45,20 @@ def _image_table(args):
             ious.append(np.asarray(mask_util.iou(rles, gt, [0] * len(gt))).T)
         else:
             ious.append(np.zeros((len(gt), len(rles))))
-    label = np.zeros(len(rles), bool)
+    label = np.zeros(len(rles), bool)   # clf: a match for at least one annotator
+    exp_iou = np.zeros(len(rles))       # iou: TP IoU averaged over the image's annotators
     for m in ious:
         if m.size:
-            label |= (m > IOU_THRESHOLD).any(0)
-    return stem, feats, label, ious
+            hit = m > IOU_THRESHOLD
+            label |= hit.any(0)
+            exp_iou += np.where(hit, m, 0).max(0)
+    exp_iou /= max(len(ious), 1)
+    return stem, feats, label, ious, exp_iou
 
 
 def pq_with_keep(tables, keep_by_stem) -> tuple[float, dict]:
     tp_iou, fp, fn = [], 0, 0
-    for stem, _, _, ious in tables:
+    for stem, _, _, ious, _ in tables:
         keep = keep_by_stem[stem]
         for m in ious:
             m = m[:, keep]
@@ -66,9 +70,13 @@ def pq_with_keep(tables, keep_by_stem) -> tuple[float, dict]:
     return (sum(tp_iou) / den if den else 0.0), dict(tp=len(tp_iou), fp=fp, fn=fn)
 
 
-def make_clf():
-    return HistGradientBoostingClassifier(max_iter=300, learning_rate=0.05, max_leaf_nodes=15,
-                                          l2_regularization=1.0, random_state=0)
+def make_model(kind: str):
+    kw = dict(max_iter=300, learning_rate=0.05, max_leaf_nodes=15, l2_regularization=1.0, random_state=0)
+    return HistGradientBoostingRegressor(**kw) if kind == "iou" else HistGradientBoostingClassifier(**kw)
+
+
+def predict(model, kind: str, X: np.ndarray) -> np.ndarray:
+    return model.predict(X) if kind == "iou" else model.predict_proba(X)[:, 1]
 
 
 def main() -> None:
@@ -77,6 +85,8 @@ def main() -> None:
     ap.add_argument("--post", type=Path, required=True)
     ap.add_argument("--out", type=Path)
     ap.add_argument("--folds", type=int, default=5)
+    ap.add_argument("--target", choices=["clf", "iou"], default="clf",
+                    help="clf: P(match); iou: expected IoU over annotators (keep above ~PQ/2)")
     args = ap.parse_args()
 
     post = PostParams(**json.loads(args.post.read_text()))
@@ -89,9 +99,9 @@ def main() -> None:
 
     stems = [t[0] for t in tables]
     X = np.concatenate([t[1] for t in tables])
-    y = np.concatenate([t[2] for t in tables])
+    y = np.concatenate([t[2] for t in tables]) if args.target == "clf" else np.concatenate([t[4] for t in tables])
     owner = np.repeat(np.arange(len(tables)), [len(t[2]) for t in tables])
-    print(f"{len(stems)} images, {len(y)} instances, {y.mean():.2f} positive", flush=True)
+    print(f"{len(stems)} images, {len(y)} instances, target {args.target} mean {y.mean():.3f}", flush=True)
 
     # out-of-fold scores, folds by image
     idx = list(range(len(stems)))
@@ -102,7 +112,7 @@ def main() -> None:
     oof = np.zeros(len(y))
     for f in range(args.folds):
         te = fold_of[owner] == f
-        oof[te] = make_clf().fit(X[~te], y[~te]).predict_proba(X[te])[:, 1]
+        oof[te] = predict(make_model(args.target).fit(X[~te], y[~te]), args.target, X[te])
 
     def keep_at(th):
         out, start = {}, 0
@@ -115,7 +125,8 @@ def main() -> None:
     base, base_c = pq_with_keep(tables, keep_at(-1.0))
     print(f"no filter: pq {base:.4f} {base_c}")
     best = (base, -1.0, base_c)
-    for th in np.arange(0.05, 0.75, 0.025):
+    grid = np.arange(0.05, 0.75, 0.025) if args.target == "clf" else np.arange(0.05, 0.45, 0.0125)
+    for th in grid:
         pq, c = pq_with_keep(tables, keep_at(th))
         print(f"th {th:.3f}: pq {pq:.4f} {c}")
         if pq > best[0]:
@@ -123,10 +134,10 @@ def main() -> None:
     print(f"best: pq {best[0]:.4f} at th {best[1]:.3f} {best[2]} (no filter {base:.4f})")
 
     if args.out:
-        clf = make_clf().fit(X, y)
+        model = make_model(args.target).fit(X, y)
         args.out.parent.mkdir(parents=True, exist_ok=True)
         with open(args.out, "wb") as fh:
-            pickle.dump({"model": clf, "threshold": best[1], "features": FEATURES,
+            pickle.dump({"model": model, "kind": args.target, "threshold": best[1], "features": FEATURES,
                          "post": post.to_dict(), "cv_pq": best[0], "base_pq": base}, fh)
         print("->", args.out)
 

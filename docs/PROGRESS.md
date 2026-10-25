@@ -15,7 +15,7 @@ Mỗi phiên làm việc thêm một mục ở **đầu** phần "Nhật ký" (m
 | Deadline | Kaggle: **2026-11-15 06:00 UTC** (13:00 VN). Report + code (Google form): Nov 15 11:59 pm CDT |
 | Repo | https://github.com/nguyenchicuongvn/filament-segmentation-2026 (**private** đến khi cuộc thi đóng) |
 | GPU | Kaggle GPU quota tuần này đã hết → train GPU trên Colab (`colab/train_unet.ipynb`); Mac M5 (MPS) cho run nhỏ |
-| Đang chờ | Colab: một session chạy E7–E10 (`RUN_NAMES`); `scripts/watch_colab.py` chạy nền trên Mac, tự tune + lọc FP + submit từng run khi nó lên Kaggle (log: `outputs/colab_watch.log`) |
+| Đang chờ | Người dùng chạy hàng đợi Colab thứ hai (R1–R3, 11 run); watcher trên Mac đang xử lý các run E8–E10 cũ và chờ các run fold (log: `outputs/colab_watch.log`) |
 
 ## Lịch sử submission
 
@@ -38,6 +38,9 @@ Val luôn cao hơn LB khoảng 0.03–0.07, nhưng thứ tự giữa các model 
 ## Nhật ký
 
 ### 2026-10-25
+- Dựng R1–R3 (5-fold, target mềm, crop @2048, map OOF) thành hàng đợi Colab thứ hai gồm 11 run;
+  watcher biết ghép fold. R4 (watershed + lấp lỗ) không giúp; R5: đặc trưng vị trí trên đĩa +0.002,
+  regressor IoU kém hơn classifier.
 - **Research** ([RESEARCH.md](RESEARCH.md)): top LB bị nhiễm do rò rỉ nhãn test (MAGFiLO 1.0 công
   khai) và payload 0.55 (76 đội). Đội trung thực tốt nhất đạt OOF 0.45–0.46 / public 0.39–0.40; hai
   chuyên gia chấm nhau chỉ được 0.34. Lỗi chính của mình là sai biên (gần trúng), không phải tách/gộp.

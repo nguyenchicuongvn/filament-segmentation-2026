@@ -2,10 +2,19 @@
 
 Every predicted instance gets a feature vector (size, shape, network
 confidence, contrast against its surroundings, position on the disk). A
-gradient-boosting classifier learns which instances match a ground-truth
-filament (IoU > 0.5 for at least one annotator); instances scoring below a
-threshold are dropped. It is trained on the held-out val split only, so the
-network's predictions it sees are not overfit.
+gradient-boosting model scores each instance and those below a threshold are
+dropped. Two kinds (scripts/fp_filter.py --target):
+  clf  classifier: does the instance match a filament (IoU > 0.5) for at
+       least one annotator?
+  iou  regressor: the instance's IoU with its match averaged over the image's
+       annotators (0 where unmatched) -- its expected contribution to PQ's
+       numerator. With pixel-disjoint masks PQ is additive over instances, and
+       keeping an instance raises PQ iff its expected IoU exceeds about PQ/2.
+It is trained on held-out (val or out-of-fold) maps only, so the network's
+predictions it sees are not overfit.
+
+FEATURES grows over time; a saved filter records the names it was trained on
+and only those columns are passed to it.
 """
 from __future__ import annotations
 
@@ -15,11 +24,33 @@ import numpy as np
 FEATURES = [
     "log_area", "mean_prob", "max_prob", "p25_prob", "frac_conf", "extent", "elongation",
     "major_len", "contrast", "mean_gray", "radius", "n_inst", "rank_area", "group_mean",
+    # position on the solar disk: annotators skip filaments beyond ~70 deg from the central meridian
+    "abs_x_disk", "y_disk", "abs_lon",
 ]
 
 
 def _disk(k: int) -> np.ndarray:
     return cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2 * k + 1, 2 * k + 1))
+
+
+def _disk_position(cx: float, cy: float, dcx: float, dcy: float, dr: float) -> tuple[float, float, float]:
+    """|x|, y on the disk (radius 1) and |longitude| in degrees from the central meridian."""
+    x, y = (cx - dcx) / dr, (cy - dcy) / dr
+    lon = np.degrees(np.arcsin(np.clip(abs(x) / max(np.sqrt(max(1 - y * y, 1e-6)), 1e-6), 0, 1)))
+    return abs(x), y, float(lon)
+
+
+def select(feats: np.ndarray, names: list[str]) -> np.ndarray:
+    """The columns of a filter trained on `names` (older filters use fewer features)."""
+    return feats[:, [FEATURES.index(n) for n in names]]
+
+
+def score(filt: dict, feats: np.ndarray) -> np.ndarray:
+    """Keep-score of each instance for a saved filter (probability or expected IoU)."""
+    X = select(feats, filt["features"])
+    if filt.get("kind", "clf") == "iou":
+        return filt["model"].predict(X)
+    return filt["model"].predict_proba(X)[:, 1]
 
 
 def instance_features(inst: np.ndarray, prob: np.ndarray, gray_full: np.ndarray,
@@ -29,7 +60,11 @@ def instance_features(inst: np.ndarray, prob: np.ndarray, gray_full: np.ndarray,
     n = int(inst.max())
     if n == 0:
         return np.zeros((0, len(FEATURES)), np.float32)
-    gray = cv2.resize(gray_full, (res, res), interpolation=cv2.INTER_AREA).astype(np.float32) / 255.0
+    from .classical import fit_disk
+
+    gray8 = cv2.resize(gray_full, (res, res), interpolation=cv2.INTER_AREA)
+    dcx, dcy, dr = fit_disk(gray8)
+    gray = gray8.astype(np.float32) / 255.0
     areas = np.bincount(inst.ravel(), minlength=n + 1)[1:].astype(np.float32)
     order = np.argsort(np.argsort(-areas))  # 0 = largest
     ring_k = _disk(max(2, res // 128))
@@ -58,5 +93,6 @@ def instance_features(inst: np.ndarray, prob: np.ndarray, gray_full: np.ndarray,
             g_in / max(g_out, 1e-3), g_in, float(np.hypot(cx - res / 2, cy - res / 2) / (res / 2)),
             float(n), float(order[k - 1]),
             float(group[m].mean()) if group is not None else -1.0,
+            *_disk_position(cx, cy, dcx, dcy, dr),
         ])
     return np.asarray(rows, np.float32)

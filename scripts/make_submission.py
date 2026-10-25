@@ -21,7 +21,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from filseg.data import encode_masks, load_gray, rle_counts_str, test_paths  # noqa: E402
 from filseg.dl import PostParams, instances_lowres, load_maps, upsample_labels  # noqa: E402
-from filseg.instfilter import instance_features  # noqa: E402
+from filseg.instfilter import instance_features, score  # noqa: E402
 
 
 def main() -> None:
@@ -42,8 +42,8 @@ def main() -> None:
         prob, group = load_maps(args.probs, path.stem)
         inst = instances_lowres(prob, p, group)
         if filt and inst.max() > 0:
-            score = filt["model"].predict_proba(instance_features(inst, prob, load_gray(path), group))[:, 1]
-            keep = np.concatenate([[False], score >= filt["threshold"]])
+            sc = score(filt, instance_features(inst, prob, load_gray(path), group))
+            keep = np.concatenate([[False], sc >= filt["threshold"]])
             lut = np.zeros(len(keep), np.int32)
             lut[keep] = np.arange(1, int(keep.sum()) + 1)
             inst = lut[inst]
