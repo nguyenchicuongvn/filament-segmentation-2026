@@ -8,6 +8,8 @@ notebook's queue view.
 Usage:
   python scripts/train_unet.py --res 512 --epochs 40 --name unet512
   python scripts/train_unet.py --res 1024 --epochs 60 --bs 4 --split all --name unet1024_full
+  python scripts/train_unet.py --res 2048 --crop 1024 --targets soft --fold 0 --name effb4_c2048_f0 \
+      --encoder efficientnet-b4 --bs 6        # fold 0 of 5, soft targets, native-res crops
 """
 from __future__ import annotations
 
@@ -25,10 +27,21 @@ from torch.utils.data import DataLoader
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from filseg.data import encode_masks, load_gray, load_train, split  # noqa: E402
-from filseg.dl import (TARGET_CHANNELS, FilamentDataset, PostParams, bce_dice_loss,  # noqa: E402
-                       build_model, cached, device, instances, predict_prob)
+from filseg.data import by_image, encode_masks, fold_split, load_gray, load_train, split  # noqa: E402
+from filseg.dl import (TARGET_CHANNELS, FilamentDataset, PostParams, SoftDataset,  # noqa: E402
+                       bce_dice_loss, build_model, cached, device, instances, predict_prob, soft_cached)
 from filseg.metric import PQAccumulator  # noqa: E402
+
+
+def _union_mask(item, res: int) -> np.ndarray:
+    """One annotator's filaments as a boolean mask at res (for the pixel Dice in validation)."""
+    import cv2
+    from filseg.dl import semantic_mask
+
+    m = semantic_mask(item)
+    if res != m.shape[0]:
+        m = (cv2.resize(m.astype(np.float32), (res, res), interpolation=cv2.INTER_AREA) >= 0.5)
+    return m.astype(bool)
 
 
 HISTORY_FIELDS = ["epoch", "loss", "lr", "epoch_s", "val_s", "elapsed_s", "val_pq", "val_sq", "val_dice",
@@ -52,7 +65,7 @@ def validate(model, items, res, dev, post: PostParams) -> tuple[PQAccumulator, f
             preds[it.image_id] = (encode_masks(instances(prob, post)), prob > post.thresh)
         rles, fg = preds[it.image_id]
         acc.add(it.gt_rles, rles)
-        gt = cached(it, res)[1].astype(bool)
+        gt = _union_mask(it, res)
         dices.append(2 * (fg & gt).sum() / max(fg.sum() + gt.sum(), 1))
     model.train()
     return acc, float(np.mean(dices))
@@ -70,6 +83,10 @@ def main() -> None:
                     help="'group' adds a second output channel (see filseg.dl)")
     ap.add_argument("--split", choices=["train", "all"], default="train",
                     help="'all' trains on every image (no held-out val)")
+    ap.add_argument("--fold", type=int, default=-1,
+                    help="0..4: train on the other four folds, validate on this one (overrides --split)")
+    ap.add_argument("--crop", type=int, default=0,
+                    help="random crop size for --targets soft (e.g. 1024 with --res 2048); 0 = whole image")
     ap.add_argument("--val-every", type=int, default=5)
     ap.add_argument("--workers", type=int, default=4)
     ap.add_argument("--name", default="unet")
@@ -81,16 +98,28 @@ def main() -> None:
     torch.manual_seed(0)
     dev = device()
     data = load_train()
-    tr_items = split(data, args.split)
-    va_items = split(data, "val") if args.split == "train" else []
+    if args.fold >= 0:
+        tr_items, va_items = fold_split(data, args.fold)
+    else:
+        tr_items = split(data, args.split)
+        va_items = split(data, "val") if args.split == "train" else []
     print(f"device={dev} train={len(tr_items)} val={len(va_items)}", flush=True)
-    for it in tr_items:  # build cache up front (single process, avoids worker races)
-        cached(it, args.res)
-
-    loader = DataLoader(FilamentDataset(tr_items, args.res, augment=True, targets=args.targets),
-                        batch_size=args.bs,
-                        shuffle=True, num_workers=args.workers, drop_last=True,
-                        persistent_workers=args.workers > 0)
+    if args.targets == "soft":
+        # one sample per image, drawn in proportion to its annotator count (as the metric weights it)
+        groups = list(by_image(tr_items).values())
+        for g in groups:  # build cache up front (single process, avoids worker races)
+            soft_cached(g, args.res)
+        dataset = SoftDataset(groups, args.res, augment=True, crop=args.crop)
+        sampler = torch.utils.data.WeightedRandomSampler([float(len(g)) for g in groups],
+                                                         num_samples=len(tr_items), replacement=True)
+        loader = DataLoader(dataset, batch_size=args.bs, sampler=sampler, num_workers=args.workers,
+                            drop_last=True, persistent_workers=args.workers > 0)
+    else:
+        for it in tr_items:  # build cache up front (single process, avoids worker races)
+            cached(it, args.res)
+        loader = DataLoader(FilamentDataset(tr_items, args.res, augment=True, targets=args.targets),
+                            batch_size=args.bs, shuffle=True, num_workers=args.workers, drop_last=True,
+                            persistent_workers=args.workers > 0)
     model = build_model(args.encoder, classes=TARGET_CHANNELS[args.targets]).to(dev)
     opt = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=1e-4)
     steps = args.epochs * len(loader)
@@ -117,7 +146,8 @@ def main() -> None:
     if start == 1 or not hist_path.exists():
         with open(hist_path, "w", newline="") as fh:
             csv.writer(fh).writerow(HISTORY_FIELDS)
-    post = PostParams()
+    # soft targets predict the annotator fraction, so their probabilities run lower
+    post = PostParams(thresh=0.35 if args.targets == "soft" else 0.5)
     n_steps = len(loader)
     report_every = max(1, n_steps // 4)
     t_start, epoch_times = time.time(), []

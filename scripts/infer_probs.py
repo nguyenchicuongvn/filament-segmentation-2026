@@ -21,12 +21,12 @@ import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from filseg.data import load_gray, load_train, split, test_paths  # noqa: E402
+from filseg.data import fold_split, load_gray, load_train, split, test_paths  # noqa: E402
 from filseg.dl import TARGET_CHANNELS, build_model, device, predict_prob  # noqa: E402
 
 
 def load_model(ckpts: list[Path], dev):
-    models, res = [], None
+    models, res, folds = [], None, set()
     for c in ckpts:
         state = torch.load(c, map_location="cpu", weights_only=False)
         meta = state["meta"]
@@ -36,20 +36,25 @@ def load_model(ckpts: list[Path], dev):
         models.append(m.to(dev).eval())
         assert res in (None, meta["res"]), "ensemble members must share resolution"
         res = meta["res"]
-    return models, res
+        folds.add(meta.get("fold", -1))
+    return models, res, folds
 
 
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--ckpt", type=Path, nargs="+", required=True)
-    ap.add_argument("--which", choices=["val", "test"], required=True)
+    ap.add_argument("--which", choices=["val", "test", "fold"], required=True,
+                    help="'fold': the held-out images of the checkpoint's fold (its out-of-fold maps)")
     ap.add_argument("--tta", action="store_true")
     ap.add_argument("--out", type=Path, help="default: outputs/probs/<ckpt stem>_<which>")
     args = ap.parse_args()
 
     dev = device()
-    models, res = load_model(args.ckpt, dev)
-    if args.which == "val":
+    models, res, folds = load_model(args.ckpt, dev)
+    if args.which == "fold":
+        assert len(folds) == 1 and -1 not in folds, f"--which fold needs checkpoints of one fold, got {folds}"
+        paths = {t.image_id: t.path for t in fold_split(load_train(), folds.pop())[1]}
+    elif args.which == "val":
         paths = {t.image_id: t.path for t in split(load_train(), "val")}
     else:
         paths = {p.stem: p for p in test_paths()}

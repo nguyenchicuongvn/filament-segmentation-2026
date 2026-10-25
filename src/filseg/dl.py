@@ -41,7 +41,7 @@ def device() -> torch.device:
     return torch.device("cpu")
 
 
-TARGET_CHANNELS = {"mask": 1, "group": 2}
+TARGET_CHANNELS = {"mask": 1, "group": 2, "soft": 1}
 
 
 def build_model(encoder: str = "resnet34", pretrained: bool = True, classes: int = 1) -> torch.nn.Module:
@@ -110,6 +110,65 @@ class FilamentDataset(Dataset):
         img = np.ascontiguousarray(img)[None]
         mask = np.ascontiguousarray(mask)
         return torch.from_numpy(img), torch.from_numpy(mask)
+
+
+def soft_cached(entries: list[TrainImage], res: int) -> tuple[np.ndarray, np.ndarray]:
+    """Image and soft target for one image at res x res: each pixel's target is the fraction of
+    the image's annotators whose filaments cover it (uint8, 0..255). Cached as .npz."""
+    path = CACHE_DIR / str(res) / f"{entries[0].image_id}.soft.npz"
+    if path.exists():
+        z = np.load(path)
+        return z["img"], z["soft"]
+    gray = load_gray(entries[0].path)
+    img = gray if res == W else cv2.resize(gray, (res, res), interpolation=cv2.INTER_AREA)
+    acc = np.zeros((res, res), np.float32)
+    for it in entries:
+        m = semantic_mask(it).astype(np.float32)
+        acc += m if res == W else cv2.resize(m, (res, res), interpolation=cv2.INTER_AREA)
+    soft = np.round(acc / len(entries) * 255).astype(np.uint8)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    np.savez_compressed(path, img=img, soft=soft)
+    return img, soft
+
+
+class SoftDataset(Dataset):
+    """One sample per image with a soft multi-annotator target, optionally a random crop.
+
+    With crop > 0, most crops are centred on a random filament pixel (fg_frac), the rest
+    anywhere, so training sees native-resolution detail while inference runs on the whole image.
+    """
+
+    def __init__(self, groups: list[list[TrainImage]], res: int, augment: bool, crop: int = 0,
+                 fg_frac: float = 0.7):
+        self.groups, self.res, self.augment, self.crop, self.fg_frac = groups, res, augment, crop, fg_frac
+
+    def __len__(self) -> int:
+        return len(self.groups)
+
+    def __getitem__(self, i):
+        img, soft = soft_cached(self.groups[i], self.res)
+        rng = np.random.default_rng()
+        if self.crop and self.crop < self.res:
+            c = self.crop
+            ys, xs = np.nonzero(soft) if rng.random() < self.fg_frac else ((), ())
+            if len(ys):
+                j = int(rng.integers(len(ys)))
+                cy, cx = ys[j] + int(rng.integers(-c // 4, c // 4)), xs[j] + int(rng.integers(-c // 4, c // 4))
+            else:
+                cy, cx = int(rng.integers(c // 2, self.res - c // 2)), int(rng.integers(c // 2, self.res - c // 2))
+            y0 = int(np.clip(cy - c // 2, 0, self.res - c))
+            x0 = int(np.clip(cx - c // 2, 0, self.res - c))
+            img, soft = img[y0:y0 + c, x0:x0 + c], soft[y0:y0 + c, x0:x0 + c]
+        img = img.astype(np.float32) / 255.0
+        mask = soft.astype(np.float32)[None] / 255.0
+        if self.augment:
+            k = int(rng.integers(4))
+            img, mask = np.rot90(img, k), np.rot90(mask, k, axes=(1, 2))
+            if rng.random() < 0.5:
+                img, mask = img[:, ::-1], mask[:, :, ::-1]
+            img = np.clip(img, 0, 1) ** float(rng.uniform(0.7, 1.4))
+            img = img * float(rng.uniform(0.8, 1.2)) + float(rng.uniform(-0.08, 0.08))
+        return torch.from_numpy(np.ascontiguousarray(img)[None]), torch.from_numpy(np.ascontiguousarray(mask))
 
 
 def bce_dice_loss(logits: torch.Tensor, target: torch.Tensor) -> torch.Tensor:

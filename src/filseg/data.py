@@ -84,3 +84,39 @@ def split(items: list[TrainImage], which: str, seed: int = 42) -> list[TrainImag
     cut = int(0.7 * len(stems))
     chosen = set(stems[:cut] if which == "train" else stems[cut:])
     return [t for t in items if t.image_id in chosen]
+
+
+N_FOLDS = 5
+
+
+_STEMS: list[str] | None = None
+
+
+def _all_stems() -> list[str]:
+    global _STEMS
+    if _STEMS is None:
+        _STEMS = sorted({Path(im["file_name"]).stem for im in json.loads(TRAIN_ANN.read_text())["images"]})
+    return _STEMS
+
+
+def fold_split(items: list[TrainImage], fold: int, k: int = N_FOLDS,
+               seed: int = 42) -> tuple[list[TrainImage], list[TrainImage]]:
+    """(train, val) annotator entries for one fold of a k-fold split by image."""
+    order = list(_all_stems())
+    random.Random(seed).shuffle(order)
+    held = {s for i, s in enumerate(order) if i % k == fold}
+    return [t for t in items if t.image_id not in held], [t for t in items if t.image_id in held]
+
+
+def by_image(items: list[TrainImage]) -> dict[str, list[TrainImage]]:
+    """Annotator entries grouped by image, in a stable order."""
+    out: dict[str, list[TrainImage]] = {}
+    for t in items:
+        out.setdefault(t.image_id, []).append(t)
+    return out
+
+
+def with_maps(items: list[TrainImage], probs_dir: Path) -> list[TrainImage]:
+    """Entries whose image has a cached probability map in probs_dir (val split, a fold, or OOF)."""
+    have = {p.stem for p in Path(probs_dir).glob("*.npy")}
+    return [t for t in items if t.image_id in have]

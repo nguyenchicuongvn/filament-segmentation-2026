@@ -17,7 +17,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from filseg.data import encode_masks, load_train, split  # noqa: E402
+from filseg.data import encode_masks, load_train, with_maps  # noqa: E402
 from filseg.dl import PostParams, instances, load_maps  # noqa: E402
 from filseg.metric import PQAccumulator  # noqa: E402
 
@@ -44,10 +44,12 @@ GRIDS = {
 _VAL = None
 
 
-def _val():
+def _val(probs_dir: str):
+    """Annotator entries of every training image that has a map in probs_dir
+    (the val split for old runs, a fold, or all images for assembled out-of-fold maps)."""
     global _VAL
     if _VAL is None:
-        _VAL = split(load_train(), "val")
+        _VAL = with_maps(load_train(), Path(probs_dir))
     return _VAL
 
 
@@ -55,7 +57,7 @@ def _score(args):
     probs_dir, p = args
     acc = PQAccumulator()
     cache: dict[str, list] = {}
-    for it in _val():
+    for it in _val(probs_dir):
         if it.image_id not in cache:
             prob, group = load_maps(Path(probs_dir), it.image_id)
             cache[it.image_id] = encode_masks(instances(prob, p, group=group))

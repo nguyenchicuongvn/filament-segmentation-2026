@@ -20,6 +20,8 @@ from __future__ import annotations
 import argparse
 import json
 import pickle
+import re
+import shutil
 import subprocess
 import sys
 import time
@@ -45,7 +47,11 @@ def sh(cmd: list, check: bool = True) -> subprocess.CompletedProcess:
 
 
 def load_state() -> dict:
-    return json.loads(STATE.read_text()) if STATE.exists() else {"runs": {}, "ensemble": {}}
+    st = json.loads(STATE.read_text()) if STATE.exists() else {"runs": {}, "ensemble": {}}
+    for rs in st["runs"].values():  # state written before "downloaded" existed
+        if "val_filtered" in rs:
+            rs["downloaded"] = True
+    return st
 
 
 def save_state(st: dict) -> None:
@@ -89,10 +95,10 @@ def run_dir(run: str) -> Path:
 
 
 def maps_complete(out: Path) -> bool:
-    """Test maps for all 180 images (and val maps for all 213 val images, when present)."""
+    """Test maps for all 180 images, and val maps (the val split or a fold's held-out images)."""
     n_val = len(list((out / "probs_val").glob("*.npy")))
     n_test = len(list((out / "probs_test").glob("*.npy")))
-    return n_test == 180 and n_val in (0, 213)
+    return n_test == 180 and n_val > 0
 
 
 def download(owner: str, run: str) -> Path:
@@ -141,12 +147,25 @@ def best_line(log_text: str) -> float:
     raise RuntimeError("no result line in tune_post output")
 
 
-def tune_and_filter(name: str, probs_val: Path, modes: list[str]) -> dict:
+def scaled_grid(probs_dir: Path) -> str:
+    """A 36-point cc grid with areas and radii scaled to the maps' resolution (tuned values at
+    1024 px were min_area 50-90, group_radius 4-6). Full grids are too slow on 2048 px maps."""
+    import numpy as np
+
+    res = np.load(next(Path(probs_dir).glob("*.npy"))).shape[0]
+    r = res / 1024
+    return json.dumps({"thresh": [0.2, 0.3, 0.4, 0.5],
+                       "min_area": [round(50 * r * r), round(90 * r * r), round(150 * r * r)],
+                       "group_radius": [round(4 * r), round(6 * r), round(10 * r)]})
+
+
+def tune_and_filter(name: str, probs_val: Path, modes: list[str], grid: str | None = None) -> dict:
     """Tune post-processing (best of the given modes), then the FP filter. Returns a summary."""
     best = None
     for mode in modes:
         cfg = ROOT / "configs" / f"post_{name}{'' if mode == 'cc' else '_' + mode}.json"
-        r = sh([PY, "scripts/tune_post.py", "--probs", probs_val, "--mode", mode, "--out", cfg])
+        extra = ["--grid", grid] if grid and mode == "cc" else []
+        r = sh([PY, "scripts/tune_post.py", "--probs", probs_val, "--mode", mode, "--out", cfg, *extra])
         (ROOT / "docs" / "logs" / f"tune_{name}_{mode}.log").write_text(r.stdout)
         pq = best_line(r.stdout)
         log(f"{name}: tuned {mode} -> val pq {pq:.4f}")
@@ -183,6 +202,32 @@ def submit(csv: Path, message: str) -> str | None:
     return "pending"
 
 
+FOLD_RE = re.compile(r"^(?P<recipe>.+)_f(?P<fold>\d)$")
+
+
+def assemble_recipe(recipe: str, folds: list[str]) -> Path:
+    """Out-of-fold val maps of all folds in one directory, and the mean of their test maps."""
+    out = run_dir(recipe)
+    val = out / "probs_val"
+    shutil.rmtree(val, ignore_errors=True)
+    val.mkdir(parents=True)
+    for run in folds:
+        for f in (run_dir(run) / "probs_val").glob("*.npy"):
+            shutil.copy(f, val / f.name)
+    sh([PY, "scripts/ensemble_probs.py", "--inputs", *[run_dir(r) / "probs_test" for r in folds],
+        "--out", out / "probs_test"])
+    return out
+
+
+def submit_pending(entry: dict, label: str, message: str, st: dict) -> None:
+    if entry.get("csv") and "lb" not in entry:
+        lb = submit(ROOT / entry["csv"], message)
+        if lb is not None:
+            entry["lb"] = lb
+            log(f"{label}: public LB {lb}")
+        save_state(st)
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--runs", nargs="+", required=True)
@@ -192,67 +237,96 @@ def main() -> None:
     args = ap.parse_args()
 
     st = load_state()
+    st.setdefault("recipes", {})
     deadline = time.time() + args.hours * 3600
     while time.time() < deadline:
+        # 1. single runs: download; tune + submit whole-split runs and fold 0 (an early signal)
         for run in args.runs:
             rs = st["runs"].setdefault(run, {})
             if rs.get("errors", 0) >= 3:
                 continue  # needs a look; fix, clear its entry in watch_state.json, restart
+            m = FOLD_RE.match(run)
             try:
                 # maps inferred locally from a checkpoint: marked by an empty LOCAL file
                 local = (run_dir(run) / "LOCAL").exists() and maps_complete(run_dir(run))
-                if "val_filtered" not in rs and (local or dataset_ready(args.owner, run)):
+                if not rs.get("downloaded") and (local or dataset_ready(args.owner, run)):
                     log(f"{run}: {'local maps' if local else 'dataset ready'}, processing")
-                    out = run_dir(run) if local else download(args.owner, run)
+                    if not local:
+                        download(args.owner, run)
+                    rs["downloaded"] = True
+                    save_state(st)
+                if rs.get("downloaded") and "val_filtered" not in rs and (not m or m["fold"] == "0"):
+                    out = run_dir(run)
                     modes = ["cc", "group"] if (out / "probs_val" / "group").is_dir() else ["cc"]
-                    rs.update(tune_and_filter(run, out / "probs_val", modes))
+                    rs.update(tune_and_filter(run, out / "probs_val", modes,
+                                              scaled_grid(out / "probs_val") if m else None))
                     rs["csv"] = str(build_submission(run, out / "probs_test", rs["filter"]).relative_to(ROOT))
                     save_state(st)
-                if "val_filtered" in rs and "lb" not in rs:
-                    lb = submit(ROOT / rs["csv"], f"{run} tta + FP filter (val {rs['val_filtered']:.3f})")
-                    if lb is not None:
-                        rs["lb"] = lb
-                        log(f"{run}: public LB {lb}")
-                    save_state(st)
+                tag = " (one fold)" if m else ""
+                submit_pending(rs, run, f"{run} tta + FP filter{tag} (val {rs.get('val_filtered', 0):.3f})", st)
             except Exception as e:  # keep watching the other runs
                 log(f"{run}: ERROR {e}")
                 rs["error"] = str(e)[-500:]
                 rs["errors"] = rs.get("errors", 0) + 1
                 save_state(st)
 
-        done = [r for r in args.runs if "val_filtered" in st["runs"].get(r, {})]
-        key = "+".join(sorted(done))
+        # 2. recipes whose five folds are all in: out-of-fold tuning, mean of the folds' test maps
+        recipes: dict[str, list[str]] = {}
+        for run in args.runs:
+            m = FOLD_RE.match(run)
+            if m:
+                recipes.setdefault(m["recipe"], []).append(run)
+        for recipe, folds in recipes.items():
+            rec = st["recipes"].setdefault(recipe, {})
+            fold_ids = sorted(FOLD_RE.match(r)["fold"] for r in folds)
+            ready = fold_ids == ["0", "1", "2", "3", "4"] and all(st["runs"][r].get("downloaded") for r in folds)
+            if ready and "val_filtered" not in rec and rec.get("errors", 0) < 3:
+                try:
+                    log(f"{recipe}: all 5 folds in, tuning on out-of-fold maps")
+                    out = assemble_recipe(recipe, sorted(folds))
+                    rec.update(tune_and_filter(recipe, out / "probs_val", ["cc"], scaled_grid(out / "probs_val")))
+                    rec["csv"] = str(build_submission(recipe, out / "probs_test", rec["filter"]).relative_to(ROOT))
+                    save_state(st)
+                except Exception as e:
+                    log(f"{recipe}: ERROR {e}")
+                    rec.update(error=str(e)[-500:], errors=rec.get("errors", 0) + 1)
+                    save_state(st)
+            submit_pending(rec, recipe, f"{recipe} 5-fold tta + FP filter (oof {rec.get('val_filtered', 0):.3f})", st)
+
+        # 3. ensemble of complete recipes (their out-of-fold maps cover the same images)
+        done = sorted(r for r, rec in st["recipes"].items() if "val_filtered" in rec)
+        key = "+".join(done)
         ens = st["ensemble"]
         if len(done) >= 2 and ens.get("key") != key:
             try:
-                name = "ens_" + "_".join(r.replace("unet1024_", "") for r in sorted(done))
+                name = "ens_" + "_".join(done)
                 maps = {}
                 for which in ("val", "test"):
                     out = ROOT / "outputs" / "probs" / f"{name}_{which}"
                     sh([PY, "scripts/ensemble_probs.py", "--inputs",
-                        *[ROOT / "outputs" / "colab" / r / f"probs_{which}" for r in sorted(done)], "--out", out])
+                        *[run_dir(r) / f"probs_{which}" for r in done], "--out", out])
                     maps[which] = out
-                res = tune_and_filter(name, maps["val"], ["cc"])
-                best_single = max(st["runs"][r]["val_filtered"] for r in done)
+                res = tune_and_filter(name, maps["val"], ["cc"], scaled_grid(maps["val"]))
+                best_single = max(st["recipes"][r]["val_filtered"] for r in done)
                 ens.clear()
                 ens.update(key=key, name=name, best_single=best_single, **res)
                 if res["val_filtered"] > best_single:
                     ens["csv"] = str(build_submission(name, maps["test"], res["filter"]).relative_to(ROOT))
                 else:
-                    log(f"{name}: val {res['val_filtered']:.4f} <= best single {best_single:.4f}, not submitted")
+                    log(f"{name}: oof {res['val_filtered']:.4f} <= best recipe {best_single:.4f}, not submitted")
                 save_state(st)
             except Exception as e:
                 log(f"ensemble: ERROR {e}")
                 ens.update(key=key, error=str(e)[-500:])
                 save_state(st)
-        if ens.get("csv") and "lb" not in ens:
-            lb = submit(ROOT / ens["csv"], f"{ens['name']} + FP filter (val {ens['val_filtered']:.3f})")
-            if lb is not None:
-                ens["lb"] = lb
-                log(f"{ens['name']}: public LB {lb}")
-            save_state(st)
+        submit_pending(ens, ens.get("name", "ensemble"),
+                       f"{ens.get('name')} + FP filter (oof {ens.get('val_filtered', 0):.3f})", st)
 
-        if all("lb" in st["runs"].get(r, {}) or st["runs"].get(r, {}).get("errors", 0) >= 3 for r in args.runs) and ("csv" not in ens or "lb" in ens):
+        runs_done = all("lb" in st["runs"].get(r, {}) or st["runs"].get(r, {}).get("errors", 0) >= 3
+                        or (FOLD_RE.match(r) and FOLD_RE.match(r)["fold"] != "0" and st["runs"].get(r, {}).get("downloaded"))
+                        for r in args.runs)
+        recipes_done = all("lb" in st["recipes"].get(r, {}) for r in recipes)
+        if runs_done and recipes_done and ("csv" not in ens or "lb" in ens):
             log("all runs processed")
             break
         time.sleep(args.poll)

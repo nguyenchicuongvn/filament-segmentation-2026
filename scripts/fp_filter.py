@@ -26,7 +26,7 @@ from sklearn.ensemble import HistGradientBoostingClassifier
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from filseg.data import encode_masks, load_gray, load_train, split  # noqa: E402
+from filseg.data import encode_masks, load_gray, load_train, with_maps  # noqa: E402
 from filseg.dl import PostParams, instances_lowres, load_maps, upsample_labels  # noqa: E402
 from filseg.instfilter import FEATURES, instance_features  # noqa: E402
 from filseg.metric import IOU_THRESHOLD  # noqa: E402
@@ -81,7 +81,7 @@ def main() -> None:
 
     post = PostParams(**json.loads(args.post.read_text()))
     by_img: dict[str, tuple[Path, list]] = {}
-    for it in split(load_train(), "val"):
+    for it in with_maps(load_train(), args.probs):  # val split, a fold, or all images (out-of-fold)
         by_img.setdefault(it.image_id, (it.path, []))[1].append(it.gt_rles)
     jobs = [(str(args.probs), post, p, s, gts) for s, (p, gts) in sorted(by_img.items())]
     with ProcessPoolExecutor() as pool:
