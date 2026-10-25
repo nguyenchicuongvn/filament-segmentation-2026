@@ -34,6 +34,7 @@ holdout / 0.34 public.
 | R6 | Ensemble encoder: EffNet-B4 (tốt nhất ở E9) + R34 + EffV2-S / RegNetY, theo fold | Dariush, umerkang66 | sau R1–R3 |
 | R7 | Head phụ skeleton/core + blob loss | +0.009 có CI | sau R6 |
 | R8 | (Nếu còn thời gian) detector + crop refiner làm thành viên ensemble | biconcavelens 0.40 → 0.461 | tuỳ thời gian |
+| R4b | **Hysteresis chặt** (đỉnh > 0.95–0.99) + chỉnh mask theo kích thước | tự phản biện 2026-10-25: +0.007 có CI, test có vẻ thưa nhãn | **xong**: dùng mặc định (watcher tune cả cc và hyst) |
 | R9 | Model cuối: công thức thắng, train 5 fold (hoặc full), **weights lưu trong repo (Git LFS)**, notebook load weights | yêu cầu mới của host (24/10) | cuối cùng |
 
 Không làm: dùng MAGFiLO 1.0 công khai, mask chồng nhau, tune theo LB, clDice/CLAHE/pseudo-label/

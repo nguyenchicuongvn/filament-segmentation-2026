@@ -21,6 +21,7 @@ Mỗi phiên làm việc thêm một mục ở **đầu** phần "Nhật ký" (m
 
 | Ngày (UTC) | File | Mô tả | val PQ | Public LB |
 |---|---|---|---|---|
+| 2026-10-25 18:2x | `submission_unet1024_effb4_hyst.csv` | E9a + hysteresis chặt (đỉnh > 0.99), không lọc | 0.408 (cross-tune) | 0.36 |
 | 2026-10-25 04:04 | `submission_unet1024_r34_e60.csv` | E10 R34 60 epoch + lọc FP | 0.402 | 0.34 |
 | 2026-10-25 03:40 | `submission_unet1024_cnxt.csv` | E9b ConvNeXt-Tiny + lọc FP | 0.392 | 0.33 |
 | ~2026-10-25 | `submission_unet1024_effb4.csv` | E9a EfficientNet-B4 + lọc FP | 0.408 | **0.36** |
@@ -42,6 +43,12 @@ Val luôn cao hơn LB khoảng 0.03–0.07, nhưng thứ tự giữa các model 
 ## Nhật ký
 
 ### 2026-10-25
+- **Tự phản biện** (`scripts/compare.py`, bootstrap ghép cặp + cross-tune): EffNet-B4 > R34 là thật;
+  ensemble các model holdout không giúp; nhãn test có vẻ thưa hơn, nên giữ instance chặt có lợi.
+  Ý tưởng mới đã kiểm chứng: hysteresis chặt +0.007 [+0.002, +0.011], chỉnh mask theo kích thước
+  +0.005, nhưng hai cái không cộng dồn và tương đương lọc FP. Submit EffNet-B4 + hysteresis →
+  **LB 0.36** (như dự báo). Watcher giờ tune cả hysteresis cho các run fold.
+- Hàng đợi Colab thứ hai: sau nhiều giờ vẫn chưa có run fold nào trên Kaggle, cần kiểm tra notebook.
 - Watcher submit xong E8–E10: **EfficientNet-B4 LB 0.36** (tốt nhất), R34+group 0.34, R34 60 epoch
   0.34, ConvNeXt 0.33. Người dùng đã chạy hàng đợi Colab thứ hai (11 run fold) trên L4.
 - Dựng R1–R3 (5-fold, target mềm, crop @2048, map OOF) thành hàng đợi Colab thứ hai gồm 11 run;

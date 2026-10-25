@@ -28,6 +28,20 @@ GRIDS = {
         "group_radius": [0, 2, 4, 8],
         "out_dilate": [0, 1, 2],
     },
+    "hyst": {  # strict keep (peak > 0.9-0.99) helped monotonically on val, most for sparse annotators
+        "thresh": [0.3, 0.4, 0.5],
+        "seed_thresh": [0.9, 0.95, 0.97, 0.99],
+        "min_area": [50, 90, 150],
+        "group_radius": [4, 6],
+    },
+    "hyst_size": {  # strict hysteresis + shrinking small instances (see docs/EXPERIMENTS.md, self-critique)
+        "thresh": [0.4, 0.5],
+        "seed_thresh": [0.97, 0.99],
+        "min_area": [50, 90],
+        "group_radius": [4, 6],
+        "small_area": [200],
+        "small_thresh": [0.0, 0.7, 0.8],
+    },
     "watershed": {
         "thresh": [0.3, 0.4, 0.5],
         "seed_thresh": [0.6, 0.7, 0.8, 0.9],
@@ -74,7 +88,8 @@ def main() -> None:
     args = ap.parse_args()
 
     grid = json.loads(args.grid) if args.grid else GRIDS[args.mode]
-    cands = [PostParams(mode=args.mode, **dict(zip(grid, v))) for v in itertools.product(*grid.values())]
+    base_mode = {"hyst_size": "hyst"}.get(args.mode, args.mode)
+    cands = [PostParams(mode=base_mode, **dict(zip(grid, v))) for v in itertools.product(*grid.values())]
     results = []
     with ProcessPoolExecutor() as pool:
         for p, acc in pool.map(_score, [(str(args.probs), c) for c in cands]):

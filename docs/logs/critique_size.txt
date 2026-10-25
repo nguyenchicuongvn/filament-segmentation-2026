@@ -1,0 +1,5 @@
+213 images, 2000 bootstrap resamples
+pipeline                          PQ    TP    FP    FN     diff             95% CI   P>0
+effb4_cc                      0.4015  1373   838   993
+effb4_cc_size                 0.4064  1359   760  1007  +0.0049 [+0.0017, +0.0079]  1.00
+ens6_cc_size                  0.4005  1339   763  1027  -0.0010 [-0.0090, +0.0066]  0.39

@@ -14,6 +14,9 @@ Instances are recovered from the maps by one of three modes (PostParams.mode):
              joins a seed group by watershed on the probability; foreground
              components without any seed are dropped (hysteresis-like)
 fill_holes closes holes inside each instance (annotations never have holes).
+  hyst       like cc, but the extent threshold (thresh) and the keep test are separate:
+             a component of p > thresh is kept only if its peak exceeds seed_thresh
+             (draw boundaries low, accept filaments only when confident)
   group      instances = connected regions of the predicted group map;
              foreground outside every region forms its own instances
 Labels are finally upsampled to 2048x2048.
@@ -211,10 +214,18 @@ class PostParams:
     min_area: int = 40         # pixels at prediction resolution
     group_radius: int = 0      # merge fragments (or seeds) closer than ~2*radius
     out_dilate: int = 0
-    mode: str = "cc"           # cc | watershed | group (see module docstring)
+    mode: str = "cc"           # cc | hyst | watershed | group (see module docstring)
     seed_thresh: float = 0.7   # watershed: seed pixels
     group_thresh: float = 0.5  # group: threshold on the group map
     fill_holes: bool = False   # fill background enclosed by an instance
+    # size-dependent extent (0 = off): on val, small instances come out ~25% larger than the
+    # annotators' outlines and large ones ~13% smaller, so small ones are re-thresholded higher
+    # and large ones grown into lower-probability pixels around them. Areas at map resolution.
+    small_area: int = 0
+    small_thresh: float = 0.0
+    large_area: int = 0
+    large_thresh: float = 0.0
+    large_grow: int = 3
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -241,6 +252,10 @@ def instances_lowres(prob: np.ndarray, p: PostParams, group: np.ndarray | None =
     fg = (prob > p.thresh).astype(np.uint8)
     n, lab, stats, _ = cv2.connectedComponentsWithStats(fg, 8)
     keep = stats[:, cv2.CC_STAT_AREA] >= p.min_area
+    if p.mode == "hyst":
+        peak = np.zeros(n, np.float32)
+        np.maximum.at(peak, lab.ravel(), prob.ravel())
+        keep &= peak > p.seed_thresh
     keep[0] = False
     fg = keep[lab].astype(np.uint8)
 
@@ -274,7 +289,29 @@ def instances_lowres(prob: np.ndarray, p: PostParams, group: np.ndarray | None =
         inst = np.where(inst > 0, inst, grown).astype(np.int32)
     if p.fill_holes:
         inst = fill_instance_holes(inst)
+    if p.small_thresh or p.large_thresh:
+        inst = adjust_extent(inst, prob, p)
     return _relabel(inst, p.min_area)
+
+
+def adjust_extent(inst: np.ndarray, prob: np.ndarray, p: PostParams) -> np.ndarray:
+    """Shrink small instances to pixels above small_thresh; grow large ones by up to large_grow px
+    into unclaimed pixels above large_thresh."""
+    out = inst.copy()
+    areas = np.bincount(inst.ravel())
+    if p.small_thresh and p.small_area:
+        small = np.zeros(len(areas), bool)
+        small[1:] = (areas[1:] > 0) & (areas[1:] < p.small_area)
+        drop = small[inst] & (prob <= p.small_thresh)
+        out[drop] = 0
+    if p.large_thresh and p.large_area:
+        large = np.zeros(len(areas), bool)
+        large[1:] = areas[1:] >= p.large_area
+        seed = np.where(large[inst], inst, 0).astype(np.float32)
+        grown = cv2.dilate(seed, _disk(p.large_grow)).astype(np.int32)
+        add = (out == 0) & (grown > 0) & (prob > p.large_thresh)
+        out[add] = grown[add]
+    return out
 
 
 def fill_instance_holes(inst: np.ndarray) -> np.ndarray:

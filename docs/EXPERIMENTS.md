@@ -200,3 +200,50 @@ kaggle datasets download nguyenchicuong/filseg-<run> -p outputs/colab/<run> --un
 **Kết luận**: R4 không giúp trên map của mình (umerkang66 được +0.008, có lẽ vì model của họ cho map
 khác). R5 chỉ giữ phần đặc trưng vị trí (+0.002); regressor IoU kém hơn. Log: `docs/logs/r4_*`,
 `docs/logs/r5_*`. Lợi ích lớn hơn phải đến từ chất lượng map (R1–R3).
+
+## Tự phản biện và kiểm chứng (2026-10-25) — `scripts/compare.py`
+
+**Công cụ**: `scripts/compare.py` so sánh các pipeline trên cùng ảnh val bằng **bootstrap ghép cặp
+theo ảnh** (2,000 lần lấy mẫu lại) và cho CI 95% của chênh lệch.
+- Bộ lọc FP được fit lại 5 fold, không dùng bản đã fit trên chính các ảnh đó.
+- Spec `tune:<mode>` là **cross-tune**: tune grid trên một nửa số ảnh, chấm trên nửa còn lại, đổi
+  vai, lặp 3 lần chia ngẫu nhiên. Cách này loại thiên lệch do tune và chấm trên cùng một tập.
+- Log: `docs/logs/critique_*.txt`.
+
+**Kiểm tra lại các kết luận cũ** (holdout 213 ảnh):
+
+| So sánh | Δ PQ | 95% CI | Kết luận |
+|---|---|---|---|
+| EffNet-B4 so với R34 @1024 | +0.013 | [+0.003, +0.023] | thật |
+| EffNet-B4 + lọc FP so với không lọc | +0.004 | [0.000, +0.008] | thật nhưng nhỏ |
+| R34 60 epoch so với EffNet-B4 | −0.005 | [−0.014, +0.005] | không phân biệt được |
+| ensemble 6 model holdout (cross-tune) | −0.001 | [−0.009, +0.007] | **không giúp**: trộn model yếu làm loãng model mạnh |
+| tune trên chính tập chấm so với cross-tune (EffNet-B4 cc) | 0.4042 so với 0.4015 | – | tune in-sample lạc quan ~0.003 |
+
+**Val có dự đoán được LB không?** Qua 12 submission: Spearman 0.92, LB ≈ 0.84 × val. Riêng các U-Net
+≥ 768: Spearman 0.81, LB thấp hơn val trung bình 0.059. Val vẫn dùng để xếp hạng được, nhưng các
+chênh lệch < 0.01 không thể thấy trên LB (vì LB làm tròn 2 chữ số và nhiễu ±0.03).
+
+**Nhãn test có thưa hơn không?** Model dự đoán trên test và val như nhau: 6.57 so với 6.37 instance
+mỗi ảnh, foreground 3.25‰ so với 3.18‰. Vậy khoảng cách LB đến từ phía nhãn. Trên val, chia
+annotator theo mật độ (trung vị 6.9 filament/ảnh): **giữ instance càng chặt thì PQ càng tăng ở cả
+hai nhóm**, và tăng nhiều hơn ở nhóm thưa (+0.010 so với +0.006, seed 0.6 → 0.99).
+
+**Ý tưởng mới, đã kiểm chứng bằng cross-tune** (EffNet-B4, so với cc cross-tune 0.4015):
+
+| Ý tưởng | PQ | Δ | 95% CI | Ghi chú |
+|---|---|---|---|---|
+| **Hysteresis chặt** (`mode=hyst`: biên ở p > 0.5, giữ nếu đỉnh > 0.99) | 0.4083 | **+0.007** | [+0.002, +0.011] | FP 838 → 753, TP giữ nguyên |
+| Chỉnh mask theo kích thước (instance < 200 px chỉ giữ p > 0.7) | 0.4064 | +0.005 | [+0.002, +0.008] | mask nhỏ dự đoán to hơn GT 27%, mask lớn nhỏ hơn 13% |
+| Hysteresis + chỉnh theo kích thước | 0.4091 | +0.008 | [+0.002, +0.013] | **không cộng dồn**; tune trên toàn val tự tắt phần kích thước |
+| Hysteresis + lọc FP (in-sample) | 0.4108 | +0.0005 so với hyst | – | lọc FP thừa khi đã có hysteresis |
+| Hysteresis so với cc + lọc FP đang dùng | +0.002 | [−0.004, +0.008] | – | hai cách loại FP tương đương |
+
+**Trên LB**: EfficientNet-B4 + hysteresis chặt được **0.36**, bằng cc + lọc FP. Kết quả này khớp
+với dự báo (+0.002, không có ý nghĩa thống kê).
+
+**Bài học**:
+1. Thắng lợi từ hậu xử lý đã gần cạn: mọi cách loại FP chỉ cho +0.004 đến +0.008 và không cộng dồn.
+2. Ensemble chỉ có ích khi các thành viên mạnh ngang nhau. Hàng đợi fold (cùng EffNet-B4) là
+   hướng đúng.
+3. Watcher giờ tune cả `hyst` và `cc` trên map fold/OOF rồi chọn cái tốt hơn.

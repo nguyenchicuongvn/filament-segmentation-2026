@@ -59,6 +59,7 @@ Measured runtimes on the reference machine:
 | `scripts/infer_probs.py` | cache probability maps (val/test, optional 8x TTA, ensembles of checkpoints) |
 | `scripts/tune_post.py` | grid-search instance post-processing on cached val maps |
 | `scripts/ensemble_probs.py` | average cached maps of several models |
+| `scripts/compare.py` | paired-bootstrap comparison of pipelines, with honest cross-tuning |
 | `scripts/fp_filter.py` | train/evaluate the instance FP filter (5-fold CV on val maps) |
 | `scripts/make_submission.py` | cached test maps + post config (+ optional FP filter) → submission CSV |
 | `scripts/package_colab.py`, `scripts/kaggle_upload.py` | Colab code bundle; push results to a private Kaggle dataset |

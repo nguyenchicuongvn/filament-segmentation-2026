@@ -147,24 +147,30 @@ def best_line(log_text: str) -> float:
     raise RuntimeError("no result line in tune_post output")
 
 
-def scaled_grid(probs_dir: Path) -> str:
-    """A 36-point cc grid with areas and radii scaled to the maps' resolution (tuned values at
-    1024 px were min_area 50-90, group_radius 4-6). Full grids are too slow on 2048 px maps."""
+def scaled_grid(probs_dir: Path, mode: str = "cc") -> str:
+    """A small grid with areas and radii scaled to the maps' resolution (tuned values at 1024 px
+    were min_area 50-90, group_radius 4-6). Full grids are too slow on 2048 px maps. 'hyst' is
+    the strict-peak hysteresis that cross-tuned +0.007 over cc on the val split (EXPERIMENTS.md)."""
     import numpy as np
 
     res = np.load(next(Path(probs_dir).glob("*.npy"))).shape[0]
     r = res / 1024
+    if mode == "hyst":
+        return json.dumps({"thresh": [0.3, 0.4, 0.5], "seed_thresh": [0.95, 0.99],
+                           "min_area": [round(50 * r * r), round(90 * r * r)],
+                           "group_radius": [round(4 * r), round(6 * r)]})
     return json.dumps({"thresh": [0.2, 0.3, 0.4, 0.5],
                        "min_area": [round(50 * r * r), round(90 * r * r), round(150 * r * r)],
                        "group_radius": [round(4 * r), round(6 * r), round(10 * r)]})
 
 
-def tune_and_filter(name: str, probs_val: Path, modes: list[str], grid: str | None = None) -> dict:
-    """Tune post-processing (best of the given modes), then the FP filter. Returns a summary."""
+def tune_and_filter(name: str, probs_val: Path, modes: list[str], scaled: bool = False) -> dict:
+    """Tune post-processing (best of the given modes), then the FP filter. Returns a summary.
+    scaled: use resolution-scaled small grids (fold and recipe maps)."""
     best = None
     for mode in modes:
         cfg = ROOT / "configs" / f"post_{name}{'' if mode == 'cc' else '_' + mode}.json"
-        extra = ["--grid", grid] if grid and mode == "cc" else []
+        extra = ["--grid", scaled_grid(probs_val, mode)] if scaled and mode in ("cc", "hyst") else []
         r = sh([PY, "scripts/tune_post.py", "--probs", probs_val, "--mode", mode, "--out", cfg, *extra])
         (ROOT / "docs" / "logs" / f"tune_{name}_{mode}.log").write_text(r.stdout)
         pq = best_line(r.stdout)
@@ -258,8 +264,9 @@ def main() -> None:
                 if rs.get("downloaded") and "val_filtered" not in rs and (not m or m["fold"] == "0"):
                     out = run_dir(run)
                     modes = ["cc", "group"] if (out / "probs_val" / "group").is_dir() else ["cc"]
-                    rs.update(tune_and_filter(run, out / "probs_val", modes,
-                                              scaled_grid(out / "probs_val") if m else None))
+                    if m:
+                        modes.append("hyst")
+                    rs.update(tune_and_filter(run, out / "probs_val", modes, scaled=bool(m)))
                     rs["csv"] = str(build_submission(run, out / "probs_test", rs["filter"]).relative_to(ROOT))
                     save_state(st)
                 tag = " (one fold)" if m else ""
@@ -284,7 +291,7 @@ def main() -> None:
                 try:
                     log(f"{recipe}: all 5 folds in, tuning on out-of-fold maps")
                     out = assemble_recipe(recipe, sorted(folds))
-                    rec.update(tune_and_filter(recipe, out / "probs_val", ["cc"], scaled_grid(out / "probs_val")))
+                    rec.update(tune_and_filter(recipe, out / "probs_val", ["cc", "hyst"], scaled=True))
                     rec["csv"] = str(build_submission(recipe, out / "probs_test", rec["filter"]).relative_to(ROOT))
                     save_state(st)
                 except Exception as e:
@@ -306,7 +313,7 @@ def main() -> None:
                     sh([PY, "scripts/ensemble_probs.py", "--inputs",
                         *[run_dir(r) / f"probs_{which}" for r in done], "--out", out])
                     maps[which] = out
-                res = tune_and_filter(name, maps["val"], ["cc"], scaled_grid(maps["val"]))
+                res = tune_and_filter(name, maps["val"], ["cc", "hyst"], scaled=True)
                 best_single = max(st["recipes"][r]["val_filtered"] for r in done)
                 ens.clear()
                 ens.update(key=key, name=name, best_single=best_single, **res)
