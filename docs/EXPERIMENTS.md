@@ -22,10 +22,10 @@ bản gán nhãn; PQ gộp trên mọi bản gán nhãn, đúng cách của host
 | E5f | E5 + lọc FP theo instance (GBM, CV 5 fold trên val) | 768 | – | 0.389 | **0.33** | `configs/fpfilter_unet768.pkl`, `logs/fpfilter_768.log` |
 | E7 | U-Net ResNet34 (Colab L4) | 1024 | 0.357 | 0.391 → 0.396 (lọc FP) | 0.33–0.34 | `configs/post_unet1024_r34.json`, `configs/fpfilter_unet1024_r34.pkl` |
 | E5+E7 | Trung bình map 768 + 1024 | 1024 | – | 0.394 → 0.399 (lọc FP) | **0.34** (0.33 không lọc) | `configs/post_ens_768_1024r34.json`, `configs/fpfilter_ens_768_1024r34.pkl` |
-| E8 | U-Net R34 + kênh group | 1024 | 0.364 | 0.394 (cc; mode group 0.393) → 0.399 (lọc FP) | chờ | Colab `unet1024_r34_grp` |
-| E9a | U-Net EfficientNet-B4 | 1024 | **0.381** | chờ tune | | Colab `unet1024_effb4` |
-| E9b | U-Net ConvNeXt-Tiny (lr 5e-4) | 1024 | 0.342 | chờ tune | | Colab `unet1024_cnxt` |
-| E10 | R34, 60 epoch | 1024 | ≥0.364 (đang chạy) | | | Colab `unet1024_r34_e60` |
+| E8 | U-Net R34 + kênh group | 1024 | 0.364 | 0.394 (cc; mode group 0.393) → 0.399 (lọc FP) | 0.34 | Colab `unet1024_r34_grp` |
+| E9a | U-Net EfficientNet-B4 | 1024 | **0.381** | 0.404 → **0.408** (lọc FP) | **0.36** | Colab `unet1024_effb4` |
+| E9b | U-Net ConvNeXt-Tiny (lr 5e-4) | 1024 | 0.342 | 0.384 → 0.392 | 0.33 | Colab `unet1024_cnxt` |
+| E10 | R34, 60 epoch | 1024 | 0.364 | 0.399 → 0.402 | 0.34 | Colab `unet1024_r34_e60` |
 | E11 | Model cuối, train trên toàn bộ ảnh | 1024 | sau E7–E10 | | | Colab `unet1024_final_full` |
 
 ## E1–E3: Classical baseline

@@ -8,7 +8,7 @@ Mỗi phiên làm việc thêm một mục ở **đầu** phần "Nhật ký" (m
 
 | | |
 |---|---|
-| Submission tốt nhất | **Public LB 0.34**: U-Net R34 @1024 + lọc FP (val 0.394), và ensemble 768 + 1024 + lọc FP (val 0.399) |
+| Submission tốt nhất | **Public LB 0.36**: U-Net EfficientNet-B4 @1024 + lọc FP (val 0.408) |
 | Hạng | ~767 / 1,153 với 0.31 (snapshot sáng 2026-10-24, trước khi nộp 0.33) |
 | LB tham chiếu | #1 0.69 nhưng bị nhiễm (rò rỉ nhãn, payload 0.55 × 76 đội); đội trung thực tốt nhất ~0.40; trung vị 0.34 |
 | Submissions đã dùng | 8 (tối đa 5/ngày, reset 00:00 UTC) |
@@ -21,6 +21,10 @@ Mỗi phiên làm việc thêm một mục ở **đầu** phần "Nhật ký" (m
 
 | Ngày (UTC) | File | Mô tả | val PQ | Public LB |
 |---|---|---|---|---|
+| 2026-10-25 04:04 | `submission_unet1024_r34_e60.csv` | E10 R34 60 epoch + lọc FP | 0.402 | 0.34 |
+| 2026-10-25 03:40 | `submission_unet1024_cnxt.csv` | E9b ConvNeXt-Tiny + lọc FP | 0.392 | 0.33 |
+| ~2026-10-25 | `submission_unet1024_effb4.csv` | E9a EfficientNet-B4 + lọc FP | 0.408 | **0.36** |
+| ~2026-10-25 | `submission_unet1024_r34_grp.csv` | E8 R34 + kênh group + lọc FP | 0.399 | 0.34 |
 | 2026-10-24 23:53 | `submission_ens_768_1024r34_nofilt.csv` | trung bình map E5 + E7, không lọc FP | 0.394 | 0.33 |
 | 2026-10-24 23:52 | `submission_ens_768_1024r34.csv` | trung bình map E5 + E7 + lọc FP | 0.399 | **0.34** |
 | 2026-10-24 23:47 | `submission_unet1024_r34.csv` | E7, tune nhanh 12 tổ hợp + lọc FP | 0.396 | 0.33 |
@@ -38,6 +42,8 @@ Val luôn cao hơn LB khoảng 0.03–0.07, nhưng thứ tự giữa các model 
 ## Nhật ký
 
 ### 2026-10-25
+- Watcher submit xong E8–E10: **EfficientNet-B4 LB 0.36** (tốt nhất), R34+group 0.34, R34 60 epoch
+  0.34, ConvNeXt 0.33. Người dùng đã chạy hàng đợi Colab thứ hai (11 run fold) trên L4.
 - Dựng R1–R3 (5-fold, target mềm, crop @2048, map OOF) thành hàng đợi Colab thứ hai gồm 11 run;
   watcher biết ghép fold. R4 (watershed + lấp lỗ) không giúp; R5: đặc trưng vị trí trên đĩa +0.002,
   regressor IoU kém hơn classifier.
