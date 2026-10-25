@@ -15,26 +15,40 @@ code và report phải tốt.
 
 Nên chốt model trước ~2026-11-10 để còn thời gian viết report và dọn code.
 
-## Việc tiếp theo (ưu tiên từ trên xuống)
+## Mục tiêu thực tế (sau research 2026-10-25, xem [RESEARCH.md](RESEARCH.md))
 
-| # | Việc | Lý do | Trạng thái |
+LB public bị nhiễm (rò rỉ nhãn test qua MAGFiLO 1.0, payload 0.55). Các đội trung thực tốt nhất có
+công bố đạt **OOF ~0.45–0.46 / public ~0.40**; hai chuyên gia chấm lẫn nhau chỉ được 0.34. Mục tiêu:
+**OOF ≥ 0.45, public ~0.40**, kèm code tái lập được và report tốt (30% điểm). Mình đang ở 0.399
+holdout / 0.34 public.
+
+## Việc tiếp theo (theo thứ tự)
+
+| # | Việc | Lý do / bằng chứng | Trạng thái |
 |---|---|---|---|
-| 1 | U-Net R34 @1024 trên Colab (E7) | 512 → 768 tăng ~0.03; mask filament mảnh | người dùng đang chạy |
-| 2a | Watershed thay cho gom mảnh bằng dilation (E5w) | gt_split + pred_merge ~190 trên val | **xong**: 0.384 ≈ cc, không dùng |
-| 2b | Kênh group để model học gom mảnh (E8) | luật cố định chỉ đổi lỗi tách lấy lỗi gộp | dựng xong, chờ Colab |
-| 3 | Lọc FP bằng classifier theo instance (E5f) | FP 965 ≈ FN 981 | **xong**: val +0.006, LB +0.02, giữ lại |
-| 4 | Encoder mạnh hơn (E9), train 60 epoch (E10) | E5 chưa bão hoà ở epoch 30 | dựng xong, chờ Colab |
-| 5 | Train trên toàn bộ ảnh (`--split all`) cho model cuối (E11) | thêm 30% dữ liệu | cuối cùng, sau khi chọn công thức |
-| 6 | Ensemble các model 1024 cùng độ phân giải / khác kiến trúc | E6: trộn 512 + 768 không giúp | công cụ có sẵn, chờ model |
+| R1 | **5-fold CV theo ảnh**, chấm OOF PQ trên cả 707 ảnh; tune post/lọc FP trên OOF | holdout 213 ảnh quá nhiễu (SD ~0.014); mọi đội top dùng OOF | chưa làm |
+| R2 | **Target mềm đa annotator** (tỉ lệ annotator vẽ pixel), lấy mẫu theo số bản gán nhãn | umerkang66, +0.01–0.03 | chưa làm |
+| R3 | **Độ phân giải gần gốc**: train crop 1024 từ ảnh 2048 (hoặc full 1536), infer full 2048 + TTA 8 | mọi đội top; 768 → 1024 đã +0.01 | chưa làm |
+| R4 | **Tách instance**: seed + gộp seed gần + watershed + lấp lỗ | umerkang66 +0.008; GT không có lỗ | chưa làm (CPU, làm trên map có sẵn) |
+| R5 | **Bộ lọc → regressor IoU kỳ vọng, giữ nếu > PQ/2**; thêm đặc trưng góc so với kinh tuyến trung tâm (annotator bỏ qua > ±70°) | umerkang66, theainerd; paper MAGFiLO | chưa làm (CPU) |
+| R6 | Ensemble encoder: EffNet-B4 (tốt nhất ở E9) + R34 + EffV2-S / RegNetY, theo fold | Dariush, umerkang66 | sau R1–R3 |
+| R7 | Head phụ skeleton/core + blob loss | +0.009 có CI | sau R6 |
+| R8 | (Nếu còn thời gian) detector + crop refiner làm thành viên ensemble | biconcavelens 0.40 → 0.461 | tuỳ thời gian |
+| R9 | Model cuối: công thức thắng, train 5 fold (hoặc full), **weights lưu trong repo (Git LFS)**, notebook load weights | yêu cầu mới của host (24/10) | cuối cùng |
 
-Thứ tự đề xuất trên Colab: E7 (đang chạy) → E8 → E9 → E10 → E11 với công thức thắng.
+Không làm: dùng MAGFiLO 1.0 công khai, mask chồng nhau, tune theo LB, clDice/CLAHE/pseudo-label/
+Mask2Former/SAM (đã có người thử và kém).
+
+Phần đã xong trước đó: E5w watershed thuần (không giúp), E5f lọc FP (+0.01 LB), E7–E10 trên Colab
+(EffNet-B4 tốt nhất, ConvNeXt kém, 60 epoch giúp ít).
 
 ## Hồ sơ nhận giải (bắt buộc)
 
 - [x] License MIT
 - [x] `requirements.txt` pin version
 - [x] README: cài đặt, môi trường, thời gian chạy
-- [ ] Jupyter notebook chạy toàn bộ pipeline (tạm hoãn, làm khi chốt model)
+- [ ] Jupyter notebook chạy toàn bộ pipeline, **load weights có sẵn trong repo** (tạm hoãn, làm khi chốt model)
+- [ ] Weights trong repo (Git LFS, mỗi file 80–120 MB > giới hạn 100 MB của GitHub)
 - [ ] Technical report 4 trang theo template Overleaf của host (viết khi có kết quả tốt)
 - [ ] Repo public ngay khi cuộc thi đóng, giữ public đến khi công bố
 - [ ] Nộp Google form trước Nov 15 11:59 pm CDT

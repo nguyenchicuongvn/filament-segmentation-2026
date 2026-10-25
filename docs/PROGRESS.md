@@ -10,7 +10,7 @@ Mỗi phiên làm việc thêm một mục ở **đầu** phần "Nhật ký" (m
 |---|---|
 | Submission tốt nhất | **Public LB 0.34**: U-Net R34 @1024 + lọc FP (val 0.394), và ensemble 768 + 1024 + lọc FP (val 0.399) |
 | Hạng | ~767 / 1,153 với 0.31 (snapshot sáng 2026-10-24, trước khi nộp 0.33) |
-| LB tham chiếu | #1 0.69 · 97 đội ≥ 0.50 · trung vị 0.34 · 494 đội > 0.35 |
+| LB tham chiếu | #1 0.69 nhưng bị nhiễm (rò rỉ nhãn, payload 0.55 × 76 đội); đội trung thực tốt nhất ~0.40; trung vị 0.34 |
 | Submissions đã dùng | 8 (tối đa 5/ngày, reset 00:00 UTC) |
 | Deadline | Kaggle: **2026-11-15 06:00 UTC** (13:00 VN). Report + code (Google form): Nov 15 11:59 pm CDT |
 | Repo | https://github.com/nguyenchicuongvn/filament-segmentation-2026 (**private** đến khi cuộc thi đóng) |
@@ -38,6 +38,10 @@ Val luôn cao hơn LB khoảng 0.03–0.07, nhưng thứ tự giữa các model 
 ## Nhật ký
 
 ### 2026-10-25
+- **Research** ([RESEARCH.md](RESEARCH.md)): top LB bị nhiễm do rò rỉ nhãn test (MAGFiLO 1.0 công
+  khai) và payload 0.55 (76 đội). Đội trung thực tốt nhất đạt OOF 0.45–0.46 / public 0.39–0.40; hai
+  chuyên gia chấm nhau chỉ được 0.34. Lỗi chính của mình là sai biên (gần trúng), không phải tách/gộp.
+  Viết lại plan (R1–R9). Host yêu cầu mới: weights phải nằm trong repo.
 - Session Colab L4 chạy xong E7–E10 trong ~4.7 h (nhanh hơn ước tính ~3 lần: 1 min/epoch với R34
   @1024). Val PQ thô: EfficientNet-B4 **0.381** > R34+group 0.364 ≈ R34 60 epoch 0.364 > R34 0.357 >
   ConvNeXt-Tiny 0.342.

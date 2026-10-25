@@ -15,6 +15,7 @@ Prize conditions: [PRIZE_RULES.md](PRIZE_RULES.md).
 | [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md) | every experiment: config, val/LB, conclusion |
 | [docs/DATA_AND_METRIC.md](docs/DATA_AND_METRIC.md) | dataset facts, PQ details, validation split, val↔LB gap |
 | [docs/PLAN.md](docs/PLAN.md) | next steps, deadlines, prize-deliverables checklist |
+| [docs/RESEARCH.md](docs/RESEARCH.md) | leaderboard contamination, honest ceilings, what other teams found |
 | [docs/logs/](docs/logs/) | training / tuning / search logs |
 | [PRIZE_RULES.md](PRIZE_RULES.md) | competition rules and prize conditions |
 

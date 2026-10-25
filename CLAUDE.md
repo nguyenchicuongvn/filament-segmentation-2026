@@ -4,6 +4,10 @@ Kaggle "Solar Filament Segmentation Challenge 2026": instance segmentation of so
 scored by Panoptic Quality. Read `docs/PROGRESS.md` first (status, submissions, log), then
 `docs/PLAN.md` (next steps, deadlines) and `docs/EXPERIMENTS.md` (what was tried, results).
 
+The public LB top is contaminated (test labels leak via public MAGFiLO 1.0; a 0.55 payload);
+honest best is ~0.40 public / ~0.46 OOF — see `docs/RESEARCH.md`. Never use MAGFiLO 1.0 public
+data, never submit overlapping masks, keep final weights inside the repo (host requirement).
+
 ## Conventions
 
 - Python 3.12 venv at `.venv` (created with `uv`); run everything as `.venv/bin/python ...` from
