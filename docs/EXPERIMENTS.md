@@ -247,3 +247,7 @@ với dự báo (+0.002, không có ý nghĩa thống kê).
 2. Ensemble chỉ có ích khi các thành viên mạnh ngang nhau. Hàng đợi fold (cùng EffNet-B4) là
    hướng đúng.
 3. Watcher giờ tune cả `hyst` và `cc` trên map fold/OOF rồi chọn cái tốt hơn.
+
+**LB của các biến thể (2026-10-27)**: EffNet-B4 + hysteresis + co mask nhỏ 0.36; + min_area 150 0.35;
+ensemble 6 + hysteresis 0.35; + co mask nhỏ 0.35. Không có gì vượt 0.36, đúng như dự báo từ CI.
+Hậu xử lý trên map 1024 hiện tại đã chạm trần (~0.36 public).

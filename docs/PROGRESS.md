@@ -11,16 +11,20 @@ Mỗi phiên làm việc thêm một mục ở **đầu** phần "Nhật ký" (m
 | Submission tốt nhất | **Public LB 0.36**: U-Net EfficientNet-B4 @1024 + lọc FP (val 0.408) |
 | Hạng | ~767 / 1,153 với 0.31 (snapshot sáng 2026-10-24, trước khi nộp 0.33) |
 | LB tham chiếu | #1 0.69 nhưng bị nhiễm (rò rỉ nhãn, payload 0.55 × 76 đội); đội trung thực tốt nhất ~0.40; trung vị 0.34 |
-| Submissions đã dùng | 8 (tối đa 5/ngày, reset 00:00 UTC) |
+| Submissions đã dùng | 18 (tối đa 5/ngày, reset 00:00 UTC) |
 | Deadline | Kaggle: **2026-11-15 06:00 UTC** (13:00 VN). Report + code (Google form): Nov 15 11:59 pm CDT |
 | Repo | https://github.com/nguyenchicuongvn/filament-segmentation-2026 (**private** đến khi cuộc thi đóng) |
 | GPU | Kaggle GPU quota tuần này đã hết → train GPU trên Colab (`colab/train_unet.ipynb`); Mac M5 (MPS) cho run nhỏ |
-| Đang chờ | Người dùng chạy hàng đợi Colab thứ hai (R1–R3, 11 run); watcher trên Mac đang xử lý các run E8–E10 cũ và chờ các run fold (log: `outputs/colab_watch.log`) |
+| Đang chờ | **Hàng đợi Colab thứ hai chưa upload run nào** — cần log notebook để tìm lỗi; watcher trên Mac vẫn chờ |
 
 ## Lịch sử submission
 
 | Ngày (UTC) | File | Mô tả | val PQ | Public LB |
 |---|---|---|---|---|
+| 2026-10-27 23:38 | `submission_ens6_all_hyst_small07.csv` | ensemble 6 + hysteresis + co mask nhỏ | – | 0.35 |
+| 2026-10-27 23:38 | `submission_ens6_all_hyst.csv` | ensemble 6 + hysteresis chặt | 0.409 (cross-tune) | 0.35 |
+| 2026-10-27 23:24 | `submission_unet1024_effb4_hyst_strict150.csv` | EffNet-B4 + hysteresis, min_area 150 | – | 0.35 |
+| 2026-10-27 23:24 | `submission_unet1024_effb4_hyst_small07.csv` | EffNet-B4 + hysteresis + co mask nhỏ (p > 0.7) | 0.409 (cross-tune) | 0.36 |
 | 2026-10-25 18:2x | `submission_unet1024_effb4_hyst.csv` | E9a + hysteresis chặt (đỉnh > 0.99), không lọc | 0.408 (cross-tune) | 0.36 |
 | 2026-10-25 04:04 | `submission_unet1024_r34_e60.csv` | E10 R34 60 epoch + lọc FP | 0.402 | 0.34 |
 | 2026-10-25 03:40 | `submission_unet1024_cnxt.csv` | E9b ConvNeXt-Tiny + lọc FP | 0.392 | 0.33 |
@@ -41,6 +45,14 @@ Val luôn cao hơn LB khoảng 0.03–0.07, nhưng thứ tự giữa các model 
 được để chọn model (xem [DATA_AND_METRIC.md](DATA_AND_METRIC.md#khoảng-cách-val--lb)).
 
 ## Nhật ký
+
+### 2026-10-27
+- Nộp 4 biến thể hậu xử lý / ensemble trên các map 1024 có sẵn: không biến thể nào vượt 0.36
+  (EffNet-B4 + hysteresis + co mask nhỏ 0.36; giữ chặt hơn 0.35; ensemble 6 model 0.35 với cả 2 cách).
+  Khớp với kết quả tự phản biện: hậu xử lý đã cạn, ensemble model yếu không giúp. Giả thuyết "nhãn
+  test thưa → giữ chặt hơn" không được LB xác nhận (0.35, trong mức nhiễu).
+- **Hàng đợi Colab thứ hai không ra kết quả nào sau ~3 ngày** (không có dataset `filseg-*_f*` nào trên
+  Kaggle). Đây là điểm nghẽn: muốn tăng thêm phải có map tốt hơn (5 fold, độ phân giải gốc).
 
 ### 2026-10-25
 - **Tự phản biện** (`scripts/compare.py`, bootstrap ghép cặp + cross-tune): EffNet-B4 > R34 là thật;
