@@ -54,6 +54,9 @@ def _union_mask(item, res: int) -> np.ndarray:
 HISTORY_FIELDS = ["epoch", "loss", "lr", "epoch_s", "val_s", "elapsed_s", "val_pq", "val_sq", "val_dice",
                   "tp", "fp", "fn", "gt_split", "pred_merge"]
 INSTANCE_FIELDS = ["loss_blob", "loss_fpc"]  # only in the history of runs with an instance loss
+# only with --ema: the raw (non-averaged) weights scored too, so an EMA lag can be told apart from the losses;
+# checkpoint selection still uses the EMA weights
+RAW_FIELDS = ["raw_val_pq", "raw_tp", "raw_fp", "raw_fn"]
 # recipe v2 options and their defaults; at the default they stay out of the run's meta
 V2_DEFAULTS = {"blob_weight": 0.0, "fpc_weight": 0.0, "fpc_thresh": 0.5, "inst_min_area": 0, "ema": 0.0}
 
@@ -211,7 +214,7 @@ def main() -> None:
     meta = run_meta(args)
     inst_loss = instance_loss_on(args)
     min_area = resolve_inst_min_area(args)
-    fields = HISTORY_FIELDS + (INSTANCE_FIELDS if inst_loss else [])
+    fields = HISTORY_FIELDS + (INSTANCE_FIELDS if inst_loss else []) + (RAW_FIELDS if args.ema > 0 else [])
     hist_path = args.out_dir / f"{args.name}.history.csv"
     best, start, elapsed0 = -1.0, 1, 0.0
     if args.resume and last.exists():
@@ -284,6 +287,10 @@ def main() -> None:
                        pred_merge=acc.pred_merge)
             msg += (f" | val pq {acc.pq:.4f} sq {acc.sq:.4f} dice {dice:.4f} tp {acc.tp} fp {acc.fp} fn {acc.fn}"
                     f" ({fmt_dur(row['val_s'])})")
+            if ema is not None:
+                raw, _ = validate(model, va_items, args.res, dev, post)
+                row.update(raw_val_pq=round(raw.pq, 4), raw_tp=raw.tp, raw_fp=raw.fp, raw_fn=raw.fn)
+                msg += f" | raw pq {raw.pq:.4f} tp {raw.tp} fp {raw.fp}"
             if acc.pq > best:
                 best = acc.pq
                 torch.save(best_state(model, ema, meta), ckpt)
