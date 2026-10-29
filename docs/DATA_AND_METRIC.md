@@ -55,6 +55,7 @@ chỉ để chọn checkpoint và tune post-processing.
 | U-Net 512 | 0.354 | 0.29 | 0.06 |
 | U-Net 768 | 0.383 | 0.31 | 0.07 |
 
-Thứ tự giữa các model giữ nguyên nên val vẫn dùng để chọn được. Giả thuyết chưa kiểm chứng: test
-có tỉ lệ ảnh nhiều annotator khác train, hoặc LB chỉ chấm ~50% ảnh test (public split). Post-
-processing tune trên val cũng hơi lạc quan.
+Thứ tự giữa các model giữ nguyên nên val vẫn dùng để chọn được. Cập nhật 29/10: nguyên nhân chính
+được cho là lệch annotator (PQ theo nhóm annotator 0.37–0.46), cộng với nhiễu lấy mẫu của public LB
+(SD 0.014 trên 90 ảnh). Bằng chứng ở [RESEARCH.md § 3](RESEARCH.md#3-leaderboard-và-khoảng-cách-val--lb)
+(F8–F11, H5).

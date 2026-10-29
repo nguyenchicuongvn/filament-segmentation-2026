@@ -8,6 +8,38 @@ commit vì nặng); config đã tune nằm trong `configs/`.
 bản gán nhãn; PQ gộp trên mọi bản gán nhãn, đúng cách của host
 (xem [DATA_AND_METRIC.md](DATA_AND_METRIC.md)). Chọn model và tham số theo val, không theo LB.
 
+## Sổ cái
+
+Mỗi thay đổi đã thử, đo so với đối chứng nào, kết luận ra sao. Từ 25/10 các so sánh dùng bootstrap
+ghép cặp theo ảnh (`scripts/compare.py`). Trước đó chỉ có chênh lệch điểm, **không có CI**, nên coi
+là bằng chứng yếu. "in-sample" nghĩa là hậu xử lý được tune trên chính tập chấm (lạc quan ~0.003).
+Thí nghiệm mới (từ 29/10) phải có thẻ đăng ký trước trong [PLAN.md § 4](PLAN.md#4-thẻ-thí-nghiệm).
+
+| ID | Ngày | Thay đổi | Đối chứng | Δ PQ (val 213 ảnh) | 95% CI | Kết luận | LB |
+|---|---|---|---|---|---|---|---|
+| E3 | 22/10 | classical, random search | – | 0.242 | – | baseline | 0.21 |
+| E4 | 22/10 | U-Net R34 @512 | E3 | +0.112 (in-sample) | không có | giữ | 0.29 |
+| E5 | 23/10 | @768 | E4 | +0.029 (in-sample) | không có | giữ | 0.31 |
+| E6 | 23/10 | trung bình map 512 + 768 | E5 | −0.003 | không có | bỏ | – |
+| E5w | 24/10 | watershed thay cho cc | E5 | +0.001 | không có | bỏ | – |
+| E5f | 24/10 | bộ lọc FP (GBM) | E5 | +0.006 | không có | giữ | 0.33 |
+| E7 | 24/10 | R34 @1024 | E5 (R34 @768) | +0.008 | không đo | yếu | 0.34 |
+| E8 | 24/10 | + kênh group | E7 | +0.003 | không đo | không phân biệt | 0.34 |
+| E9a | 24/10 | **EfficientNet-B4** | E7 | **+0.013** | [+0.003, +0.023] | **giữ** | **0.36** |
+| E9b | 24/10 | ConvNeXt-Tiny | E9a | −0.020 | [−0.031, −0.010] | bỏ | 0.33 |
+| E10 | 24/10 | R34 60 epoch | E9a | −0.005 | [−0.014, +0.005] | không phân biệt | 0.34 |
+| E9a+f | 25/10 | bộ lọc FP trên E9a | E9a cc | +0.004 | [0.000, +0.008] | giữ (nhỏ) | 0.36 |
+| R4 | 25/10 | seed + watershed + lấp lỗ | cc (ens 768 + 1024) | 0.0000 | không đo | bỏ | – |
+| R5a | 25/10 | bộ lọc + đặc trưng vị trí | bộ lọc 14 đặc trưng | +0.002 | không đo | giữ | – |
+| R5b | 25/10 | regressor IoU kỳ vọng | R5a | −0.002 | không đo | bỏ | – |
+| R4b | 25/10 | **hysteresis chặt** (cross-tune) | E9a cc cross-tune | **+0.007** | [+0.002, +0.011] | **giữ** | 0.36 |
+| R4c | 25/10 | chỉnh mask theo kích thước (cross-tune) | E9a cc cross-tune | +0.005 | [+0.002, +0.008] | không cộng với R4b → bỏ | 0.36 / 0.35 |
+| E-ens6 | 25/10 | ensemble 6 model holdout (cross-tune) | E9a | −0.001 | [−0.009, +0.007] | bỏ | 0.35 |
+| E11 | – | model train trên toàn bộ ảnh | – | – | – | **không chạy**, thay bằng 5 fold (N1) | – |
+| E12–E14 | 25–28/10 | hàng đợi Colab thứ hai (11 run fold) | – | – | – | **không ra kết quả** (hàng đợi chết, nghi bug cache) | – |
+| N1 | 29/10– | 5 fold EffNet-B4 @1024 + target mềm | – | ⏳ | | baseline B1 cho OOF | |
+| N2 | 29/10– | crop 1024 @2048, fold 0 | N1 fold 0 | ⏳ | | tiêu chí: Δ ≥ +0.012, CI > 0 | |
+
 ## Tổng hợp
 
 | ID | Model | Độ phân giải | val PQ (thô) | val PQ (đã tune post) | LB | Config / log |
@@ -26,7 +58,7 @@ bản gán nhãn; PQ gộp trên mọi bản gán nhãn, đúng cách của host
 | E9a | U-Net EfficientNet-B4 | 1024 | **0.381** | 0.404 → **0.408** (lọc FP) | **0.36** | Colab `unet1024_effb4` |
 | E9b | U-Net ConvNeXt-Tiny (lr 5e-4) | 1024 | 0.342 | 0.384 → 0.392 | 0.33 | Colab `unet1024_cnxt` |
 | E10 | R34, 60 epoch | 1024 | 0.364 | 0.399 → 0.402 | 0.34 | Colab `unet1024_r34_e60` |
-| E11 | Model cuối, train trên toàn bộ ảnh | 1024 | sau E7–E10 | | | Colab `unet1024_final_full` |
+| E11 | Model cuối, train trên toàn bộ ảnh | 1024 | không chạy (thay bằng 5 fold, N1) | | | Colab `unet1024_final_full` |
 
 ## E1–E3: Classical baseline
 

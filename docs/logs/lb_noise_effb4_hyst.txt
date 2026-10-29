@@ -1,0 +1,8 @@
+# Sampling noise of pooled PQ for a public-LB-sized test sample (2026-10-29)
+# EffNet-B4 @1024 + strict hysteresis (configs/post_unet1024_effb4_hyst.json), val 213 images.
+# Per-image TP/FP/FN/sum-IoU, then PQ of random image subsets (4000 draws, seed 0).
+all 213 0.4103
+90 images: SD 0.0105 (subsample w/o replacement from 213; underestimates)
+90 images: SD 0.0138 (bootstrap)
+180 images: SD 0.0039 (subsample w/o replacement from 213; underestimates)
+180 images: SD 0.0099 (bootstrap)

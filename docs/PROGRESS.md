@@ -9,13 +9,30 @@ Mỗi phiên làm việc thêm một mục ở **đầu** phần "Nhật ký" (m
 | | |
 |---|---|
 | Submission tốt nhất | **Public LB 0.36**: U-Net EfficientNet-B4 @1024 + lọc FP (val 0.408) |
-| Hạng | ~767 / 1,153 với 0.31 (snapshot sáng 2026-10-24, trước khi nộp 0.33) |
-| LB tham chiếu | #1 0.69 nhưng bị nhiễm (rò rỉ nhãn, payload 0.55 × 76 đội); đội trung thực tốt nhất ~0.40; trung vị 0.34 |
+| Hạng | 483 / 1,260 với 0.36 (LB 2026-10-29 08:16 UTC) |
+| LB tham chiếu | #1 0.70 nhưng bị nhiễm (rò rỉ nhãn, payload 0.55 × 82 đội); tầng trung thực cao nhất 0.42 (1 đội), 0.41 (11), 0.40 (46); xem [RESEARCH S16](RESEARCH.md#3-leaderboard-và-khoảng-cách-val--lb) |
 | Submissions đã dùng | 23 (tối đa 5/ngày, reset 00:00 UTC) |
 | Deadline | Kaggle: **2026-11-15 06:00 UTC** (13:00 VN). Report + code (Google form): Nov 15 11:59 pm CDT |
 | Repo | https://github.com/nguyenchicuongvn/filament-segmentation-2026 (**private** đến khi cuộc thi đóng) |
 | GPU | Kaggle GPU quota tuần này đã hết → train GPU trên Colab (`colab/train_unet.ipynb`); Mac M5 (MPS) cho run nhỏ |
-| Đang chờ | Bundle Colab mới (sửa bug cache) + hàng đợi thứ ba: 5 fold EffNet-B4 @1024 target mềm + fold 0 @2048 (~7–8 h L4); kế hoạch N0–N6 trong [PLAN.md](PLAN.md) |
+| Đang chờ | Hàng đợi Colab thứ ba (Q3, ~8 h L4, người dùng chạy từ 29/10): 5 fold EffNet-B4 @1024 target mềm (N1) + fold 0 @2048 (N2); watcher local đang chờ |
+
+## Theo dõi kế hoạch
+
+Thẻ thí nghiệm và tiêu chí ở [PLAN.md § 4](PLAN.md#4-thẻ-thí-nghiệm). Cập nhật bảng này mỗi khi một
+việc đổi trạng thái.
+
+| Việc | Ở đâu | Trạng thái | Hạn / cổng | Kết quả |
+|---|---|---|---|---|
+| N0: sửa bug cache, bundle Colab mới | Mac | ✅ 29/10 | – | `dl.py` ghi atomic; bundle 2.2 MB |
+| N1: 5 fold EffNet-B4 @1024 + target mềm | Colab Q3 | ⏳ chờ người dùng chạy | 31/10 | |
+| N2: crop @2048 so với @1024, fold 0 | Colab Q3 | ⏳ | G1 30/10 | |
+| P1: `compare.py` scale grid theo độ phân giải | Mac | 📝 | trước G1 | |
+| N3: gói v2 (EMA + blob loss + input limb) | Mac → Colab Q4 | 📝 viết code | G2 01–02/11 | |
+| N4: Mask R-CNN + bỏ phiếu mask | Mac → Colab | 📝 | G3 05/11 (go/no-go) | |
+| N5: metric rubric (torchmetrics Dice, phân bố, 1:n / n:1) | Mac | 📝 | 08/11 | |
+| N6: final, weights fp16, notebook, report | Mac | 📝 | đóng băng 09/11; nộp 15/11 | |
+| Người dùng: số giờ Colab còn lại, GPU Kaggle, YOLO (AGPL) | – | ❓ | sớm nhất có thể | |
 
 ## Lịch sử submission
 
@@ -45,6 +62,15 @@ Val luôn cao hơn LB khoảng 0.03–0.07, nhưng thứ tự giữa các model 
 được để chọn model (xem [DATA_AND_METRIC.md](DATA_AND_METRIC.md#khoảng-cách-val--lb)).
 
 ## Nhật ký
+
+### 2026-10-29 (chiều)
+- Viết lại docs theo yêu cầu "research tỉ mỉ, có dẫn chứng, plan rõ ràng, theo dõi tiến độ":
+  - [RESEARCH.md](RESEARCH.md): mỗi nhận định có mã (`S*` nguồn ngoài, `F*` số đo của mình,
+    `H*` giả thuyết), link và mức tin cậy; các số liệu được đối chiếu lại với nguồn.
+  - [PLAN.md](PLAN.md): ràng buộc thời gian/GPU, quy trình thí nghiệm (độ nhạy một fold ±0.012,
+    đăng ký tiêu chí trước), thẻ thí nghiệm N1–N6, cổng quyết định G1–G3, câu hỏi cho người dùng.
+  - [EXPERIMENTS.md § Sổ cái](EXPERIMENTS.md#sổ-cái): mọi thay đổi đã thử kèm Δ, CI, kết luận.
+- Người dùng chạy Q3 trên Colab với bundle mới; watcher local đang chờ.
 
 ### 2026-10-29
 - **Tự phản biện lần 2**, ghi ở [EXPERIMENTS.md](EXPERIMENTS.md). Script mới: `scripts/analyze_errors.py`,
