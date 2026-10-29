@@ -27,12 +27,13 @@ việc đổi trạng thái.
 | N0: sửa bug cache, bundle Colab mới | Mac | ✅ 29/10 | – | `dl.py` ghi atomic; bundle 2.2 MB |
 | N1: 5 fold EffNet-B4 @1024 + target mềm | Colab Q3 | ⏳ chờ người dùng chạy | 31/10 | |
 | N2: crop @2048 so với @1024, fold 0 | Colab Q3 | ⏳ | G1 30/10 | |
-| P1: `compare.py` scale grid theo độ phân giải | Mac | 📝 | trước G1 | |
+| P1: `compare.py` scale grid theo độ phân giải | Mac | ✅ 29/10 | trước G1 | diện tích × r², bán kính × r; grid cc thêm ngưỡng 0.2 cho map target mềm. Chạy lại trên E9a ra đúng số cũ (cc 0.4015, hyst 0.4083, Δ +0.0068 [+0.003, +0.011]); mất 8.4 phút cho 213 ảnh @1024 |
 | N3: gói v2 (EMA + blob loss + input limb) | Mac → Colab Q4 | 📝 viết code | G2 01–02/11 | |
 | N4: Mask R-CNN + bỏ phiếu mask | Mac → Colab | 📝 | G3 05/11 (go/no-go) | |
 | N5: metric rubric (torchmetrics Dice, phân bố, 1:n / n:1) | Mac | 📝 | 08/11 | |
 | N6: final, weights fp16, notebook, report | Mac | 📝 | đóng băng 09/11; nộp 15/11 | |
-| Người dùng: số giờ Colab còn lại, GPU Kaggle, YOLO (AGPL) | – | ❓ | sớm nhất có thể | |
+| Người dùng: số giờ Colab | – | ✅ 29/10 | – | ~25 h L4, đủ cho kế hoạch đầy đủ |
+| Người dùng: GPU Kaggle khi Colab hỏng; YOLO (AGPL) hay Mask R-CNN | – | ❓ | trước G3 (05/11) | |
 
 ## Lịch sử submission
 

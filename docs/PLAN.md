@@ -30,7 +30,7 @@ và vì sao; chạy xong thì quyết định thế nào; đang ở đâu. Bằn
 
 | Tài nguyên | Ràng buộc | Hệ quả |
 |---|---|---|
-| GPU Colab (L4) | **Chưa biết số giờ còn lại** (người dùng xác nhận, xem § 7). EffNet-B4 @1024 mất ~75 phút một fold: 61 phút cho 494 ảnh ở E9a, fold có 566 ảnh | Mỗi lần train là một khoản chi; ước tính dưới đây tính theo giờ L4 |
+| GPU Colab (L4) | **~25 h** (người dùng xác nhận 29/10). EffNet-B4 @1024 mất ~75 phút một fold: 61 phút cho 494 ảnh ở E9a, fold có 566 ảnh | Mỗi lần train là một khoản chi; ước tính dưới đây tính theo giờ L4 |
 | GPU Kaggle | Không dùng nếu chưa hỏi người dùng | Chỉ là phương án dự phòng |
 | Mac M5 (MPS) | Train một fold mất ≥ 50 h, không khả thi ([EXPERIMENTS § Tự phản biện lần 2.5](EXPERIMENTS.md#5-train-trên-mac-có-thay-được-colab-không)) | Mac dùng để viết code, smoke test, infer, tune, phân tích |
 | Lượt submit | 5 lượt/ngày, còn ~80 lượt | Không khan hiếm. LB chỉ để tham khảo, không quyết định gì |
@@ -167,7 +167,7 @@ hỏi có dùng Kaggle GPU không (30 h/tuần). Không tự ý dùng Kaggle GPU
 
 ## 7. Cần người dùng quyết định
 
-1. **Số giờ GPU Colab còn lại** (compute units). Kế hoạch cần ~25 h L4. Nếu ít hơn thì cắt N4 trước.
+1. ~~Số giờ GPU Colab còn lại~~: **đủ ~25 h** (trả lời 29/10). Làm theo kế hoạch đầy đủ; dự phòng chỉ còn ~3 h, nên một run hỏng phải được phát hiện sớm.
 2. **Có cho dùng GPU Kaggle** khi Colab không đủ hay hỏng không?
 3. **YOLO11-seg (AGPL-3.0)** hay chỉ Mask R-CNN (BSD)?
 

@@ -31,7 +31,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from filseg.data import load_train, with_maps  # noqa: E402
-from filseg.dl import PostParams  # noqa: E402
+from filseg.dl import PostParams, load_maps  # noqa: E402
 from filseg.instfilter import select  # noqa: E402
 from filseg.metric import IOU_THRESHOLD  # noqa: E402
 from fp_filter import _image_table, make_model, predict  # noqa: E402
@@ -53,7 +53,7 @@ def pq(s: np.ndarray) -> float:
 
 
 GRIDS = {
-    "cc": {"thresh": [0.3, 0.4, 0.5, 0.6], "min_area": [50, 90, 150], "group_radius": [4, 6, 8]},
+    "cc": {"thresh": [0.2, 0.3, 0.4, 0.5, 0.6], "min_area": [50, 90, 150], "group_radius": [4, 6, 8]},
     "hyst": {"thresh": [0.3, 0.4, 0.5], "seed_thresh": [0.9, 0.95, 0.97, 0.99], "min_area": [50, 90],
              "group_radius": [6]},
     # strict hysteresis + shrinking small instances
@@ -64,6 +64,24 @@ GRIDS = {
                 "small_area": [200], "small_thresh": [0.0, 0.7, 0.8],
                 "large_area": [800], "large_thresh": [0.0, 0.4, 0.5]},
 }
+
+
+# sizes in GRIDS are for 1024 px maps; areas scale with the square of the map resolution
+AREA_KEYS, RADIUS_KEYS = ("min_area", "small_area", "large_area"), ("group_radius",)
+
+
+def scale_grid(grid: dict, res: int) -> dict:
+    """GRIDS[mode] with areas and radii rescaled from 1024 px maps to `res` px maps."""
+    r = res / 1024
+    out = {}
+    for k, v in grid.items():
+        if k in AREA_KEYS:
+            out[k] = [round(a * r * r) for a in v]
+        elif k in RADIUS_KEYS:
+            out[k] = [round(a * r) for a in v]
+        else:
+            out[k] = list(v)
+    return out
 
 
 def _combo_stats(args):
@@ -81,7 +99,7 @@ def evaluate_crosstuned(probs: str, mode: str, stems: list[str], jobs_by_stem: d
     """Per-image stats when the grid is tuned on the other half of the images (mean over repeats)."""
     import itertools
 
-    grid = GRIDS[mode]
+    grid = scale_grid(GRIDS[mode], load_maps(Path(probs), stems[0])[0].shape[0])
     base_mode = {"cc_size": "cc", "hyst_size": "hyst"}.get(mode, mode)
     combos = [PostParams(mode=base_mode, **dict(zip(grid, v)))
               for v in itertools.product(*grid.values())]
