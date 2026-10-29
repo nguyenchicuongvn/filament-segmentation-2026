@@ -1,0 +1,13 @@
+== r34e60: FP entries 864, FN entries 995
+  FP kinds: nearmiss 301 (0.35), isolated 291 (0.34), partial 189 (0.22), merge 66 (0.08), fragment 17 (0.02)
+    n_ann=1: nearmiss 114, isolated 77, partial 60, merge 21, fragment 8
+    n_ann=2: isolated 103, nearmiss 90, partial 66, merge 16, fragment 3
+    n_ann=3: isolated 111, nearmiss 97, partial 63, merge 29, fragment 6
+  FN kinds: missed 457 (0.46), nearmiss 226 (0.23), merged 148 (0.15), split 96 (0.10), partial 54 (0.05), nopred 14 (0.01)
+    n_ann=1: missed 213, nearmiss 84, merged 50, split 33, partial 21, nopred 7
+    n_ann=2: missed 127, nearmiss 63, merged 36, split 35, partial 17, nopred 2
+    n_ann=3: missed 117, nearmiss 79, merged 62, split 28, partial 16, nopred 5
+  AUC hit-vs-none by meanp: 0.728
+  AUC hit-vs-none by frac>0.99: 0.734
+  AUC hit-vs-none by p10: 0.717
+  frac>0.99 median: hit 0.77 none 0.66

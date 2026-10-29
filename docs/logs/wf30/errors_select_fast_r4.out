@@ -1,0 +1,13 @@
+images 213 nodes 16156
+baseline (real hyst pipeline) PQ 0.4103
+base-in-tree PQ 0.4119 vs real [np.float64(0.0017), np.float64(-0.0011), np.float64(0.0046)]
+fold done
+fold done
+fold done
+fold done
+fold done
+lambda 0.35: PQ 0.3978  vs base -0.0125 [-0.0197,-0.0052]  n_sel 1518
+lambda 0.45: PQ 0.4045  vs base -0.0058 [-0.0125,+0.0008]  n_sel 1411
+lambda 0.55: PQ 0.4068  vs base -0.0035 [-0.0103,+0.0033]  n_sel 1332
+lambda 0.65: PQ 0.4032  vs base -0.0071 [-0.0144,-0.0001]  n_sel 1230
+CROSS-TUNED lambda: PQ 0.4059 vs base -0.0043 [-0.0110,+0.0026]

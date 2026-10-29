@@ -39,10 +39,10 @@ Thí nghiệm mới (từ 29/10) phải có thẻ đăng ký trước trong [PLA
 | E12–E14 | 25–28/10 | hàng đợi Colab thứ hai (11 run fold) | – | – | – | **không ra kết quả** (hàng đợi chết, nghi bug cache) | – |
 | N1 | 29/10– | 5 fold EffNet-B4 @1024 + target mềm | – | ⏳ | | baseline B1 cho OOF | |
 | N2 | 29/10– | crop 1024 @2048, fold 0 | N1 fold 0 | ⏳ | | tiêu chí: Δ ≥ +0.012, CI > 0 | |
-| W-agree | 30/10 | bộ lọc instance + 8 đặc trưng đồng thuận giữa 5 model holdout (cross-tune cả grid, bộ lọc và ngưỡng) | E9a hyst cross-tune (0.4083) | −0.0004 (0.4079) | [−0.0032, +0.0022] | **bỏ** (tiêu chí Δ ≥ +0.010; so với bộ lọc 17 đặc trưng −0.0001 [−0.002, +0.002], P>0 0.47). AUC OOF 0.723 → 0.733 nhưng PQ không đổi | – |
+| W-agree | 30/10 | bộ lọc instance + 8 đặc trưng đồng thuận giữa 5 model holdout (cross-tune cả grid, bộ lọc và ngưỡng) | E9a hyst cross-tune (0.4083) | −0.0004 (0.4079) | [−0.0032, +0.0022] | **bỏ** (tiêu chí Δ ≥ +0.010; so với bộ lọc 17 đặc trưng −0.0001 [−0.002, +0.002]; reviewer đổi seed chia fold OOF thì +0.0015 [−0.001, +0.004], tức thứ hạng giữa các biến thể bộ lọc nằm trong ±0.0015 nhiễu seed). AUC OOF 0.723 → 0.733 nhưng PQ không đổi | – |
 | W-filt17 | 30/10 | bộ lọc 17 đặc trưng, học trong cross-tune (trên hysteresis chặt) | E9a hyst cross-tune | −0.0003 (0.4080) | [−0.0022, +0.0014] | trên hyst bộ lọc không còn lợi (FP −58, TP −29) | – |
-| H6-tree | 30/10 | lớp quyết định học được (cây, tái lập) | E9a hyst, 213 ảnh | −0.004 | [−0.011, +0.003] | **H6 bác bỏ**; oracle (giữ đúng instance TP) +0.125 | – |
-| loc-err | 30/10 | lỗi do vị trí / gần limb / sunspot (tái lập) | – | < 1% số lỗi | – | không đáng xử lý riêng | – |
+| H6-tree | 30/10 | lớp quyết định học được: cây thành phần 0.1–0.95, GBM 20 đặc trưng OOF 5 fold + DP, λ cross-tune | E9a hyst, 213 ảnh | −0.0043 | [−0.011, +0.003] | **H6 bác bỏ**; oracle +0.125. Hai agent làm độc lập, code khác nhau; agent thứ hai (123 ảnh, máy quá tải): −0.004 [−0.013, +0.005]. Log `docs/logs/wf30/errors_select_fast_r4.out`, `decision_learned.log`; script `scripts/research/wf30/` | – |
+| loc-err | 30/10 | lỗi do vị trí / gần limb / sunspot | – | 3/794 FP; 1/2,194 dự đoán ngoài ±70° | – | không đáng xử lý riêng; bỏ input hiệu chỉnh limb khỏi N3. Log `docs/logs/wf30/errors_analyze.out`, `training_summary_effb4.txt` | – |
 
 ## Tổng hợp
 

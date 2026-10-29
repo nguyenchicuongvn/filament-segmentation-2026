@@ -1,0 +1,8 @@
+images 117
+baseline hyst (fixed config, in-sample tuned): PQ 0.4131 TP 975 FP 532 FN 666
+ORACLE keep/drop on hyst instances                   PQ 0.4708 TP   946 FP   100 FN   695 d +0.0577 [+0.0493,+0.0668]
+ORACLE tree antichain fam=r0 (levels+split+keep)     PQ 0.5403 TP  1130 FP   104 FN   511 d +0.1273 [+0.1149,+0.1413]
+ORACLE keep/drop single level 0.5 fam=r0             PQ 0.4776 TP   972 FP   106 FN   669 d +0.0645 [+0.0556,+0.0744]
+ORACLE tree antichain fam=r4 (levels+split+keep)     PQ 0.5384 TP  1134 FP   105 FN   507 d +0.1253 [+0.1143,+0.1383]
+ORACLE keep/drop single level 0.5 fam=r4             PQ 0.4758 TP   972 FP   109 FN   669 d +0.0627 [+0.0534,+0.0728]
+annotators per image: [ 0 67 32 18]
