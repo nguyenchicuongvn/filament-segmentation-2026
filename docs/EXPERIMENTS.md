@@ -251,3 +251,86 @@ với dự báo (+0.002, không có ý nghĩa thống kê).
 **LB của các biến thể (2026-10-27)**: EffNet-B4 + hysteresis + co mask nhỏ 0.36; + min_area 150 0.35;
 ensemble 6 + hysteresis 0.35; + co mask nhỏ 0.35. Không có gì vượt 0.36, đúng như dự báo từ CI.
 Hậu xử lý trên map 1024 hiện tại đã chạm trần (~0.36 public).
+
+## Tự phản biện lần 2 (2026-10-29): mình sai ở đâu, khoảng cách thật nằm ở đâu
+
+Công cụ mới: `scripts/analyze_errors.py` (lỗi theo annotator, nhóm annotator, mức đồng thuận, kích
+thước; Dice và tỉ lệ 1:n / n:1 của rubric; PQ giữa người với người), `scripts/res_ceiling.py` (trần
+độ phân giải). Log: `docs/logs/critique2_*.txt`. Số liệu bên dưới là EffNet-B4 + hysteresis chặt
+trên val 213 ảnh (tune in-sample, nên lạc quan khoảng 0.003).
+
+### 1. So sánh công bằng: model đơn của mình không thua nhiều
+
+| | Mình (EffNet-B4 @1024) | theainerd | biconcavelens |
+|---|---|---|---|
+| Model đơn | 0.408–0.410 (holdout) | 0.414–0.446 mỗi fold (B3) | U-Net ngữ nghĩa 0.396; YOLO11m-seg **0.437**; Mask R-CNN 0.429 |
+| Sản phẩm cuối | **1 model, train trên 70% ảnh** | 2 họ × 5 fold, OOF 0.452 | ensemble 13 nguồn mask, OOF 0.461 |
+| RQ / SQ | 0.614 / 0.668 | 0.660 / 0.685 | – |
+| FP/TP, FN/TP | 0.57, 0.69 | 0.42, 0.61 | – |
+
+Kết luận: khoảng cách ~0.04 không nằm ở hậu xử lý mà ở **chất lượng phân biệt của model**. Đội đầu
+ít FP hơn hẳn (0.42 so với 0.57 trên mỗi TP). Họ có được nhờ 4 thứ mình chưa có:
+1. ensemble nhiều fold, train trên toàn bộ dữ liệu;
+2. loss có ý thức về instance (blob loss, BiCC);
+3. thành viên detector;
+4. EMA.
+
+### 2. Vì sao LB thấp hơn val (~0.05, đội nào cũng bị)
+
+- **Lệch annotator là nguyên nhân chính**:
+  - PQ theo từng annotator trên val dao động **0.29–0.55** (trung vị 0.41).
+  - PQ theo nhóm annotator (2 chữ số đầu của id): nhóm 01 **0.383** và nhóm 04 **0.373**, so với
+    nhóm 02/03/05/06 ở 0.43–0.46.
+  - PQ giữa hai người: các annotator nhóm 01 chỉ được 0.28–0.36 khi chấm theo người khác, nhóm 02/05
+    được 0.40–0.44.
+  - Host không công bố ai gán nhãn test (discussion 753043).
+  - Nếu test nghiêng về kiểu nhóm 01/04 thì LB ≈ 0.37–0.38 trước nhiễu, khớp với 0.36.
+  - umerkang66 cũng kết luận như vậy (PQ theo nhóm annotator 0.40–0.55).
+- **Model nộp lên chỉ train trên 494/707 ảnh** (30% để làm val). Các đội khác nộp ensemble fold
+  train trên 80% mỗi fold.
+- **Tune in-sample** lạc quan ~0.003, và mình chọn qua rất nhiều biến thể trên cùng 213 ảnh.
+- LB làm tròn 2 chữ số và có nhiễu ±0.03 (90 ảnh).
+
+→ Hệ quả: không thể tune cho annotator của test. Chỉ có model tốt hơn trên **mọi** nhóm mới nâng LB.
+
+### 3. Phân tích lỗi mới
+
+| Quan sát | Số liệu | Ý nghĩa |
+|---|---|---|
+| Filament mà các annotator khác cũng vẽ | recall **0.83** | phần đồng thuận gần như đã bắt được |
+| Filament chỉ một người vẽ (ảnh 2–3 annotator) | recall 0.27–0.32; chiếm ~65% FN ở ảnh nhiều annotator | phần lớn FN là do khác biệt giữa người với người, khó gỡ |
+| Prediction không khớp annotator nào | 33% (ảnh 1 annotator), 17% (ảnh 3 annotator) | FP "thật" nhiều nhất ở ảnh một annotator |
+| Filament < 400 px | recall 0.32, **54% không có prediction nào chạm** | chi tiết nhỏ bị mất |
+| Filament 1,600–8,000 px | 17–20% gần trúng (IoU 0.3–0.5) | lỗi biên |
+| Kích thước mask khớp | mask dự đoán lớn hơn GT 39% (< 400 px), 23% (400–800 px), ~3% (lớn) | mask nhỏ quá to |
+| Trần độ phân giải (GT → 1024 → 2048, model hoàn hảo) | IoU trung bình 0.894, 0.860 với filament < 800 px; 1536: 0.909 | không phải nút thắt chính (SQ hiện tại 0.668), nhưng có giá trị với filament nhỏ |
+| Metric rubric | Dice mỗi bản gán nhãn 0.668; 1:n 3.9%, n:1 3.4% (umerkang66: 3.0% / 2.9%) | cần báo cáo trong report (70% điểm định lượng) |
+
+### 4. Mình đã sai ở đâu (quy trình)
+
+1. **Dùng 9 lượt submit cho các biến thể hậu xử lý** mà CI của chính mình đã dự báo là không đổi
+   (+0.002, CI chứa 0). Kết quả đúng như dự báo: 0.35–0.36. Lẽ ra nên giữ lượt và công sức cho model.
+2. **Đặt cả pipeline lên một đường Colab duy nhất mà không có tín hiệu sống**:
+   - notebook chỉ báo khi một run xong và upload;
+   - mất 4 ngày mà không biết hàng đợi chết vì đâu;
+   - Mac đứng không trong lúc chờ.
+3. **Bug cache không atomic** (tìm thấy hôm nay):
+   - `soft_cached` / `cached` ghi `.npz` trực tiếp, nên một run bị ngắt để lại file cụt;
+   - mọi run sau đó trên cùng máy chết ngay khi load cache (`EOFError`);
+   - bug này có thể đã giết hàng đợi Colab sau một lần reconnect, chưa xác nhận vì chưa có log;
+   - đã sửa: ghi atomic, file hỏng thì tự build lại.
+4. **Hàng đợi 11 run đặt cược vào một giả thuyết chưa kiểm chứng** (crop 1024 @2048):
+   - BSergey2000 thấy native 2048 với crop 640 **kém 0.07** so với resize 1024;
+   - theainerd thì thắng với tile 512 native, nên kết quả còn tuỳ công thức;
+   - lẽ ra phải so 2 công thức trên fold 0 trước rồi mới chạy 5 fold.
+5. **Model nộp chỉ train trên 70% dữ liệu**. Đây là phần tăng chắc chắn nhất mà mình bỏ qua.
+6. Chưa đo metric của rubric. Rubric chấm cả Dice, phân bố IoU/Dice và tỉ lệ 1:n / n:1, không chỉ PQ.
+
+### 5. Train trên Mac có thay được Colab không?
+
+Benchmark: EfficientNet-B4, crop 1024 từ ảnh 2048, bs 4, MPS (M5, 32 GB).
+- Build cache 2048 cho 566 ảnh mất ~25 phút (làm một lần).
+- Sau đó hơn 25 phút vẫn chưa xong 58 bước đầu (1/4 epoch), tức ≥ 1.7 h/epoch và ≥ 50 h cho một fold.
+
+→ **Không khả thi trên Mac**. Train fold phải chạy trên GPU (Colab, hoặc Kaggle nếu người dùng đồng
+ý). Mac chỉ dùng để infer, tune và phân tích.

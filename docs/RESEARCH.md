@@ -89,3 +89,34 @@ SimSiam trên ảnh GONG không nhãn, Mask2Former (≤ 0.345), SAM với box pr
   chứa ảnh test.
 - Nộp mask chồng nhau hoặc trùng lặp. `make_submission.py` cần assert mọi mask rời nhau.
 - Tune theo LB public (nhiễu ±0.03, và LB lệch so với val).
+
+## 6. Cập nhật 2026-10-29
+
+**Sự thật** (discussion và repo đọc ngày 29/10)
+- Host **không công bố** ai gán nhãn test, cũng không nói mỗi ảnh test có bao nhiêu annotator
+  ([753043](https://www.kaggle.com/competitions/filament-segmentation-2026/discussion/753043)).
+  Public LB chấm ~50% ảnh test.
+- **Rubric** (Overview): 70% định lượng gồm Dice trung bình (torchmetrics), PQ, phân bố Dice/IoU,
+  tỉ lệ chồng 1:n / n:1; 30% định tính. Host sẽ xem kỹ mọi bài có PQ > 0.35
+  ([747399](https://www.kaggle.com/competitions/filament-segmentation-2026/discussion/747399)).
+  Ensemble lớn và TTA được chấp nhận
+  ([749526](https://www.kaggle.com/competitions/filament-segmentation-2026/discussion/749526)).
+- Được dùng frame GONG lân cận (trừ ±1 h quanh ảnh test). biconcavelens thử chuyển nhãn sang frame
+  lân cận thì **kém đi** (0.404 → 0.372).
+- **theainerd** (CV 0.452, public 0.40):
+  - input 3 kênh đã hiệu chỉnh limb; EffNet-B3 + scSE; target mềm; tile 512 native;
+  - **BiCC loss** (arXiv 2609.30223): +0.003 đến +0.022 trên 4/5 fold;
+  - rescorer GBM; hysteresis 0.5/0.3; nối mảnh trong 8 px.
+- **umerkang66** (OOF 0.448): **blob loss** + head skeleton/core + deep supervision cho +0.009
+  (CI +0.006 đến +0.012); EMA 0.998; gộp seed trong 16 px cho +0.008; PQ theo nhóm annotator
+  0.40–0.55.
+- **biconcavelens** (OOF 0.461), model đơn:
+  - YOLO11m-seg 0.437, RT-DETR 0.436, Mask R-CNN 0.429, U-Net ngữ nghĩa 0.396;
+  - hiệu chỉnh isotonic (+0.021);
+  - score-weighted mask vote (+0.007 đến +0.012).
+- ranjeet258: 3 U-Net × 4 fold + EMA + YOLO11m-seg + LightGBM IoU kỳ vọng, public 0.39 (chỉ model).
+- BSergey2000: native 2048 với crop 640 **kém 0.07** so với resize 1024 + crop 768.
+
+**Suy luận**: các hệ thống ≥ 0.45 đều có ít nhất một trong hai thứ: (a) detector instance,
+(b) loss có ý thức về instance cộng với ensemble fold. U-Net ngữ nghĩa thuần với cc dừng quanh 0.40
+ở mọi đội, kể cả mình.

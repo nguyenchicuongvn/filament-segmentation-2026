@@ -22,7 +22,30 @@ công bố đạt **OOF ~0.45–0.46 / public ~0.40**; hai chuyên gia chấm l�
 **OOF ≥ 0.45, public ~0.40**, kèm code tái lập được và report tốt (30% điểm). Mình đang ở 0.399
 holdout / 0.34 public.
 
-## Việc tiếp theo (theo thứ tự)
+## Kế hoạch sau tự phản biện lần 2 (2026-10-29)
+
+Xem [EXPERIMENTS.md § Tự phản biện lần 2](EXPERIMENTS.md#tự-phản-biện-lần-2-2026-10-29-mình-sai-ở-đâu-khoảng-cách-thật-nằm-ở-đâu).
+Hậu xử lý đã cạn. Khoảng cách ~0.04 so với các đội trung thực đầu bảng đến từ ba chỗ: model nộp chỉ
+train trên 70% dữ liệu, không có ensemble fold, và thiếu loss/thành viên có ý thức về instance.
+
+| # | Việc | Bằng chứng | Ước tính | Chi phí |
+|---|---|---|---|---|
+| N0 | **Mở lại đường GPU**: sửa bug cache (xong), bundle mới, hàng đợi thứ ba (6 run, ~7–8 h L4); hỏi trước khi dùng Kaggle GPU | 4 ngày không có run nào | – | thấp |
+| N1 | **5 fold EffNet-B4 @1024 + target mềm**: tune trên OOF 707 ảnh, nộp trung bình 5 fold | công thức E9a đã biết; các đội top đều nộp ensemble fold | **+0.01–0.02 LB**, rủi ro thấp | 5 × ~1 h L4 |
+| N2 | So **@1024 cả ảnh với crop @2048** trên fold 0, rồi mới chạy fold @2048 | theainerd thắng với tile 512 native; BSergey thấy native kém 0.07 | ? | 2 run |
+| N3 | Ablation fold 0, chỉ giữ cái nào có CI > 0: **EMA**, **blob loss**, **BiCC**, input đã hiệu chỉnh limb (3 kênh) | umerkang66 blob +0.009 (CI); theainerd BiCC +0.003–0.022 trên 4/5 fold | +0.01–0.02 | mỗi cái 1 run |
+| N4 | **Thành viên detector**: Mask R-CNN (torchvision, BSD; đã chạy thử trên MPS) @1024, rồi ghép với U-Net bằng score-weighted mask vote | biconcavelens: Mask R-CNN 0.429 / YOLO11m 0.437 so với U-Net 0.396; vote +0.007–0.012 | +0.02–0.04 (trần cao nhất) | lớn: code mới, train ~1 ngày |
+| N5 | Metric rubric (Dice, phân bố IoU/Dice, 1:n / n:1) trong `analyze_errors.py`, đưa vào report | 70% điểm định lượng | điểm rubric | thấp |
+| N6 | Model cuối + weights trong repo + notebook (R9), chốt trước 2026-11-10 | yêu cầu host | bắt buộc | trung bình |
+
+**Quy tắc submit mới**: chỉ nộp khi model thay đổi có CI > 0 trên OOF/fold. Không nộp biến thể hậu
+xử lý nữa. Giữ 2 bài cuối: một bài OOF tốt nhất, một bài ít rủi ro nhất (ensemble 5 fold @1024).
+
+YOLO11-seg (Ultralytics) mạnh nhất trong số detector nhưng có license AGPL-3.0. AGPL là license OSI
+nên được luật cho phép, nhưng repo mình dùng MIT. Chỉ dùng nếu người dùng đồng ý; nếu không thì dùng
+Mask R-CNN của torchvision.
+
+## Việc tiếp theo (theo thứ tự, kế hoạch cũ 2026-10-25)
 
 | # | Việc | Lý do / bằng chứng | Trạng thái |
 |---|---|---|---|

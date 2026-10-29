@@ -23,6 +23,8 @@ Labels are finally upsampled to 2048x2048.
 """
 from __future__ import annotations
 
+import os
+import zipfile
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
@@ -36,6 +38,26 @@ from torch.utils.data import Dataset
 from .data import H, W, TrainImage, load_gray
 
 CACHE_DIR = Path(__file__).resolve().parents[2] / "data" / "cache"
+
+
+def _load_npz(path: Path) -> dict | None:
+    """A cached .npz, or None if missing or unreadable (e.g. truncated by a killed run)."""
+    if not path.exists():
+        return None
+    try:
+        with np.load(path) as z:
+            return {k: z[k] for k in z.files}
+    except (EOFError, OSError, ValueError, zipfile.BadZipFile):
+        path.unlink(missing_ok=True)
+        return None
+
+
+def _save_npz(path: Path, **arrays) -> None:
+    """Write atomically, so an interrupted run never leaves a partial cache file behind."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(f"{path.stem}.{os.getpid()}.tmp.npz")
+    np.savez_compressed(tmp, **arrays)
+    os.replace(tmp, path)
 
 
 def device() -> torch.device:
@@ -79,15 +101,13 @@ def group_target(item: TrainImage, res: int) -> np.ndarray:
 def cached(item: TrainImage, res: int) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Image, mask and group target resized to res x res, cached on disk as .npz."""
     path = CACHE_DIR / str(res) / f"{item.key}.v2.npz"
-    if path.exists():
-        z = np.load(path)
+    if (z := _load_npz(path)) is not None:
         return z["img"], z["mask"], z["group"]
     img = cv2.resize(load_gray(item.path), (res, res), interpolation=cv2.INTER_AREA)
     m = cv2.resize(semantic_mask(item).astype(np.float32), (res, res), interpolation=cv2.INTER_AREA)
     mask = (m >= 0.5).astype(np.uint8)
     group = group_target(item, res)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    np.savez_compressed(path, img=img, mask=mask, group=group)
+    _save_npz(path, img=img, mask=mask, group=group)
     return img, mask, group
 
 
@@ -121,8 +141,7 @@ def soft_cached(entries: list[TrainImage], res: int) -> tuple[np.ndarray, np.nda
     """Image and soft target for one image at res x res: each pixel's target is the fraction of
     the image's annotators whose filaments cover it (uint8, 0..255). Cached as .npz."""
     path = CACHE_DIR / str(res) / f"{entries[0].image_id}.soft.npz"
-    if path.exists():
-        z = np.load(path)
+    if (z := _load_npz(path)) is not None:
         return z["img"], z["soft"]
     gray = load_gray(entries[0].path)
     img = gray if res == W else cv2.resize(gray, (res, res), interpolation=cv2.INTER_AREA)
@@ -131,8 +150,7 @@ def soft_cached(entries: list[TrainImage], res: int) -> tuple[np.ndarray, np.nda
         m = semantic_mask(it).astype(np.float32)
         acc += m if res == W else cv2.resize(m, (res, res), interpolation=cv2.INTER_AREA)
     soft = np.round(acc / len(entries) * 255).astype(np.uint8)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    np.savez_compressed(path, img=img, soft=soft)
+    _save_npz(path, img=img, soft=soft)
     return img, soft
 
 

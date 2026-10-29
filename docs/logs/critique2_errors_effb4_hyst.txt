@@ -1,0 +1,71 @@
+model PQ 0.4103 TP 1401.0 FP 794.0 FN 965.0 SQ 0.668
+mean pixel Dice per entry 0.668  1:n rate 0.039  n:1 rate 0.034
+
+== by annotator group (first 2 digits of the annotator id) ==
+  group 01: entries 136 PQ 0.383
+  group 02: entries  39 PQ 0.461
+  group 03: entries  36 PQ 0.455
+  group 04: entries  50 PQ 0.373
+  group 05: entries  56 PQ 0.425
+  group 06: entries  20 PQ 0.443
+
+== by #annotators of image ==
+  n_ann=1: entries 123 PQ 0.4142 TP 542.0 FP 264.0 FN 396.0
+  n_ann=2: entries 112 PQ 0.4077 TP 407.0 FP 255.0 FN 269.0
+  n_ann=3: entries 102 PQ 0.4079 TP 452.0 FP 275.0 FN 300.0
+
+== per annotator (val, >=4 entries) ==  PQ | gt/entry | pred/img | recall | prec | matched area ratio
+  010101 n= 20 PQ 0.286 gt  7.7 pred  5.8 rec 0.39 prec 0.50 ratio 1.20
+  050302 n=  4 PQ 0.320 gt  5.2 pred  4.0 rec 0.43 prec 0.56 ratio 1.28
+  040201 n= 11 PQ 0.328 gt  8.1 pred  6.8 rec 0.47 prec 0.56 ratio 1.21
+  010201 n=  4 PQ 0.330 gt  8.2 pred  6.2 rec 0.45 prec 0.60 ratio 1.13
+  040102 n= 12 PQ 0.348 gt  7.2 pred  6.1 rec 0.49 prec 0.59 ratio 1.19
+  040302 n=  4 PQ 0.349 gt  7.5 pred  5.2 rec 0.47 prec 0.67 ratio 1.12
+  010103 n=  7 PQ 0.350 gt  4.7 pred  4.1 rec 0.55 prec 0.62 ratio 1.28
+  050202 n=  5 PQ 0.362 gt 10.0 pred  8.0 rec 0.52 prec 0.65 ratio 1.24
+  010102 n= 17 PQ 0.382 gt  7.8 pred  6.5 rec 0.52 prec 0.62 ratio 1.00
+  010203 n= 13 PQ 0.386 gt  4.7 pred  4.8 rec 0.57 prec 0.56 ratio 1.05
+  010402 n= 16 PQ 0.387 gt  8.2 pred  7.0 rec 0.51 prec 0.60 ratio 0.90
+  010401 n= 15 PQ 0.394 gt  7.4 pred  8.1 rec 0.65 prec 0.59 ratio 1.22
+  040401 n= 11 PQ 0.409 gt  7.7 pred  7.2 rec 0.60 prec 0.65 ratio 1.11
+  010403 n= 19 PQ 0.410 gt  5.8 pred  7.1 rec 0.69 prec 0.57 ratio 1.11
+  020401 n= 15 PQ 0.411 gt  6.5 pred  6.3 rec 0.62 prec 0.65 ratio 1.33
+  050103 n= 16 PQ 0.416 gt  7.4 pred  7.1 rec 0.61 prec 0.64 ratio 1.02
+  060403 n= 14 PQ 0.431 gt  8.3 pred  6.6 rec 0.55 prec 0.69 ratio 1.13
+  030302 n= 14 PQ 0.435 gt  7.8 pred  7.1 rec 0.64 prec 0.70 ratio 1.31
+  030101 n= 11 PQ 0.440 gt 10.5 pred  6.5 rec 0.51 prec 0.82 ratio 0.98
+  050102 n= 13 PQ 0.440 gt  8.2 pred  8.2 rec 0.65 prec 0.65 ratio 1.00
+  040301 n= 10 PQ 0.443 gt  6.0 pred  8.1 rec 0.80 prec 0.59 ratio 1.27
+  010202 n= 11 PQ 0.448 gt  5.1 pred  5.1 rec 0.68 prec 0.68 ratio 1.14
+  030401 n=  5 PQ 0.449 gt  6.8 pred  7.2 rec 0.68 prec 0.64 ratio 1.28
+  050101 n= 15 PQ 0.465 gt  7.9 pred  7.6 rec 0.67 prec 0.69 ratio 1.02
+  020101 n=  7 PQ 0.474 gt  7.9 pred  6.4 rec 0.64 prec 0.78 ratio 1.23
+  060102 n=  6 PQ 0.483 gt  6.0 pred  5.0 rec 0.67 prec 0.80 ratio 1.08
+  020403 n= 15 PQ 0.487 gt  5.2 pred  6.3 rec 0.77 prec 0.64 ratio 1.06
+  010302 n=  8 PQ 0.532 gt  4.4 pred  4.9 rec 0.80 prec 0.72 ratio 0.97
+  030403 n=  6 PQ 0.549 gt  6.2 pred  7.3 rec 0.86 prec 0.73 ratio 1.09
+  spread of per-annotator PQ: min 0.286 p25 0.362 med 0.411 p75 0.448 max 0.549
+
+== recall by GT support (multi-annotator images; support = #other annotators matching it) ==
+  n_ann=2 support=0:  306 gts, recall 0.32, near-miss(0.3-0.5) 0.18
+  n_ann=2 support=1:  370 gts, recall 0.83, near-miss(0.3-0.5) 0.10
+  n_ann=3 support=0:  224 gts, recall 0.27, near-miss(0.3-0.5) 0.25
+  n_ann=3 support=1:  206 gts, recall 0.60, near-miss(0.3-0.5) 0.19
+  n_ann=3 support=2:  322 gts, recall 0.83, near-miss(0.3-0.5) 0.09
+
+== recall by GT area (px @2048) ==
+  [    0,    400) n= 227 recall 0.32 near 0.09 none(<0.1) 0.54 meanIoU|TP 0.623 pred/gt area 1.39
+  [  400,    800) n= 532 recall 0.52 near 0.13 none(<0.1) 0.30 meanIoU|TP 0.652 pred/gt area 1.23
+  [  800,   1600) n= 664 recall 0.66 near 0.13 none(<0.1) 0.17 meanIoU|TP 0.661 pred/gt area 1.12
+  [ 1600,   3200) n= 493 recall 0.64 near 0.20 none(<0.1) 0.10 meanIoU|TP 0.675 pred/gt area 1.10
+  [ 3200,   8000) n= 358 recall 0.68 near 0.17 none(<0.1) 0.08 meanIoU|TP 0.692 pred/gt area 1.03
+  [ 8000,1000000000) n=  92 recall 0.62 near 0.20 none(<0.1) 0.04 meanIoU|TP 0.715 pred/gt area 1.02
+
+== FP predictions: how many annotators of the image match each prediction ==
+  n_ann=1: preds 806, matched by k annotators: 0:0.33, 1:0.67
+  n_ann=2: preds 331, matched by k annotators: 0:0.27, 1:0.22, 2:0.50
+  n_ann=3: preds 242, matched by k annotators: 0:0.17, 1:0.21, 2:0.23, 3:0.40
+
+== human agreement (all train multi-annotator images): annotator A scored as prediction vs B ==
+  pooled PQ 0.3399  SQ 0.634  TP 4292.0 FP 3709.0 FN 3709.0
+  annotator-as-predictor PQ (vs the others): 010402:0.28, 040301:0.28, 010401:0.29, 010101:0.30, 010103:0.31, 010102:0.31, 010403:0.31, 010201:0.33, 010302:0.35, 010203:0.35, 010202:0.36, 050101:0.40, 050102:0.41, 050103:0.42, 020401:0.44, 020403:0.44

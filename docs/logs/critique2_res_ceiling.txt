@@ -1,0 +1,3 @@
+512 mean IoU 0.797 frac>0.5 0.997 | <800px: meanIoU 0.735 frac>0.5 0.993
+1024 mean IoU 0.894 frac>0.5 1.000 | <800px: meanIoU 0.860 frac>0.5 1.000
+1536 mean IoU 0.909 frac>0.5 1.000 | <800px: meanIoU 0.881 frac>0.5 1.000

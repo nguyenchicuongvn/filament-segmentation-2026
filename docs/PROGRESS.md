@@ -4,18 +4,18 @@ Mỗi phiên làm việc thêm một mục ở **đầu** phần "Nhật ký" (m
 "Trạng thái". Chi tiết từng thí nghiệm nằm ở [EXPERIMENTS.md](EXPERIMENTS.md), kế hoạch ở
 [PLAN.md](PLAN.md).
 
-## Trạng thái (cập nhật 2026-10-24)
+## Trạng thái (cập nhật 2026-10-29)
 
 | | |
 |---|---|
 | Submission tốt nhất | **Public LB 0.36**: U-Net EfficientNet-B4 @1024 + lọc FP (val 0.408) |
 | Hạng | ~767 / 1,153 với 0.31 (snapshot sáng 2026-10-24, trước khi nộp 0.33) |
 | LB tham chiếu | #1 0.69 nhưng bị nhiễm (rò rỉ nhãn, payload 0.55 × 76 đội); đội trung thực tốt nhất ~0.40; trung vị 0.34 |
-| Submissions đã dùng | 18 (tối đa 5/ngày, reset 00:00 UTC) |
+| Submissions đã dùng | 23 (tối đa 5/ngày, reset 00:00 UTC) |
 | Deadline | Kaggle: **2026-11-15 06:00 UTC** (13:00 VN). Report + code (Google form): Nov 15 11:59 pm CDT |
 | Repo | https://github.com/nguyenchicuongvn/filament-segmentation-2026 (**private** đến khi cuộc thi đóng) |
 | GPU | Kaggle GPU quota tuần này đã hết → train GPU trên Colab (`colab/train_unet.ipynb`); Mac M5 (MPS) cho run nhỏ |
-| Đang chờ | **Hàng đợi Colab thứ hai chưa upload run nào** — cần log notebook để tìm lỗi; watcher trên Mac vẫn chờ |
+| Đang chờ | Bundle Colab mới (sửa bug cache) + hàng đợi thứ ba: 5 fold EffNet-B4 @1024 target mềm + fold 0 @2048 (~7–8 h L4); kế hoạch N0–N6 trong [PLAN.md](PLAN.md) |
 
 ## Lịch sử submission
 
@@ -45,6 +45,22 @@ Val luôn cao hơn LB khoảng 0.03–0.07, nhưng thứ tự giữa các model 
 được để chọn model (xem [DATA_AND_METRIC.md](DATA_AND_METRIC.md#khoảng-cách-val--lb)).
 
 ## Nhật ký
+
+### 2026-10-29
+- **Tự phản biện lần 2**, ghi ở [EXPERIMENTS.md](EXPERIMENTS.md). Script mới: `scripts/analyze_errors.py`,
+  `scripts/res_ceiling.py`.
+- Model đơn của mình (0.41) gần ngang model đơn của các đội đầu (~0.42 mỗi fold). Khoảng cách nằm ở
+  ba chỗ: model nộp chỉ train trên 70% dữ liệu, không có ensemble fold, và thiếu loss/detector có ý
+  thức về instance. Đội đầu có FP/TP 0.42 so với 0.57 của mình.
+- Khoảng cách val → LB chủ yếu do lệch annotator: PQ theo annotator dao động 0.29–0.55; nhóm 01/04
+  chỉ được ~0.38, các nhóm khác 0.43–0.46. Host không công bố ai gán nhãn test.
+- **Bug**: cache `.npz` không ghi atomic, nên một run bị ngắt để lại file cụt và mọi run sau đó chết
+  ngay (`EOFError`). Có thể đây là lý do hàng đợi Colab không ra kết quả. Đã sửa (ghi atomic, file
+  hỏng thì build lại).
+- Hàng đợi Colab thứ ba: fold 0 của hai công thức EffNet-B4 (@1024 và crop @2048), rồi 4 fold còn
+  lại của @1024.
+- Research mới (theainerd, umerkang66, biconcavelens, ranjeet258, rubric của host):
+  [RESEARCH.md § 6](RESEARCH.md#6-cập-nhật-2026-10-29). Kế hoạch mới N0–N6 ở [PLAN.md](PLAN.md).
 
 ### 2026-10-27
 - Nộp 4 biến thể hậu xử lý / ensemble trên các map 1024 có sẵn: không biến thể nào vượt 0.36
