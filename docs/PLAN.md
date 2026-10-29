@@ -92,16 +92,19 @@ Trạng thái: ⏳ đang chạy/chờ · 📝 chuẩn bị · ✅ xong · ❌ b�
 | Nếu đạt | Chạy fold 1–4 @2048 (~6–7 h) và dùng làm công thức chính. N3 cũng làm ở @2048 |
 | Nếu không | Giữ @1024 (rẻ hơn), dồn giờ GPU cho N3/N4. Nếu 0 < Δ < 0.012 thì có thể dùng làm thành viên ensemble khi còn giờ |
 
-### N3 — Gói "công thức v2": EMA + blob loss + input đã hiệu chỉnh limb (📝 viết code trên Mac)
+### N3 — Gói "công thức v2": EMA + blob loss + loss thành phần giả kiểu BiCC (📝 code xong, chờ Q4)
 
 | | |
 |---|---|
-| Giả thuyết | Ba thay đổi rẻ, mỗi cái đã giúp ở đội khác, cộng lại được +0.01–0.02. Từng cái riêng thì quá nhỏ để đo (§ 3.3) |
-| Bằng chứng | **Blob loss** + head skeleton/core + deep supervision + loss JML1: +0.0092, CI **90%** [+0.006, +0.012], ablation proxy 5 fold R34 @1024 (umerkang66, `S11a`). Đó là một gói; blob loss riêng không có số. **EMA** 0.998: umerkang66 và ranjeet258 có dùng (`S11b`, `S12`), không có số tách riêng. **Input 3 kênh hiệu chỉnh limb**: theainerd (`S10a`), tushhaaarrrr chuẩn hoá vật lý (`S15`), không có số tách riêng. Code làm phẳng limb đã có sẵn trong `classical.py` |
-| Không đưa vào | **BiCC loss** (`S10b`, +0.005 đến +0.023 ở 4/5 fold, −0.002 ở fold còn lại, không có CI): cần đọc paper và tự cài, rủi ro bug cao, để thành N3b nếu còn thời gian. **Head skeleton/core**: cần thêm target, để sau |
-| Thiết kế | Một run fold 0 (cùng độ phân giải N2 chọn), so ghép cặp với fold 0 của N1. Smoke test trên Mac trước (256 px, 2 epoch; unit test blob loss; checkpoint EMA lưu đúng) |
-| Chi phí | Code ~1 ngày trên Mac. GPU: 1–2 run (~1.3–2.5 h), thêm 4 fold (~5 h) nếu chấp nhận |
-| Tiêu chí | Δ ≥ +0.012 và CI > 0 trên fold 0 → chấp nhận. 0 < Δ < 0.012 → chạy fold 1, chấp nhận nếu CI gộp > 0. Δ ≤ 0 → bỏ |
+| Giả thuyết | Loss chuẩn hoá theo instance (blob Dice + phạt thành phần dự đoán không chạm GT) cộng EMA giảm FP (khoảng cách chính với đội top: FP/TP 0.57 so với 0.42) và cho +0.012 trở lên. Từng cái riêng thì quá nhỏ để đo (§ 3.3) |
+| Bằng chứng | **Blob loss** + head skeleton/core + deep supervision + loss JML1: +0.0092, CI **90%** [+0.006, +0.012], ablation proxy 5 fold R34 @1024 (umerkang66, `S11a`). Đó là một gói; blob loss riêng không có số. **EMA** 0.998: umerkang66 và ranjeet258 có dùng (`S11b`, `S12`), không có số tách riêng. **Thành phần giả kiểu BiCC** (`S10b`, +0.0095 trung bình, tăng ở 4/5 fold, không có CI): blob loss chỉ phạt theo instance GT; "nửa kia" của BiCC phạt từng thành phần dự đoán không chạm GT, nhắm vào ~120 FP không chạm GT nào và FP mảnh vụn |
+| Đã bỏ khỏi gói | **Input hiệu chỉnh limb**: hai phân tích độc lập đo lỗi do vị trí/limb/vết đen < 1% số lỗi (3/794 FP; tỉ lệ không khớp phẳng theo r/R 0.25–0.31), nên không có mục tiêu đo được, lại đổi đường input ở khâu test. **Head skeleton/core**: cần thêm target, để sau |
+| Cài đặt | `filseg.dl`: `instance_labels` (thành phần 8-liên thông của target mềm; thành phần < `inst_min_area` gán −1), `blob_dice_loss` (dạng đóng, scatter_add, Dice từng instance trên cả ảnh với các instance GT khác bị che), `false_component_loss` (thành phần của p > 0.5 có diện tích ≥ min_area và không chạm target > 0; loss = trung bình p trong thành phần), `train_loss`. `scripts/train_unet.py`: `--blob-weight 1.0 --fpc-weight 0.3 --ema 0.998` (`--fpc-thresh`, `--inst-min-area` 0 = 10 px ở 1024, scale theo `--res`). Mặc định giữ nguyên đường code cũ (các run Q3). Checkpoint `model` = trọng số EMA, `model_raw` = trọng số thô. Unit test `tests/test_instance_loss.py` (so với vòng lặp brute-force, gradient, ca rỗng, label khớp sau xoay/lật/crop, EMA lưu/nạp) |
+| Thiết kế | `effb4_v2_s1024_f0` (đã có trong EXPERIMENTS, chưa vào RUN_NAMES) so ghép cặp với `effb4_s1024_f0` (N1): cùng encoder, độ phân giải, 30 epoch, `--val-every 10`, cùng luật chọn checkpoint tốt nhất trong 3, cùng ~141 ảnh fold 0. Nếu G1 chọn 2048 thì thêm `effb4_v2_c2048_f0` (`--res 2048 --crop 1024 --bs 6`) và so với `effb4_c2048_f0` |
+| Lệnh đo | `compare.py n1=outputs/colab/effb4_s1024_f0/probs_val,tune:hyst v2=outputs/colab/effb4_v2_s1024_f0/probs_val,tune:hyst` (bootstrap ghép cặp theo ảnh, cross-tune); `tune:cc` là kiểm tra phụ. Combo tốt nhất nằm ở mép grid thì mở rộng grid cho cả hai nhánh như nhau rồi chạy lại |
+| Chi phí | GPU: 1–2 run (~1.3–2.5 h), thêm 4 fold (~5 h) nếu chấp nhận |
+| Tiêu chí | Δ ≥ +0.012 và CI > 0 trên fold 0 → chấp nhận. 0 < Δ < 0.012 → chạy fold 1 (`effb4_v2_s1024_f1` so với `effb4_s1024_f1`, +1.3 h), chấp nhận nếu CI gộp fold 0+1 > 0. Còn lại → bỏ, giữ N1. Không bao giờ quyết bằng LB |
+| Chẩn đoán cơ chế | Báo cáo, không dùng để quyết: số FP near-miss+partial, FP cô lập (không chạm GT), FN merged/split, IoU TP trung bình (SQ), tỉ lệ 1:n/n:1 ở cả hai nhánh. Chỉ được quy công cho loss instance nếu FP near-miss+partial giảm ≥ 10% hoặc FP cô lập giảm ≥ 20% |
 | Nếu đạt | Chạy 4 fold còn lại; v2 thay N1 làm thành viên U-Net chính |
 | Nếu không | Giữ N1. Không tách gói ra để thử lẻ (không đủ độ nhạy) |
 | Ghi chú cho report | Nếu chấp nhận thì nói rõ đây là gói, không quy công cho từng thành phần |
