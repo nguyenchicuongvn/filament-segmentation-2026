@@ -64,6 +64,15 @@ Val luôn cao hơn LB khoảng 0.03–0.07, nhưng thứ tự giữa các model 
 
 ## Nhật ký
 
+### 2026-10-30 (W-agree, CPU)
+- Thử đặc trưng đồng thuận giữa 5 model holdout cho bộ lọc instance, đăng ký trước, cross-tune cả
+  grid + bộ lọc + ngưỡng (`compare.py ... tune:hyst,filter:base+agree --agree-maps ...`).
+  Đối chứng tái lập đúng 0.4083. Kết quả **âm**: 0.4079, Δ −0.0004 [−0.003, +0.002]; so với bộ lọc
+  17 đặc trưng Δ −0.0001, P>0 0.47. AUC OOF +0.010 nhưng PQ không đổi. Bỏ, không nộp
+  (CSV ở `outputs/wf_cpu/`, mask đã kiểm tra không chồng nhau). Ghi thêm vào sổ cái: H6 (cây quyết
+  định) −0.004 [−0.011, +0.003] → bác bỏ; lỗi vị trí/limb/sunspot < 1%. Log
+  `docs/logs/wf_agree_filter.txt`.
+
 ### 2026-10-29 (chiều)
 - Viết lại docs theo yêu cầu "research tỉ mỉ, có dẫn chứng, plan rõ ràng, theo dõi tiến độ":
   - [RESEARCH.md](RESEARCH.md): mỗi nhận định có mã (`S*` nguồn ngoài, `F*` số đo của mình,

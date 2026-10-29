@@ -156,7 +156,7 @@ Mỗi giả thuyết ứng với một thẻ trong [PLAN § 4](PLAN.md#4-thẻ-t
 | H2 | Độ phân giải gốc (crop @2048) cứu filament nhỏ | F12, F14 (< 800 px: 0.860 → 0.881), S10a, S15 (@2048) | S13 (−0.07), F14 (trần tăng ít), F20 | N2 |
 | H3 | Gói EMA + blob loss + input hiệu chỉnh limb cho +0.01–0.02 | S11a (+0.009, CI 90% > 0), S10a, S11b, S12, S15 (chuẩn hoá vật lý) | S11a là cả một gói (blob loss + head + JML1), không phải blob loss riêng; EMA và input limb chưa có số tách riêng; độ nhạy F24 | N3 |
 | H4 | Detector (Mask R-CNN) giảm FP; ghép với U-Net được +0.02–0.04 | F18 (khoảng cách nằm ở FP), S9a (+0.033 so với U-Net của họ), S9c (bỏ phiếu +0.007–0.012) | U-Net của S9a (0.396) yếu hơn của mình (~0.41); S9c chỉ có CI > 0 ở 3/5 lần chia; tốn code nhiều nhất; đi ngược S6b (phức tạp hoá) | N4 |
-| H6 | Lớp quyết định instance học được (ngưỡng theo từng thành phần, cây thành phần nhiều ngưỡng) tốt hơn bộ lọc GBM hiện tại | S15 (+0.06 so với ngưỡng cố định), S11c | F21 (bộ lọc và hysteresis của mình chỉ +0.004–0.007 và không cộng dồn); không có CI | chưa có thẻ, xét sau G2 |
+| H6 | Lớp quyết định instance học được (ngưỡng theo từng thành phần, cây thành phần nhiều ngưỡng) tốt hơn bộ lọc GBM hiện tại | S15 (+0.06 so với ngưỡng cố định), S11c | F21 (bộ lọc và hysteresis của mình chỉ +0.004–0.007 và không cộng dồn); không có CI | **bác bỏ 30/10**: cây −0.004 [−0.011, +0.003], đồng thuận model −0.0004 [−0.003, +0.002] (EXPERIMENTS § W-agree) |
 | H5 | Khoảng cách val → LB do lệch annotator | mục 3 | không kiểm chứng được | không có thẻ: chấp nhận như ràng buộc |
 
 ## 8. Không được làm

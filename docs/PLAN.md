@@ -160,6 +160,7 @@ hỏi có dùng Kaggle GPU không (30 h/tuần). Không tự ý dùng Kaggle GPU
 |---|---|---|
 | Thêm biến thể hậu xử lý / nộp để dò LB | 9 lượt nộp gần nhất đều trong khoảng 0.35–0.36, đúng như CI dự báo; hậu xử lý đã cạn | [EXPERIMENTS § Tự phản biện](EXPERIMENTS.md#tự-phản-biện-và-kiểm-chứng-2026-10-25--scriptscomparepy) |
 | Ensemble model holdout yếu | Δ −0.0001 [−0.008, +0.008] | `docs/logs/critique_models.txt` |
+| Thêm đặc trưng cho bộ lọc instance (đồng thuận model, cây quyết định H6) | đồng thuận −0.0004 [−0.003, +0.002]; cây −0.004 [−0.011, +0.003]; trên hyst chính bộ lọc 17 đặc trưng cũng 0.000 | `docs/logs/wf_agree_filter.txt` |
 | clDice, CLAHE, pseudo-label test, SimSiam, Mask2Former, SAM | biconcavelens đã thử và kém đi | `S9e` |
 | Closing/dilate mask theo instance, co/giãn cả submission | umerkang66: −0.003 đến −0.016; public 0.37/0.35 | `S11e` |
 | Chuyển nhãn sang frame GONG lân cận | model ngữ nghĩa một mình 0.404 → 0.372; trong hệ thống đầy đủ không đổi | `S9d` |

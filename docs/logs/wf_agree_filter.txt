@@ -1,0 +1,43 @@
+# wf_agree_filter: cross-model agreement features for the instance filter (2026-10-30)
+# Val holdout 213 images, E9a (EffNet-B4 @1024) maps; other models: r34, r34_grp (channel 0), r34_e60, cnxt.
+
+# 1) Kill gate (diagnostic only, selects nothing): 5-fold-by-image OOF ROC-AUC of the clf label,
+#    hyst instances of configs/post_unet1024_effb4_hyst.json
+# OMP_NUM_THREADS=1 python scripts/fp_filter.py --probs outputs/colab/unet1024_effb4/probs_val \
+#   --post configs/post_unet1024_effb4_hyst.json --agree-maps <r34,r34_grp,r34_e60,cnxt probs_val> \
+#   --jobs 4 --out outputs/wf_cpu/fpfilter_unet1024_effb4_hyst_agree.pkl
+213 images, 1379 instances, target clf mean 0.714
+OOF ROC-AUC: base 0.7234  base+agree 0.7334  diff +0.0100
+no filter: pq 0.4103 {'tp': 1401, 'fp': 794, 'fn': 965}
+best: pq 0.4139 at th 0.150 {'tp': 1378, 'fp': 704, 'fn': 988} (no filter 0.4103)
+# (the "best" line above is in-sample threshold selection on OOF scores, not an honest estimate)
+
+# 2) Pre-registered comparison: grid tuned on half A, classifier fitted on half A's instances,
+#    drop threshold chosen on half A (5-fold OOF scores by image, fp_filter PQ sweep), half B scored;
+#    3 random halves x 2 directions (seeds of evaluate_crosstuned); paired bootstrap by image.
+# OMP_NUM_THREADS=1 python scripts/compare.py base=outputs/colab/unet1024_effb4/probs_val,tune:hyst \
+#   filt17=outputs/colab/unet1024_effb4/probs_val,tune:hyst,filter:base \
+#   agree=outputs/colab/unet1024_effb4/probs_val,tune:hyst,filter:base+agree \
+#   --agree-maps outputs/colab/unet1024_r34/probs_val,outputs/colab/unet1024_r34_grp/probs_val,outputs/colab/unet1024_r34_e60/probs_val,outputs/colab/unet1024_cnxt/probs_val \
+#   --jobs 4 --cache outputs/wf_cpu/cache
+evaluated base
+  outputs/colab/unet1024_effb4/probs_val hyst filter:base: (combo, threshold) per split [(22, 0.075), (14, 0.125), (14, 0.075), (19, 0.325), (14, 0.175), (22, -1.0)]
+evaluated filt17
+  outputs/colab/unet1024_effb4/probs_val hyst filter:base+agree: (combo, threshold) per split [(22, 0.325), (14, -1.0), (14, -1.0), (19, 0.125), (14, 0.275), (22, 0.25)]
+evaluated agree
+213 images, 2000 bootstrap resamples
+pipeline                          PQ    TP    FP    FN     diff             95% CI   P>0
+base                          0.4083  1375   753   991
+filt17                        0.4080  1346   695  1020  -0.0003 [-0.0022, +0.0014]  0.35
+agree                         0.4079  1326   654  1040  -0.0004 [-0.0032, +0.0022]  0.36
+
+# 3) Secondary: agree vs filt17 (same command with filt17 first; cached tables)
+213 images, 2000 bootstrap resamples
+pipeline                          PQ    TP    FP    FN     diff             95% CI   P>0
+filt17                        0.4080  1346   695  1020
+agree                         0.4079  1326   654  1040  -0.0001 [-0.0024, +0.0022]  0.47
+
+# Verdict (pre-registered): delta(agree - base) -0.0004 < +0.010 and CI includes 0; delta(agree - filt17)
+# -0.0001, P(>0) 0.47 < 0.90 -> REJECTED. The filters drop ~60-100 FP but lose as many TP; PQ unchanged.
+# 4) Test CSV (not submitted, not a candidate): outputs/wf_cpu/submission_unet1024_effb4_hyst_agree.csv,
+#    177 images, 1160 filaments; all masks pixel-disjoint (checked by decoding every RLE).
