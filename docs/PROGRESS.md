@@ -29,8 +29,8 @@ việc đổi trạng thái.
 | N2: crop @2048 so với @1024, fold 0 | Colab Q3 | ⏳ | G1 30/10 | |
 | P1: `compare.py` scale grid theo độ phân giải | Mac | ✅ 29/10 | trước G1 | diện tích × r², bán kính × r; grid cc thêm ngưỡng 0.2 cho map target mềm. Chạy lại trên E9a ra đúng số cũ (cc 0.4015, hyst 0.4083, Δ +0.0068 [+0.003, +0.011]); mất 8.4 phút cho 213 ảnh @1024 |
 | N3: gói v2 (EMA + blob loss + loss thành phần giả) | nhánh `exp/train-v2` → Colab Q4 | 📝 code + 8 test xong; smoke MPS 256 px 2 epoch (reviewer chạy): loss hữu hạn và giảm, PQ trọng số thô 0.089, EMA ~0 vì trễ ở run ngắn (bình thường, nên giờ ghi cả PQ thô); chưa merge vào main, chờ GPU | G2 01–02/11 | |
-| N4: Mask R-CNN + bỏ phiếu mask | Mac → Colab | 📝 | G3 05/11 (go/no-go) | |
-| N5: metric rubric (torchmetrics Dice, phân bố, 1:n / n:1) | Mac | 📝 | 08/11 | |
+| N4: Mask R-CNN ghép với U-Net | nhánh `exp/maskrcnn` → Colab | 📝 code + 5 test xong; thử @512 trên Mac **âm** (ghép −0.006) | G3 05/11 (go/no-go) | chỉ chạy fold 0 @1024 nếu còn giờ GPU |
+| N5: metric rubric (torchmetrics Dice, phân bố, 1:n / n:1) | nhánh `exp/rubric-metrics` | ✅ 01/11 | 08/11 | E9a: Dice 0.668, 1:n 4.9%, n:1 3.7%; chạy lại trên model final |
 | N6: final, weights fp16, notebook, report | Mac | 📝 | đóng băng 09/11; nộp 15/11 | |
 | Người dùng: số giờ Colab | – | ✅ 29/10 | – | ~25 h L4, đủ cho kế hoạch đầy đủ |
 | Người dùng: GPU Kaggle khi Colab hỏng; YOLO (AGPL) hay Mask R-CNN | – | ❓ | trước G3 (05/11) | |
@@ -63,6 +63,18 @@ Val luôn cao hơn LB khoảng 0.03–0.07, nhưng thứ tự giữa các model 
 được để chọn model (xem [DATA_AND_METRIC.md](DATA_AND_METRIC.md#khoảng-cách-val--lb)).
 
 ## Nhật ký
+
+### 2026-11-01
+- Merge `research/new-solution` và `exp/train-v2` vào main (19 test pass), đóng lại bundle Colab.
+  Q3 chưa chạy (người dùng xác nhận). Hàng đợi mới, 8 run, ~10.5 h L4: ba run fold 0 (N1, N2,
+  v2) trước, rồi v2 fold 1 và N1 fold 1–4. Watcher khởi động lại với danh sách mới. GPU Kaggle chỉ
+  dùng khi Colab lỗi (người dùng quyết định).
+- N4 (nhánh `exp/maskrcnn`): code Mask R-CNN, detector một mình và ghép với U-Net, spec
+  `tune:det` / `tune:fuse` trong `compare.py`, Colab và watcher hỗ trợ run `mrcnn_*`. Thử @512,
+  8 epoch trên Mac (split 70% của E9a): detector một mình 0.250, ghép −0.006 [−0.012, +0.000]. Âm,
+  nhưng detector @512 yếu; chỉ thử @1024 fold 0 nếu còn giờ GPU.
+- N5 (nhánh `exp/rubric-metrics`): `scripts/rubric_metrics.py` (torchmetrics Dice, PQ/SQ/RQ, phân bố
+  Dice/IoU, 1:n / n:1). E9a: Dice 0.668, 1:n 4.9%, n:1 3.7%.
 
 ### 2026-10-30 (workflow nhiều agent)
 - Theo yêu cầu "dùng multi agent để tìm solution mới": 3 agent điều tra (quyết định instance, cách
