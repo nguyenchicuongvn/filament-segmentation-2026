@@ -1,23 +1,32 @@
 """Compare pipelines on the same held-out images with a paired bootstrap over images.
 
-Each spec is  name=probs_dir,post.json[,filter.pkl]  or  name=probs_dir,tune:<mode>.
+Each spec is  name=probs_dir,post.json[,filter.pkl]  or  name=probs_dir,tune:<mode>[,filter:<set>].
 A tune:<mode> spec is cross-tuned: the images are split in two halves, the post-processing grid of
 that mode (GRIDS below) is tuned on one half and scored on the other, both ways, over 3 random
 splits -- an honest estimate for a pipeline whose parameters are tuned on the same val images.
 Without a filter every instance is kept;
 with one, the filter is refitted in 5 folds by image (its saved model was fitted on these very
 images, so using it directly would be in-sample) and its saved threshold is applied to the
-out-of-fold scores. The first spec is the baseline; for every other spec the report gives
+out-of-fold scores. A tune:<mode>,filter:<set> spec also learns the instance filter inside the
+cross-tuning: in each split the grid is tuned on half A, a classifier on the features <set>
+('base' = FEATURES, 'base+agree' = FEATURES + AGREE_FEATURES, which needs --agree-maps) is fitted
+on half A's instances, its drop threshold is chosen on half A (5-fold out-of-fold scores by image,
+PQ sweep of fp_filter.py), and half B is scored with all three; nothing is fitted on the images it
+scores. The first spec is the baseline; for every other spec the report gives
 PQ, the difference to the baseline with a 95% bootstrap interval, and P(difference > 0).
 
 Usage:
   python scripts/compare.py \
       base=outputs/colab/unet1024_effb4/probs_val,configs/post_unet1024_effb4.json \
       filt=outputs/colab/unet1024_effb4/probs_val,configs/post_unet1024_effb4.json,configs/fpfilter_unet1024_effb4.pkl
+  python scripts/compare.py base=outputs/colab/unet1024_effb4/probs_val,tune:hyst \
+      agree=outputs/colab/unet1024_effb4/probs_val,tune:hyst,filter:base+agree \
+      --agree-maps outputs/colab/unet1024_r34/probs_val,outputs/colab/unet1024_r34_grp/probs_val,... --jobs 4
 """
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import pickle
 import random
@@ -32,9 +41,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from filseg.data import load_train, with_maps  # noqa: E402
 from filseg.dl import PostParams, load_maps  # noqa: E402
-from filseg.instfilter import select  # noqa: E402
+from filseg.instfilter import AGREE_FEATURES, FEATURES, select  # noqa: E402
 from filseg.metric import IOU_THRESHOLD  # noqa: E402
-from fp_filter import _image_table, make_model, predict  # noqa: E402
+from fp_filter import _agree_table, _image_table, make_model, predict  # noqa: E402
+
+JOBS: int | None = None        # worker processes (None = all cores)
+CACHE: Path | None = None      # pickles of per-combo stats and filter tables (None = no cache)
+AGREE_MAPS: list[str] = []     # val maps of the 4 other models, for filter:base+agree
+FEATURE_SETS = {"base": FEATURES, "base+agree": FEATURES + AGREE_FEATURES}
 
 
 def image_stats(ious: list[np.ndarray], keep: np.ndarray) -> np.ndarray:
@@ -94,27 +108,137 @@ def _combo_stats(args):
     return np.stack(rows)
 
 
-def evaluate_crosstuned(probs: str, mode: str, stems: list[str], jobs_by_stem: dict,
-                        repeats: int = 3) -> np.ndarray:
-    """Per-image stats when the grid is tuned on the other half of the images (mean over repeats)."""
+def _cached(key: tuple, compute):
+    """compute(), memoised on disk under CACHE by a hash of `key` (always recomputed without CACHE)."""
+    if CACHE is None:
+        return compute()
+    path = CACHE / f"{hashlib.sha1(repr(key).encode()).hexdigest()[:16]}.pkl"
+    if path.exists():
+        return pickle.loads(path.read_bytes())
+    out = compute()
+    CACHE.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(".tmp")
+    tmp.write_bytes(pickle.dumps(out))
+    tmp.replace(path)
+    return out
+
+
+_GRID_MEMO: dict = {}
+
+
+def _grid_stats(probs: str, mode: str, stems: list[str], jobs_by_stem: dict) -> tuple[list, np.ndarray]:
+    """The grid of `mode` and per-image stats of every combo, (n_combos, n_images, 4); computed once
+    per process (several specs on the same maps share it)."""
     import itertools
 
     grid = scale_grid(GRIDS[mode], load_maps(Path(probs), stems[0])[0].shape[0])
     base_mode = {"cc_size": "cc", "hyst_size": "hyst"}.get(mode, mode)
     combos = [PostParams(mode=base_mode, **dict(zip(grid, v)))
               for v in itertools.product(*grid.values())]
-    with ProcessPoolExecutor() as pool:
-        per_combo = np.stack(list(pool.map(_combo_stats, [(probs, c, stems, jobs_by_stem) for c in combos])))
+    key = ("grid", probs, mode, [c.to_dict() for c in combos], stems)
+    if repr(key) not in _GRID_MEMO:
+        def compute():
+            with ProcessPoolExecutor(JOBS) as pool:
+                return np.stack(list(pool.map(_combo_stats, [(probs, c, stems, jobs_by_stem) for c in combos])))
+        _GRID_MEMO[repr(key)] = _cached(key, compute)
+    return combos, _GRID_MEMO[repr(key)]
+
+
+def _splits(n: int, repeats: int = 3):
+    """The cross-tuning splits: tune_on masks of `repeats` random halves, both directions."""
+    for r in range(repeats):
+        half = np.random.default_rng(100 + r).permutation(n) < n // 2
+        yield half
+        yield ~half
+
+
+def evaluate_crosstuned(probs: str, mode: str, stems: list[str], jobs_by_stem: dict,
+                        repeats: int = 3) -> np.ndarray:
+    """Per-image stats when the grid is tuned on the other half of the images (mean over repeats)."""
+    combos, per_combo = _grid_stats(probs, mode, stems, jobs_by_stem)
     out = np.zeros((len(stems), 4))
     chosen = []
-    for r in range(repeats):
-        half = np.random.default_rng(100 + r).permutation(len(stems)) < len(stems) // 2
-        for tune_on in (half, ~half):
-            best = int(np.argmax([pq(per_combo[c][tune_on].sum(0)) for c in range(len(combos))]))
-            chosen.append(best)
-            out[~tune_on] += per_combo[best][~tune_on]
+    for tune_on in _splits(len(stems), repeats):
+        best = int(np.argmax([pq(per_combo[c][tune_on].sum(0)) for c in range(len(combos))]))
+        chosen.append(best)
+        out[~tune_on] += per_combo[best][~tune_on]
     print(f"  {probs} {mode}: combos chosen {[combos[c].to_dict() for c in sorted(set(chosen))][:3]}",
           file=sys.stderr, flush=True)
+    return out / repeats
+
+
+def _filter_tables(probs: str, post: PostParams, stems: list[str], jobs_by_stem: dict,
+                   agree: bool) -> dict:
+    """{stem: (stem, features, label, ious, exp_iou)} of the instances of `post`; with `agree` the
+    AGREE_FEATURES columns (from AGREE_MAPS) follow the FEATURES ones."""
+    key = ("tables", probs, post.to_dict(), stems, AGREE_MAPS if agree else None)
+
+    def compute():
+        jobs = [(probs, post, jobs_by_stem[s][0], s, jobs_by_stem[s][1]) for s in stems]
+        with ProcessPoolExecutor(JOBS) as pool:
+            if agree:
+                rows = pool.map(_agree_table, [j + (AGREE_MAPS,) for j in jobs], chunksize=4)
+            else:
+                rows = pool.map(_image_table, jobs, chunksize=4)
+            return {t[0]: t for t in rows}
+    return _cached(key, compute)
+
+
+def fit_filter(tables: dict, train: list[str], cols: list[int], folds: int = 5) -> tuple:
+    """Classifier fitted on the instances of `train`, and the drop threshold that maximises the
+    PQ of `train` on 5-fold out-of-fold scores by image (the sweep of fp_filter.py)."""
+    tr = [s for s in train if len(tables[s][2])]
+    X = {s: tables[s][1][:, cols] for s in tr}
+    idx = list(range(len(tr)))
+    random.Random(0).shuffle(idx)
+    oof = {}
+    for chunk in np.array_split(idx, folds):
+        te = {tr[i] for i in chunk}
+        fit = [s for s in tr if s not in te]
+        model = make_model("clf").fit(np.concatenate([X[s] for s in fit]),
+                                      np.concatenate([tables[s][2] for s in fit]))
+        for s in te:
+            oof[s] = predict(model, "clf", X[s])
+
+    def pq_at(th):
+        return pq(sum(image_stats(tables[s][3], oof[s] >= th if s in oof else np.ones(len(tables[s][2]), bool))
+                      for s in train))
+
+    best = (pq_at(-1.0), -1.0)
+    for th in np.arange(0.05, 0.75, 0.025):
+        v = pq_at(th)
+        if v > best[0]:
+            best = (v, float(th))
+    model = make_model("clf").fit(np.concatenate([X[s] for s in tr]), np.concatenate([tables[s][2] for s in tr]))
+    return model, best[1]
+
+
+def evaluate_crosstuned_filter(probs: str, mode: str, fset: str, stems: list[str], jobs_by_stem: dict,
+                               repeats: int = 3) -> np.ndarray:
+    """evaluate_crosstuned with an instance filter on the features `fset` also learned on the tuning
+    half: grid params, classifier and threshold all come from half A, half B is scored."""
+    if fset not in FEATURE_SETS:
+        raise SystemExit(f"unknown feature set {fset!r}; choose from {list(FEATURE_SETS)}")
+    agree = fset == "base+agree"
+    if agree and len(AGREE_MAPS) != 4:
+        raise SystemExit("filter:base+agree needs --agree-maps with the 4 other models' val maps")
+    cols = [(FEATURES + AGREE_FEATURES).index(n) for n in FEATURE_SETS[fset]]
+    combos, per_combo = _grid_stats(probs, mode, stems, jobs_by_stem)
+    out = np.zeros((len(stems), 4))
+    tables_of: dict[int, dict] = {}
+    report = []
+    for tune_on in _splits(len(stems), repeats):
+        best = int(np.argmax([pq(per_combo[c][tune_on].sum(0)) for c in range(len(combos))]))
+        if best not in tables_of:
+            tables_of[best] = _filter_tables(probs, combos[best], stems, jobs_by_stem, agree)
+        tables = tables_of[best]
+        model, th = fit_filter(tables, [s for s, t in zip(stems, tune_on) if t], cols)
+        for i in np.nonzero(~tune_on)[0]:
+            t = tables[stems[i]]
+            keep = predict(model, "clf", t[1][:, cols]) >= th if len(t[2]) else np.ones(0, bool)
+            out[i] += image_stats(t[3], keep)
+        report.append((best, round(th, 3)))
+    print(f"  {probs} {mode} filter:{fset}: (combo, threshold) per split {report}", file=sys.stderr, flush=True)
     return out / repeats
 
 
@@ -123,11 +247,13 @@ def evaluate(spec: str, stems: list[str], jobs_by_stem: dict, folds: int = 5) ->
     name, rest = spec.split("=", 1)
     parts = rest.split(",")
     if parts[1].startswith("tune:"):
+        if len(parts) > 2 and parts[2].startswith("filter:"):
+            return evaluate_crosstuned_filter(parts[0], parts[1][5:], parts[2][7:], stems, jobs_by_stem)
         return evaluate_crosstuned(parts[0], parts[1][5:], stems, jobs_by_stem)
     probs, post = parts[0], PostParams(**json.loads(Path(parts[1]).read_text()))
     filt = pickle.loads(Path(parts[2]).read_bytes()) if len(parts) > 2 else None
     jobs = [(probs, post, jobs_by_stem[s][0], s, jobs_by_stem[s][1]) for s in stems]
-    with ProcessPoolExecutor() as pool:
+    with ProcessPoolExecutor(JOBS) as pool:
         tables = {t[0]: t for t in pool.map(_image_table, jobs, chunksize=4)}
     keep = {s: np.ones(len(tables[s][2]), bool) for s in stems}
     if filt:
@@ -150,7 +276,13 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("specs", nargs="+")
     ap.add_argument("--boot", type=int, default=2000)
+    ap.add_argument("--jobs", type=int, help="worker processes (default: all cores)")
+    ap.add_argument("--agree-maps", help="comma-separated val maps of the 4 other models (filter:base+agree)")
+    ap.add_argument("--cache", type=Path, help="directory for cached grid stats and filter tables")
     args = ap.parse_args()
+    global JOBS, CACHE, AGREE_MAPS
+    JOBS, CACHE = args.jobs, args.cache
+    AGREE_MAPS = args.agree_maps.split(",") if args.agree_maps else []
 
     first_probs = args.specs[0].split("=", 1)[1].split(",")[0]
     jobs_by_stem: dict[str, tuple[Path, list]] = {}

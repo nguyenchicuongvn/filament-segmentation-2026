@@ -6,9 +6,17 @@
    that maximises val PQ (IoU matrices are computed once, so a threshold sweep is cheap).
 4. Fit on all val instances and save (model, threshold) for make_submission.py --filter.
 
+With --agree-maps (the other holdout models' val maps, in the order of AGREE_FEATURES) the
+cross-model agreement features are appended, the out-of-fold ROC-AUC of the label is printed
+for FEATURES alone and with them, and the saved filter uses both (make_submission.py then needs
+--agree-maps with the same models' test maps).
+
 Usage:
   python scripts/fp_filter.py --probs outputs/probs/unet768_r34_val --post configs/post_unet768.json \
       --out configs/fpfilter_unet768.pkl
+  python scripts/fp_filter.py --probs outputs/colab/unet1024_effb4/probs_val \
+      --post configs/post_unet1024_effb4_hyst.json --agree-maps outputs/colab/unet1024_r34/probs_val,\
+outputs/colab/unet1024_r34_grp/probs_val,outputs/colab/unet1024_r34_e60/probs_val,outputs/colab/unet1024_cnxt/probs_val
 """
 from __future__ import annotations
 
@@ -23,12 +31,13 @@ from pathlib import Path
 import numpy as np
 from pycocotools import mask as mask_util
 from sklearn.ensemble import HistGradientBoostingClassifier, HistGradientBoostingRegressor
+from sklearn.metrics import roc_auc_score
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from filseg.data import encode_masks, load_gray, load_train, with_maps  # noqa: E402
 from filseg.dl import PostParams, instances_lowres, load_maps, upsample_labels  # noqa: E402
-from filseg.instfilter import FEATURES, instance_features  # noqa: E402
+from filseg.instfilter import AGREE_FEATURES, FEATURES, agreement_features, instance_features  # noqa: E402
 from filseg.metric import IOU_THRESHOLD  # noqa: E402
 
 
@@ -54,6 +63,17 @@ def _image_table(args):
             exp_iou += np.where(hit, m, 0).max(0)
     exp_iou /= max(len(ious), 1)
     return stem, feats, label, ious, exp_iou
+
+
+def _agree_table(args):
+    """_image_table with the cross-model agreement features appended to the features.
+    args: (probs_dir, post, path, stem, gts, agree_dirs)."""
+    probs_dir, post, path, stem, gts, agree_dirs = args
+    stem, feats, label, ious, exp_iou = _image_table((probs_dir, post, path, stem, gts))
+    prob, group = load_maps(Path(probs_dir), stem)
+    inst = instances_lowres(prob, post, group)
+    agree = agreement_features(inst, prob, [load_maps(Path(d), stem)[0] for d in agree_dirs])
+    return stem, np.concatenate([feats, agree], 1), label, ious, exp_iou
 
 
 def pq_with_keep(tables, keep_by_stem) -> tuple[float, dict]:
@@ -87,15 +107,22 @@ def main() -> None:
     ap.add_argument("--folds", type=int, default=5)
     ap.add_argument("--target", choices=["clf", "iou"], default="clf",
                     help="clf: P(match); iou: expected IoU over annotators (keep above ~PQ/2)")
+    ap.add_argument("--agree-maps", help="comma-separated val maps of the 4 other models (AGREE_FEATURES)")
+    ap.add_argument("--jobs", type=int, help="worker processes (default: all cores)")
     args = ap.parse_args()
+    agree = args.agree_maps.split(",") if args.agree_maps else None
+    names = FEATURES + AGREE_FEATURES if agree else FEATURES
 
     post = PostParams(**json.loads(args.post.read_text()))
     by_img: dict[str, tuple[Path, list]] = {}
     for it in with_maps(load_train(), args.probs):  # val split, a fold, or all images (out-of-fold)
         by_img.setdefault(it.image_id, (it.path, []))[1].append(it.gt_rles)
     jobs = [(str(args.probs), post, p, s, gts) for s, (p, gts) in sorted(by_img.items())]
-    with ProcessPoolExecutor() as pool:
-        tables = list(pool.map(_image_table, jobs, chunksize=4))
+    with ProcessPoolExecutor(args.jobs) as pool:
+        if agree:
+            tables = list(pool.map(_agree_table, [j + (agree,) for j in jobs], chunksize=4))
+        else:
+            tables = list(pool.map(_image_table, jobs, chunksize=4))
 
     stems = [t[0] for t in tables]
     X = np.concatenate([t[1] for t in tables])
@@ -109,10 +136,18 @@ def main() -> None:
     fold_of = np.empty(len(stems), int)
     for f, chunk in enumerate(np.array_split(idx, args.folds)):
         fold_of[chunk] = f
-    oof = np.zeros(len(y))
-    for f in range(args.folds):
-        te = fold_of[owner] == f
-        oof[te] = predict(make_model(args.target).fit(X[~te], y[~te]), args.target, X[te])
+    def oof_scores(cols):
+        out = np.zeros(len(y))
+        for f in range(args.folds):
+            te = fold_of[owner] == f
+            out[te] = predict(make_model(args.target).fit(X[~te][:, cols], y[~te]), args.target, X[te][:, cols])
+        return out
+
+    oof = oof_scores(slice(None))
+    if agree and args.target == "clf":
+        auc_base = roc_auc_score(y, oof_scores(slice(0, len(FEATURES))))
+        auc_agree = roc_auc_score(y, oof)
+        print(f"OOF ROC-AUC: base {auc_base:.4f}  base+agree {auc_agree:.4f}  diff {auc_agree - auc_base:+.4f}")
 
     def keep_at(th):
         out, start = {}, 0
@@ -137,8 +172,9 @@ def main() -> None:
         model = make_model(args.target).fit(X, y)
         args.out.parent.mkdir(parents=True, exist_ok=True)
         with open(args.out, "wb") as fh:
-            pickle.dump({"model": model, "kind": args.target, "threshold": best[1], "features": FEATURES,
-                         "post": post.to_dict(), "cv_pq": best[0], "base_pq": base}, fh)
+            pickle.dump({"model": model, "kind": args.target, "threshold": best[1], "features": names,
+                         "post": post.to_dict(), "cv_pq": best[0], "base_pq": base,
+                         **({"agree_maps": agree} if agree else {})}, fh)
         print("->", args.out)
 
 

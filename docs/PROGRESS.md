@@ -64,6 +64,26 @@ Val luôn cao hơn LB khoảng 0.03–0.07, nhưng thứ tự giữa các model 
 
 ## Nhật ký
 
+### 2026-10-30 (workflow nhiều agent)
+- Theo yêu cầu "dùng multi agent để tìm solution mới": 3 agent điều tra (quyết định instance, cách
+  train, pháp y lỗi) → judge → 2 build trên nhánh riêng → 2 reviewer. Không dùng GPU. Kết quả ở
+  [RESEARCH § 10](RESEARCH.md#10-workflow-nhiều-agent-3010-tìm-ý-tưởng-cải-thiện), báo cáo nguyên
+  văn ở `docs/logs/wf30/`.
+- Kết quả chính: tầng chọn instance đã cạn (H6 −0.004 dù oracle +0.125; bộ lọc đồng thuận −0.0004).
+  Phần mất lớn nhất là bất đồng giữa annotator (FP khớp người khác 29%, FN chỉ một người vẽ 20%).
+  Phần model gỡ được: đường biên, cách chia instance, ~120 FP giả.
+- Nhánh: `exp/agree-filter` (âm, code harness dùng lại được), `exp/train-v2` (N3', đã sửa theo
+  review, chờ GPU), `research/new-solution` (docs + script + log). Chưa merge vào main.
+
+### 2026-10-30 (W-agree, CPU)
+- Thử đặc trưng đồng thuận giữa 5 model holdout cho bộ lọc instance, đăng ký trước, cross-tune cả
+  grid + bộ lọc + ngưỡng (`compare.py ... tune:hyst,filter:base+agree --agree-maps ...`).
+  Đối chứng tái lập đúng 0.4083. Kết quả **âm**: 0.4079, Δ −0.0004 [−0.003, +0.002]; so với bộ lọc
+  17 đặc trưng Δ −0.0001, P>0 0.47. AUC OOF +0.010 nhưng PQ không đổi. Bỏ, không nộp
+  (CSV ở `outputs/wf_cpu/`, mask đã kiểm tra không chồng nhau). Ghi thêm vào sổ cái: H6 (cây quyết
+  định) −0.004 [−0.011, +0.003] → bác bỏ; lỗi vị trí/limb/sunspot < 1%. Log
+  `docs/logs/wf_agree_filter.txt`.
+
 ### 2026-10-29 (chiều)
 - Viết lại docs theo yêu cầu "research tỉ mỉ, có dẫn chứng, plan rõ ràng, theo dõi tiến độ":
   - [RESEARCH.md](RESEARCH.md): mỗi nhận định có mã (`S*` nguồn ngoài, `F*` số đo của mình,

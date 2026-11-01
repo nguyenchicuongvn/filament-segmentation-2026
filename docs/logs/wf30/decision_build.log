@@ -1,0 +1,8 @@
+0 20110109104734Ch
+20 20111107063154Uh
+40 20120430063154Uh
+60 20130407063154Uh
+80 20131019080114Th
+100 20140720195834Ch
+/Users/dybala/.local/share/uv/python/cpython-3.12.14-macos-aarch64-none/lib/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 5 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '

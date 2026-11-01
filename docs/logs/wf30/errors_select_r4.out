@@ -1,0 +1,7 @@
+images 213 nodes 16156
+baseline (real hyst pipeline) PQ 0.4103
+base-in-tree PQ 0.4119 vs real [np.float64(0.0017), np.float64(-0.0011), np.float64(0.0046)]
+ORACLE selection PQ 0.5352 (ceiling for any per-node choice on this tree)
+all nodes at level 0.4: PQ 0.3941
+all nodes at level 0.5: PQ 0.3960
+all nodes at level 0.6: PQ 0.3966

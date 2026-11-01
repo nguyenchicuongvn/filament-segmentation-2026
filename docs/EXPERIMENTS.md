@@ -39,6 +39,10 @@ Thí nghiệm mới (từ 29/10) phải có thẻ đăng ký trước trong [PLA
 | E12–E14 | 25–28/10 | hàng đợi Colab thứ hai (11 run fold) | – | – | – | **không ra kết quả** (hàng đợi chết, nghi bug cache) | – |
 | N1 | 29/10– | 5 fold EffNet-B4 @1024 + target mềm | – | ⏳ | | baseline B1 cho OOF | |
 | N2 | 29/10– | crop 1024 @2048, fold 0 | N1 fold 0 | ⏳ | | tiêu chí: Δ ≥ +0.012, CI > 0 | |
+| W-agree | 30/10 | bộ lọc instance + 8 đặc trưng đồng thuận giữa 5 model holdout (cross-tune cả grid, bộ lọc và ngưỡng) | E9a hyst cross-tune (0.4083) | −0.0004 (0.4079) | [−0.0032, +0.0022] | **bỏ** (tiêu chí Δ ≥ +0.010; so với bộ lọc 17 đặc trưng −0.0001 [−0.002, +0.002]; reviewer đổi seed chia fold OOF thì +0.0015 [−0.001, +0.004], tức thứ hạng giữa các biến thể bộ lọc nằm trong ±0.0015 nhiễu seed). AUC OOF 0.723 → 0.733 nhưng PQ không đổi | – |
+| W-filt17 | 30/10 | bộ lọc 17 đặc trưng, học trong cross-tune (trên hysteresis chặt) | E9a hyst cross-tune | −0.0003 (0.4080) | [−0.0022, +0.0014] | trên hyst bộ lọc không còn lợi (FP −58, TP −29) | – |
+| H6-tree | 30/10 | lớp quyết định học được: cây thành phần 0.1–0.95, GBM 20 đặc trưng OOF 5 fold + DP, λ cross-tune | E9a hyst, 213 ảnh | −0.0043 | [−0.011, +0.003] | **H6 bác bỏ**; oracle +0.125. Hai agent làm độc lập, code khác nhau; agent thứ hai (123 ảnh, máy quá tải): −0.004 [−0.013, +0.005]. Log `docs/logs/wf30/errors_select_fast_r4.out`, `decision_learned.log`; script `scripts/research/wf30/` | – |
+| loc-err | 30/10 | lỗi do vị trí / gần limb / sunspot | – | 3/794 FP; 1/2,194 dự đoán ngoài ±70° | – | không đáng xử lý riêng; bỏ input hiệu chỉnh limb khỏi N3. Log `docs/logs/wf30/errors_analyze.out`, `training_summary_effb4.txt` | – |
 
 ## Tổng hợp
 
@@ -366,3 +370,26 @@ Benchmark: EfficientNet-B4, crop 1024 từ ảnh 2048, bs 4, MPS (M5, 32 GB).
 
 → **Không khả thi trên Mac**. Train fold phải chạy trên GPU (Colab, hoặc Kaggle nếu người dùng đồng
 ý). Mac chỉ dùng để infer, tune và phân tích.
+
+## W-agree (2026-10-30): đặc trưng đồng thuận giữa các model cho bộ lọc instance — kết quả âm
+
+Câu hỏi: 4 model holdout khác (R34, R34 + group, R34 60 epoch, ConvNeXt) có cho bộ lọc giữ/bỏ
+instance một tín hiệu mà 17 đặc trưng hiện có không có? Tham số đăng ký trước, không chọn đặc
+trưng sau khi xem kết quả.
+
+- 8 đặc trưng (`AGREE_FEATURES`, `instfilter.agreement_features`, ở 1024 px): trung bình p của
+  từng model trong instance, độ lệch chuẩn của 5 trung bình, min của 4, tỉ lệ pixel có ≥ 3/5 model
+  p > 0.5, IoU tốt nhất trung bình với thành phần liên thông (p > 0.5, ≥ 50 px) của từng model.
+  Không thêm vào `FEATURES` (bộ lọc cũ vẫn load được).
+- `compare.py` spec mới `tune:<mode>,filter:<base|base+agree>`: trong mỗi split (3 lần × 2 chiều)
+  grid, classifier và ngưỡng bỏ (sweep PQ trên điểm OOF 5 fold trong nửa A) đều học trên nửa A,
+  chấm nửa B. Không có gì được fit trên ảnh nó chấm.
+- Cổng rẻ: AUC OOF 0.7234 → 0.7334 (+0.010, đúng ngưỡng).
+- Kết quả (213 ảnh, 2000 bootstrap): đối chứng hyst 0.4083 (tái lập đúng); bộ lọc 17 đặc trưng
+  0.4080 (−0.0003 [−0.002, +0.001]); + đồng thuận 0.4079 (−0.0004 [−0.003, +0.002]); đồng thuận so
+  với 17 đặc trưng −0.0001 [−0.002, +0.002], P>0 0.47. Bộ lọc bỏ 60–100 FP nhưng mất số TP tương
+  đương → PQ không đổi.
+- **Kết luận**: bỏ. AUC tăng 0.01 không chuyển thành PQ; trên hysteresis chặt, bộ lọc instance nói
+  chung không còn lợi (lợi +0.004 cũ đo trên cc). Cùng với H6 (cây quyết định −0.004 [−0.011,
+  +0.003], dù oracle +0.125) và lỗi vị trí/limb/sunspot < 1%: tầng chọn instance trên map 1024 hiện
+  tại đã cạn; phải cải thiện ở map (N1–N4). Log: `docs/logs/wf_agree_filter.txt`.

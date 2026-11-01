@@ -156,7 +156,7 @@ Mỗi giả thuyết ứng với một thẻ trong [PLAN § 4](PLAN.md#4-thẻ-t
 | H2 | Độ phân giải gốc (crop @2048) cứu filament nhỏ | F12, F14 (< 800 px: 0.860 → 0.881), S10a, S15 (@2048) | S13 (−0.07), F14 (trần tăng ít), F20 | N2 |
 | H3 | Gói EMA + blob loss + input hiệu chỉnh limb cho +0.01–0.02 | S11a (+0.009, CI 90% > 0), S10a, S11b, S12, S15 (chuẩn hoá vật lý) | S11a là cả một gói (blob loss + head + JML1), không phải blob loss riêng; EMA và input limb chưa có số tách riêng; độ nhạy F24 | N3 |
 | H4 | Detector (Mask R-CNN) giảm FP; ghép với U-Net được +0.02–0.04 | F18 (khoảng cách nằm ở FP), S9a (+0.033 so với U-Net của họ), S9c (bỏ phiếu +0.007–0.012) | U-Net của S9a (0.396) yếu hơn của mình (~0.41); S9c chỉ có CI > 0 ở 3/5 lần chia; tốn code nhiều nhất; đi ngược S6b (phức tạp hoá) | N4 |
-| H6 | Lớp quyết định instance học được (ngưỡng theo từng thành phần, cây thành phần nhiều ngưỡng) tốt hơn bộ lọc GBM hiện tại | S15 (+0.06 so với ngưỡng cố định), S11c | F21 (bộ lọc và hysteresis của mình chỉ +0.004–0.007 và không cộng dồn); không có CI | chưa có thẻ, xét sau G2 |
+| H6 | Lớp quyết định instance học được (ngưỡng theo từng thành phần, cây thành phần nhiều ngưỡng) tốt hơn bộ lọc GBM hiện tại | S15 (+0.06 so với ngưỡng cố định), S11c | F21 (bộ lọc và hysteresis của mình chỉ +0.004–0.007 và không cộng dồn); không có CI | **bác bỏ 30/10**: cây −0.004 [−0.011, +0.003], đồng thuận model −0.0004 [−0.003, +0.002] (EXPERIMENTS § W-agree) |
 | H5 | Khoảng cách val → LB do lệch annotator | mục 3 | không kiểm chứng được | không có thẻ: chấp nhận như ràng buộc |
 
 ## 8. Không được làm
@@ -188,3 +188,57 @@ Mỗi giả thuyết ứng với một thẻ trong [PLAN § 4](PLAN.md#4-thẻ-t
 | Link REPORT của umerkang66 (`/blob/main/`) | 404; đúng là `/blob/master/` | đã sửa |
 | (thiếu) | tushhaaarrrr OOF 0.4597, public 0.40; lớp quyết định học được +0.06 | thêm H6 |
 | `make_submission.py` assert mask rời nhau | không có assert; mask rời nhau vì được dựng từ một ảnh nhãn | N4 phải thêm assert |
+
+## 10. Workflow nhiều agent 30/10: tìm ý tưởng cải thiện
+
+**Cách làm**: 3 agent điều tra độc lập, mỗi agent một góc nhìn (lớp quyết định instance, cách train,
+pháp y lỗi) → 1 agent "judge" phản biện, chấm điểm và chọn → 2 agent build trên nhánh riêng
+(`exp/agree-filter`, `exp/train-v2`) → 2 reviewer độc lập tìm cách bác bỏ. Không dùng GPU. Báo cáo
+nguyên văn của từng agent: `docs/logs/wf30/` (`ideation_*.md`, `judge.md`, `builds_reviews.md`).
+Script: `scripts/research/wf30/`. Mọi số đo trên E9a holdout (213 ảnh, hysteresis chặt, PQ 0.4103
+in-sample / 0.4083 cross-tune).
+
+### 10.1 Phát hiện mới (đo trực tiếp)
+
+| Mã | Nhận định | Số liệu | Nguồn |
+|---|---|---|---|
+| F26 | Với mask rời nhau, mỗi bản gán nhãn có TP + ½FP + ½FN = ½(n_pred + n_gt). Vì vậy luật giữ instance tối ưu là: **giữ nếu IoU khớp trung bình qua các annotator của ảnh > PQ/2 (~0.21)**. Trên cây thành phần, lời giải tối ưu là antichain trọng số lớn nhất (DP) | đại số, kiểm bằng code | `ideation_decision.md` |
+| F27 | **Trần oracle của tầng chọn instance rất cao, nhưng không học được**. Oracle: giữ/bỏ +0.058, chọn trên cây +0.125. Học được: −0.004 [−0.011, +0.003], hai agent độc lập, code khác nhau. Bộ dự đoán IoU chỉ đạt R² 0.26 (cần ~0.85); DP chọn đúng các nút bị ước lượng quá cao | oracle 0.535 so với 0.410 | `errors_select_fast_r4.out`, `decision_learned.log` |
+| F28 | **FP gồm gì** (794 bản gán nhãn): khớp GT của **annotator khác** cùng ảnh 28.7% (bỏ thì mất TP của người kia); FP "mồ côi" trong đĩa 21.3%; mảnh vụn nằm trong một GT 18.6%; gần trúng nhưng **mảnh quá** 18.0%; gần trúng nhưng béo quá 6.5%; gộp ≥ 2 GT 5.4%; limb/sunspot/ngoài ±70°: 3 FP (0.4%). Chỉ 120 FP (15%) không chạm GT của bất kỳ ai | PQ nếu bỏ hết từng nhóm: +0.022 / +0.016 / +0.014 / +0.013 / +0.005 / +0.004 | `errors_analyze.out`, `training_summary_effb4.txt` |
+| F29 | **FN gồm gì** (965): sót ở ảnh 1 annotator 22.2% (trung vị 608 px); sót filament chỉ một người vẽ ở ảnh nhiều annotator 19.7%; gần trúng mảnh quá 14.5% (trung vị 1,816 px; diện tích dự đoán/GT 0.58); bị gộp vào filament bên cạnh 14.2%; gần trúng béo quá 9.7%; sót dù có người khác cũng vẽ chỉ **6.5%**; bị cắt đôi 6.0% | | `errors_analyze.out` |
+| F30 | **Filament nhỏ bị sót phần lớn do khác biệt giữa người với người**: recall của người với người cho GT < 400 px là 0.33 (47% không chạm), của model 0.32; GT nhỏ có người khác cũng vẽ thì model bắt 0.50. Chỉ 37% GT < 400 px ở ảnh nhiều annotator được người thứ hai vẽ. Lưu ý: số của người và của model đo trên hai tập ảnh khác nhau | | `training_summary_effb4.txt` |
+| F31 | Lỗi "gần trúng" phần lớn cũng là bất đồng: ở ảnh nhiều annotator, 59% dự đoán gần trúng lại là TP với một annotator khác | | `ideation_errors.md` |
+| F32 | Đổi encoder R34 → EffNet-B4 làm giảm FP cô lập (291 → 257) và FP một phần (189 → 157), **không** giảm FP gần trúng (301 → 289) hay FP gộp (66 → 67). Encoder tốt hơn giúp phân biệt, không giúp đường biên hay cách nhóm | | `training_kinds_*.txt` |
+| F33 | Trần nếu sửa hết từng nhóm (các nhóm chồng nhau, không cộng được): mọi gần trúng thành TP IoU 0.55 → +0.056 (mảnh quá +0.034, béo quá +0.023); ghép các ca bị cắt đôi +0.021; tách các ca bị gộp +0.028; nâng mọi TP lên IoU ≥ 0.70 → +0.033 | | `errors_analyze.out` |
+| F34 | Độ tự tin của map phân biệt kém: AUC giữa dự đoán trúng và không trúng là 0.72; 75% dự đoán ở cả hai nhóm có đỉnh p = 1.0. Trên hysteresis chặt, bộ lọc 17 đặc trưng học trong cross-tune cho −0.0003; thêm đặc trưng đồng thuận giữa 5 model cho −0.0004 [−0.003, +0.002] | | `docs/logs/wf_agree_filter.txt` |
+| F35 | Lịch sử train E9a dao động: val PQ ep10 0.352, ep15 0.342 (FP 1,729), ep20 0.375, ep25/30 0.381 | | `unet1024_effb4.history.csv` |
+
+### 10.2 Kết luận rút ra
+
+1. **Tầng hậu xử lý / chọn instance trên map hiện tại đã cạn**, có bằng chứng trực tiếp (F27, F34,
+   F21). Mọi cải thiện còn lại phải đến từ **map tốt hơn**.
+2. Phần mất lớn nhất **không gỡ được bằng model**: FP khớp annotator khác (28.7%), FN chỉ một người
+   vẽ (19.7%) và phần lớn filament nhỏ bị sót (F30). Đây là nhiễu gán nhãn; mức người với người chỉ
+   0.34 (F6).
+3. Phần model **có thể** gỡ: đường biên ở filament vừa và lớn (mảnh quá, F29), cách chia instance
+   (gộp, cắt, mảnh vụn: F28, F29), và ~120 FP giả thật sự. Trần lý thuyết của các nhóm này là
+   +0.02 đến +0.05 mỗi nhóm (F33). Nhưng thực tế khó vượt +0.01–0.02, vì bất đồng giữa annotator
+   chiếm luôn một phần các nhóm này (F31).
+4. **Kỳ vọng trung thực**: không có ý tưởng nào đã kiểm chứng hứa hẹn bước nhảy lớn (≥ +0.03). Con
+   đường thực tế lên ~0.43–0.45 OOF là cộng dồn: N1 (5 fold) + N3' (loss instance) + có thể N4
+   (detector cho cách chia instance). Mỗi bước chỉ được nhận khi qua tiêu chí ở PLAN.
+
+### 10.3 Bảng ý tưởng và quyết định
+
+| Ý tưởng | Góc | Điểm judge | Quyết định | Lý do / bằng chứng |
+|---|---|---|---|---|
+| Loss chuẩn hoá theo instance: blob Dice + phạt thành phần dự đoán không chạm GT (kiểu BiCC) + EMA, trên công thức N1 | train | 6 | **Build** → `exp/train-v2`, thẻ N3' | nhắm vào FP mảnh vụn/cô lập (F28) và đường biên; bằng chứng S11a, S10b; review: cần ghi PQ trọng số thô, ngưỡng 0.35, chạy 2 fold vì nhiễu seed |
+| Bỏ input hiệu chỉnh limb và mục tiêu recall filament nhỏ | train / lỗi | 6.5 | nhận (chỉ đổi plan) | F28 (lỗi vị trí 0.4%), F30 |
+| Lớp quyết định học được (H6) | quyết định | 6 | **bác bỏ** (kết quả âm có giá trị) | F27 |
+| Ngừng hậu xử lý, bỏ prior vị trí/sunspot | lỗi | 5.5 | nhận (chỉ đổi plan) | F28, F34 |
+| Dùng nhóm lỗi (gần trúng, cách chia) làm chẩn đoán cơ chế cho N3 | lỗi | 5.5 | nhận, đưa vào thẻ N3' | F29, F33; không dùng để quyết định |
+| Siết G1 (N2): N2 phải giảm nhóm FN "có người khác vẽ" và "béo quá", không chỉ PQ | lỗi | 5 | nhận, đưa vào thẻ N2 | F30: phần lớn filament nhỏ bị sót là do bất đồng |
+| Đặc trưng đồng thuận giữa các model cho bộ lọc | quyết định | 3.5 | **Build** → `exp/agree-filter`: **âm** | −0.0004 [−0.003, +0.002] (F34) |
+| Mask R-CNN cho lỗi chia instance (N4) | train / lỗi | 3.5 / 3 | hoãn, giữ cổng G3 | nhóm gộp + cắt chiếm ~25% FN; bằng chứng ngoài chỉ có một số (S9a) và model của họ yếu hơn của mình |
+| Chạy lại oracle/cây trên map OOF của N1 | quyết định | 3 | hoãn, chỉ khi CPU rảnh | chẩn đoán cho report |
+| Train có điều kiện theo annotator (style head) | train | 1.5 | **loại** | không có bằng chứng; annotator của test không biết (S7) |

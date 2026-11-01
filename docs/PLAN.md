@@ -88,7 +88,7 @@ Trạng thái: ⏳ đang chạy/chờ · 📝 chuẩn bị · ✅ xong · ❌ b�
 | Thiết kế | `effb4_c2048_f0` so với `effb4_s1024_f0`, cùng 141 ảnh fold 0, cross-tune grid đã scale theo độ phân giải |
 | Việc cần làm trước | **P1**: `compare.py` phải scale `min_area`/`group_radius` theo độ phân giải map (grid hiện tại tính cho map 1024; watcher đã scale nhưng compare chưa) |
 | Chi phí | 1 run (~1.5 h, đã xếp trong Q3) |
-| Tiêu chí | Δ ≥ +0.012 và CI > 0 → **chấp nhận** |
+| Tiêu chí | Δ ≥ +0.012 và CI > 0 → **chấp nhận**. Thêm điều kiện (workflow 30/10, RESEARCH F30): N2 phải giảm nhóm FN "sót dù có người khác vẽ" và "gần trúng béo quá" (`scripts/research/wf30/errors/`), không chỉ PQ; vì phần lớn filament nhỏ bị sót là do bất đồng giữa annotator, PQ tăng mà các nhóm này không đổi thì nghi nhiễu. Lưu ý: chỉ một cặp run trên một fold, nên không loại được nhiễu seed; nếu Δ vừa qua ngưỡng thì chạy thêm fold 1 @2048 trước khi chạy cả 5 fold |
 | Nếu đạt | Chạy fold 1–4 @2048 (~6–7 h) và dùng làm công thức chính. N3 cũng làm ở @2048 |
 | Nếu không | Giữ @1024 (rẻ hơn), dồn giờ GPU cho N3/N4. Nếu 0 < Δ < 0.012 thì có thể dùng làm thành viên ensemble khi còn giờ |
 
@@ -160,10 +160,25 @@ hỏi có dùng Kaggle GPU không (30 h/tuần). Không tự ý dùng Kaggle GPU
 |---|---|---|
 | Thêm biến thể hậu xử lý / nộp để dò LB | 9 lượt nộp gần nhất đều trong khoảng 0.35–0.36, đúng như CI dự báo; hậu xử lý đã cạn | [EXPERIMENTS § Tự phản biện](EXPERIMENTS.md#tự-phản-biện-và-kiểm-chứng-2026-10-25--scriptscomparepy) |
 | Ensemble model holdout yếu | Δ −0.0001 [−0.008, +0.008] | `docs/logs/critique_models.txt` |
+| Thêm đặc trưng cho bộ lọc instance (đồng thuận model, cây quyết định H6) | đồng thuận −0.0004 [−0.003, +0.002]; cây −0.004 [−0.011, +0.003]; trên hyst chính bộ lọc 17 đặc trưng cũng 0.000 | `docs/logs/wf_agree_filter.txt` |
 | clDice, CLAHE, pseudo-label test, SimSiam, Mask2Former, SAM | biconcavelens đã thử và kém đi | `S9e` |
 | Closing/dilate mask theo instance, co/giãn cả submission | umerkang66: −0.003 đến −0.016; public 0.37/0.35 | `S11e` |
 | Chuyển nhãn sang frame GONG lân cận | model ngữ nghĩa một mình 0.404 → 0.372; trong hệ thống đầy đủ không đổi | `S9d` |
 | MAGFiLO 1.0 công khai, mask chồng nhau, tune theo LB | Cấm hoặc vô nghĩa | `S1`, `S3` |
+
+## 6b. Kết quả workflow nhiều agent 30/10
+
+Chi tiết ở [RESEARCH § 10](RESEARCH.md#10-workflow-nhiều-agent-3010-tìm-ý-tưởng-cải-thiện). Tóm tắt
+cho kế hoạch:
+- Tầng chọn instance trên map hiện tại đã cạn: H6 bị bác bỏ (−0.004, oracle +0.125 không học
+  được), bộ lọc đồng thuận model cho −0.0004. **Không làm thêm hậu xử lý.**
+- N3 đổi thành **N3'** (nhánh `exp/train-v2`): blob Dice + phạt thành phần không chạm GT + EMA; bỏ
+  input limb (lỗi vị trí chỉ 0.4%). Tiêu chí mới: luôn chạy fold 0 và fold 1, vì CI bootstrap không
+  tính nhiễu seed.
+- N2 có thêm điều kiện về nhóm lỗi (xem thẻ N2).
+- N4 giữ cổng G3. Lỗi gộp/cắt chiếm ~25% FN là mục tiêu của nó.
+- Kỳ vọng trung thực: các bước còn lại cộng lại khoảng +0.01–0.03 OOF; chưa có ý tưởng nào hứa hẹn
+  bước nhảy lớn.
 
 ## 7. Cần người dùng quyết định
 

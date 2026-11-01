@@ -1,0 +1,8 @@
+images 123
+baseline hyst (fixed config, in-sample tuned): PQ 0.4156 TP 1073 FP 581 FN 720
+annotators per image: [ 0 69 33 21]
+r0 in-sample tau curve: 0.10:0.3949 0.13:0.4011 0.16:0.4065 0.19:0.4099 0.22:0.4123 0.25:0.4117 0.28:0.4097 0.31:0.4114 0.34:0.4116
+LEARNED tree selector fam=r0 (OOF GBM, tau cross-tuned) PQ 0.4109 TP  1064 FP   614 FN   729 d -0.0047 [-0.0160,+0.0059]
+r4 in-sample tau curve: 0.10:0.3953 0.13:0.4004 0.16:0.4060 0.19:0.4094 0.22:0.4099 0.25:0.4085 0.28:0.4107 0.31:0.4108 0.34:0.4134
+LEARNED tree selector fam=r4 (OOF GBM, tau cross-tuned) PQ 0.4118 TP  1032 FP   523 FN   761 d -0.0038 [-0.0129,+0.0054]
+LEARNED keep/drop on hyst instances (OOF, tau xtuned) PQ 0.4146 TP  1035 FP   509 FN   758 d -0.0010 [-0.0056,+0.0035]
