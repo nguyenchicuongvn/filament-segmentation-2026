@@ -162,8 +162,9 @@ class SoftDataset(Dataset):
     """
 
     def __init__(self, groups: list[list[TrainImage]], res: int, augment: bool, crop: int = 0,
-                 fg_frac: float = 0.7):
+                 fg_frac: float = 0.7, instances: bool = False, inst_min_area: int = 10):
         self.groups, self.res, self.augment, self.crop, self.fg_frac = groups, res, augment, crop, fg_frac
+        self.instances, self.inst_min_area = instances, inst_min_area
 
     def __len__(self) -> int:
         return len(self.groups)
@@ -191,7 +192,27 @@ class SoftDataset(Dataset):
                 img, mask = img[:, ::-1], mask[:, :, ::-1]
             img = np.clip(img, 0, 1) ** float(rng.uniform(0.7, 1.4))
             img = img * float(rng.uniform(0.8, 1.2)) + float(rng.uniform(-0.08, 0.08))
-        return torch.from_numpy(np.ascontiguousarray(img)[None]), torch.from_numpy(np.ascontiguousarray(mask))
+        x, y = torch.from_numpy(np.ascontiguousarray(img)[None]), torch.from_numpy(np.ascontiguousarray(mask))
+        if not self.instances:
+            return x, y
+        # labels of the final (cropped, rotated, flipped) target, so they stay aligned with it
+        lab = instance_labels(np.ascontiguousarray(mask[0]), self.inst_min_area)
+        return x, y, torch.from_numpy(lab.astype(np.int64)[None])
+
+
+def instance_labels(soft: np.ndarray, min_area: int) -> np.ndarray:
+    """8-connected components of soft > 0 as int32 labels 1..n (background 0). Components smaller
+    than min_area get -1: they still count as "another instance" in the blob loss of the others
+    but have no blob term of their own."""
+    n, lab, stats, _ = cv2.connectedComponentsWithStats((soft > 0).astype(np.uint8), connectivity=8)
+    small = stats[:, cv2.CC_STAT_AREA] < min_area
+    small[0] = False
+    valid = ~small
+    valid[0] = False
+    lut = np.zeros(n, np.int32)
+    lut[valid] = np.arange(1, int(valid.sum()) + 1)
+    lut[small] = -1
+    return lut[lab]
 
 
 def bce_dice_loss(logits: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
@@ -201,6 +222,78 @@ def bce_dice_loss(logits: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
     inter = (p * target).sum((2, 3))
     dice = 1 - (2 * inter + 1) / (p.sum((2, 3)) + target.sum((2, 3)) + 1)
     return bce + dice.mean()
+
+
+def blob_dice_loss(logits: torch.Tensor, target: torch.Tensor, labels: torch.Tensor,
+                   eps: float = 1.0) -> torch.Tensor:
+    """Blob loss (instance-normalised soft Dice), channel 0, in closed form.
+
+    For instance k of a sample, Dice is computed over the whole image with every other target
+    instance (labels != 0 and != k, including the -1 small ones) masked out of both prediction and
+    target, so a small filament weighs as much as a large one and a false blob in the background
+    lowers every instance's Dice. The loss is the mean of 1 - Dice over all instances in the batch.
+    """
+    p = torch.sigmoid(logits[:, 0]).flatten(1)
+    s = target[:, 0].flatten(1).to(p.dtype)
+    lab = labels[:, 0].flatten(1).to(p.device).long()
+    n = int(lab.max().item()) + 1 if lab.numel() else 0
+    if n <= 1:
+        return logits.sum() * 0
+    idx = lab.clamp(min=0)  # small (-1) and background pixels go to bin 0, which is ignored
+    zeros = p.new_zeros(p.shape[0], n)
+    p_in = zeros.scatter_add(1, idx, p)
+    a = zeros.scatter_add(1, idx, p * s)
+    s_k = zeros.scatter_add(1, idx, s)
+    count = zeros.scatter_add(1, idx, torch.ones_like(p))
+    f = (p * (lab != 0)).sum(1, keepdim=True)
+    pt = p.sum(1, keepdim=True)
+    dice = (2 * a + eps) / (pt - f + p_in + s_k + eps)
+    valid = count > 0
+    valid[:, 0] = False
+    if not valid.any():
+        return logits.sum() * 0
+    return (1 - dice[valid]).mean()
+
+
+def false_component_loss(logits: torch.Tensor, target: torch.Tensor, thresh: float = 0.5,
+                         min_area: int = 10) -> torch.Tensor:
+    """Penalty on predicted components that touch no target pixel (the predicted-component half of
+    BiCC). Components of sigmoid > thresh (8-connected, area >= min_area, found on the detached
+    map) with zero overlap with target > 0; loss = mean over them (pooled over the batch) of the
+    mean probability inside each component."""
+    p = torch.sigmoid(logits[:, 0])
+    pred = (p.detach() > thresh).cpu().numpy().astype(np.uint8)
+    tgt = (target[:, 0] > 0).cpu().numpy()
+    terms = []
+    for b in range(p.shape[0]):
+        n, lab, stats, _ = cv2.connectedComponentsWithStats(pred[b], connectivity=8)
+        if n <= 1:
+            continue
+        area = stats[:, cv2.CC_STAT_AREA]
+        hit = np.bincount(lab[tgt[b]], minlength=n) > 0
+        keep = (area >= min_area) & ~hit
+        keep[0] = False
+        ks = np.nonzero(keep)[0]
+        if not len(ks):
+            continue
+        lab_t = torch.from_numpy(lab.astype(np.int64)).to(p.device).flatten()
+        sums = p.new_zeros(n).scatter_add(0, lab_t, p[b].flatten())
+        ks_t = torch.from_numpy(ks).to(p.device)
+        terms.append(sums[ks_t] / torch.from_numpy(area[ks].astype(np.float32)).to(p.device))
+    if not terms:
+        return logits.sum() * 0
+    return torch.cat(terms).mean()
+
+
+def train_loss(logits: torch.Tensor, target: torch.Tensor, labels: torch.Tensor, w_blob: float,
+               w_fpc: float, fpc_thresh: float = 0.5, min_area: int = 10) -> tuple[torch.Tensor, dict]:
+    """bce_dice_loss + w_blob * blob_dice_loss + w_fpc * false_component_loss, and the three
+    components (detached floats) for logging. A term with weight 0 is not computed."""
+    base = bce_dice_loss(logits, target)
+    blob = blob_dice_loss(logits, target, labels) if w_blob else logits.sum() * 0
+    fpc = false_component_loss(logits, target, fpc_thresh, min_area) if w_fpc else logits.sum() * 0
+    total = base + w_blob * blob + w_fpc * fpc
+    return total, {"bce_dice": base.item(), "blob": blob.item(), "fpc": fpc.item()}
 
 
 # ---------------------------------------------------------------- inference
