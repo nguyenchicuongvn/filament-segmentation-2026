@@ -79,6 +79,11 @@ GRIDS = {
     "cc": {"thresh": [0.2, 0.3, 0.4, 0.5, 0.6], "min_area": [50, 90, 150], "group_radius": [4, 6, 8]},
     "hyst": {"thresh": [0.3, 0.4, 0.5], "seed_thresh": [0.9, 0.95, 0.97, 0.99], "min_area": [50, 90],
              "group_radius": [6]},
+    # soft-target maps estimate the annotator fraction, so a filament 2 of 3 annotators drew peaks near
+    # 0.67 and a seed >= 0.9 drops it although it is worth keeping (RESEARCH F26). Pre-registered
+    # 2026-11-03 for every soft-target comparison (G1, G2), both arms alike.
+    "hyst_soft": {"thresh": [0.2, 0.25, 0.3, 0.4, 0.5], "seed_thresh": [0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 0.99],
+                  "min_area": [50, 90], "group_radius": [6]},
     # strict hysteresis + shrinking small instances
     "hyst_size": {"thresh": [0.4, 0.5], "seed_thresh": [0.97, 0.99], "min_area": [50, 90], "group_radius": [4],
                   "small_area": [200], "small_thresh": [0.0, 0.7, 0.8]},
@@ -141,7 +146,7 @@ def _grid_stats(probs: str, mode: str, stems: list[str], jobs_by_stem: dict) -> 
     import itertools
 
     grid = scale_grid(GRIDS[mode], load_maps(Path(probs), stems[0])[0].shape[0])
-    base_mode = {"cc_size": "cc", "hyst_size": "hyst"}.get(mode, mode)
+    base_mode = {"cc_size": "cc", "hyst_size": "hyst", "hyst_soft": "hyst"}.get(mode, mode)
     combos = [PostParams(mode=base_mode, **dict(zip(grid, v)))
               for v in itertools.product(*grid.values())]
     key = ("grid", probs, mode, [c.to_dict() for c in combos], stems)

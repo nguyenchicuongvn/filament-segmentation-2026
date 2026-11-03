@@ -163,7 +163,8 @@ def scaled_grid(probs_dir: Path, mode: str = "cc") -> str:
     res = np.load(next(Path(probs_dir).glob("*.npy"))).shape[0]
     r = res / 1024
     if mode == "hyst":
-        return json.dumps({"thresh": [0.3, 0.4, 0.5], "seed_thresh": [0.95, 0.99],
+        # seeds below 0.9 for soft-target maps (a 2-of-3 filament peaks near 0.67; RESEARCH F26)
+        return json.dumps({"thresh": [0.2, 0.3, 0.4, 0.5], "seed_thresh": [0.6, 0.8, 0.95, 0.99],
                            "min_area": [round(50 * r * r), round(90 * r * r)],
                            "group_radius": [round(4 * r), round(6 * r)]})
     return json.dumps({"thresh": [0.2, 0.3, 0.4, 0.5],
