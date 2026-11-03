@@ -109,7 +109,7 @@ Trạng thái: ⏳ đang chạy/chờ · 📝 chuẩn bị · ✅ xong · ❌ b�
 | Nếu không | Giữ N1. Không tách gói ra để thử lẻ (không đủ độ nhạy) |
 | Ghi chú cho report | Nếu chấp nhận thì nói rõ đây là gói, không quy công cho từng thành phần |
 
-### N4 — Thành viên detector: Mask R-CNN (torchvision) + bỏ phiếu mask có trọng số điểm (📝)
+### N4 — Thành viên detector: Mask R-CNN (torchvision), ghép với U-Net (📝 code xong; thử trên Mac âm, chờ quyết định GPU)
 
 | | |
 |---|---|
@@ -117,9 +117,11 @@ Trạng thái: ⏳ đang chạy/chờ · 📝 chuẩn bị · ✅ xong · ❌ b�
 | Bằng chứng | biconcavelens, cùng cách chia: Mask R-CNN **0.429** so với U-Net ngữ nghĩa ConvNeXt-T của họ **0.396** (+0.033, `S9a`). Bỏ phiếu mask có trọng số điểm +0.007–0.012, nhưng hệ thống đầy đủ chỉ có CI > 0 ở 3/5 lần chia (`S9c`). Bỏ hiệu chỉnh isotonic thì mất 0.021 (`S9b`), nên ghép mà không hiệu chỉnh là sai. Mask R-CNN của họ train @2048 chỉ 6 epoch trên một GPU 16 GB (`S9f`). Lưu ý: U-Net của họ yếu hơn của mình (0.396 so với ~0.41), nên lợi thực tế có thể nhỏ hơn. Thêm detector đi ngược tiêu chí "không phức tạp hoá" (`S6b`), nên chỉ giữ nếu lợi rõ |
 | Rủi ro | Lớn nhất trong kế hoạch: code mới (dataset instance, train, infer 2048 với ~30 instance, ghép với map U-Net, hiệu chỉnh). TTA cho detector phức tạp hơn. Mask của detector có thể chồng nhau: phải giải chồng lấn về một ảnh nhãn và thêm assert rời nhau vào `make_submission.py` (luật `S3`) |
 | Thiết kế | (1) Code + smoke test trên Mac (torchvision Mask R-CNN đã chạy được trên MPS). (2) Train fold 0 trên Colab @1024. (3) Đo trên fold 0: Mask R-CNN một mình so với U-Net N1; ensemble bỏ phiếu so với U-Net N1 |
-| Chi phí | Code 2 ngày. GPU ~1–1.5 h một fold (ước tính, chưa đo); 5 fold ~6 h |
+| Cài đặt (01/11, nhánh `exp/maskrcnn`) | `filseg.maskrcnn`: Mask R-CNN R50-FPN v2 (COCO, BSD-3), mỗi bản gán nhãn là một sample (giống cách metric chấm); detection lưu cache `<stem>.npz`. Hai cách ra instance: `detections_to_labels` (detector một mình, tô theo score, bỏ detection bị che quá nửa) và `fuse_with_unet` (U-Net giữ pixel; detector quyết cách chia: gộp các thành phần U-Net cùng nằm trong một detection, tách thành phần mà ≥ 2 detection cùng nhận, tuỳ chọn thêm detection U-Net bỏ sót / bỏ thành phần không detection nào chạm). Kết quả rời nhau theo cách dựng. `compare.py` spec `tune:det` và `tune:fuse` (cross-tune grid hysteresis của U-Net trên nửa A trước, rồi grid ghép trên nửa A). Colab: run `mrcnn_s1024_f{k}` (chưa vào `RUN_NAMES`); watcher tải về, không tự nộp. 5 test |
+| Thử trên Mac (01/11) | Mask R-CNN **@512, 8 epoch, MPS** (~1.5 h), train trên split 70% của E9a, đo trên 213 ảnh holdout so với hysteresis cross-tune 0.4083: detector một mình **0.250** (−0.158 [−0.173, −0.143]); ghép với U-Net **0.402** (−0.006 [−0.012, +0.000]); grid chọn score ≥ 0.9 + gộp. Log `docs/logs/n4_mrcnn512_holdout_*`. Giới hạn: @512 và 8 epoch yếu hơn nhiều so với bản dự kiến (@1024, 24 epoch); biconcavelens train @2048. Không bác bỏ hẳn N4, nhưng **không có tín hiệu dương nào** |
+| Chi phí | GPU ~1.5 h cho fold 0 @1024 (ước tính, chưa đo trên L4); 5 fold ~7 h |
 | Tiêu chí | Ensemble (U-Net + Mask R-CNN) hơn U-Net một mình: Δ ≥ +0.012 và CI > 0 trên fold 0 |
-| Hạn go/no-go | **2026-11-05**: nếu đến hôm đó fold 0 chưa có kết quả đạt thì bỏ N4 |
+| Hạn go/no-go | **2026-11-05**: nếu đến hôm đó fold 0 chưa có kết quả đạt thì bỏ N4. Sau thử nghiệm Mac: chỉ chạy `mrcnn_s1024_f0` nếu còn giờ GPU sau N1/N2/N3' (xếp cuối hàng đợi); không chạy fold 1–4 trừ khi fold 0 qua tiêu chí |
 | License | YOLO11-seg (AGPL-3.0) mạnh hơn (0.437) nhưng repo dùng MIT. Chỉ dùng nếu người dùng đồng ý (§ 7) |
 
 ### N5 — Metric rubric và phân tích lỗi cho report (📝 Mac, không tốn GPU)

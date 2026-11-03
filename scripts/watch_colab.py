@@ -94,10 +94,17 @@ def run_dir(run: str) -> Path:
     return ROOT / "outputs" / "colab" / run
 
 
+def is_detector(run: str) -> bool:
+    """Mask R-CNN runs (PLAN card N4): cached detections instead of probability maps."""
+    return run.startswith("mrcnn")
+
+
 def maps_complete(out: Path) -> bool:
-    """Test maps for all 180 images, and val maps (the val split or a fold's held-out images)."""
-    n_val = len(list((out / "probs_val").glob("*.npy")))
-    n_test = len(list((out / "probs_test").glob("*.npy")))
+    """Test maps for all 180 images, and val maps (the val split or a fold's held-out images);
+    for a detector run, the same for its detection files."""
+    kind, ext = ("dets", "npz") if is_detector(out.name) else ("probs", "npy")
+    n_val = len(list((out / f"{kind}_val").glob(f"*.{ext}")))
+    n_test = len(list((out / f"{kind}_test").glob(f"*.{ext}")))
     return n_test == 180 and n_val > 0
 
 
@@ -130,7 +137,7 @@ def download(owner: str, run: str) -> Path:
         errors = [e for e in pool.map(fetch, todo) if e]
     if errors:
         raise RuntimeError(f"{len(errors)} files failed, e.g. {errors[0]}")
-    for t in out.glob("probs_*.tar"):
+    for t in [*out.glob("probs_*.tar"), *out.glob("dets_*.tar")]:
         with tarfile.open(t) as tf:
             tf.extractall(out, filter="data")
         t.unlink()
@@ -261,6 +268,12 @@ def main() -> None:
                         download(args.owner, run)
                     rs["downloaded"] = True
                     save_state(st)
+                if rs.get("downloaded") and is_detector(run):
+                    if not rs.get("announced"):  # no auto-submission: it is judged by compare.py tune:fuse (N4)
+                        log(f"{run}: detections downloaded to {run_dir(run)}; evaluate with compare.py tune:det / tune:fuse")
+                        rs["announced"] = True
+                        save_state(st)
+                    continue
                 if rs.get("downloaded") and "val_filtered" not in rs and (not m or m["fold"] == "0"):
                     out = run_dir(run)
                     modes = ["cc", "group"] if (out / "probs_val" / "group").is_dir() else ["cc"]
@@ -281,7 +294,7 @@ def main() -> None:
         recipes: dict[str, list[str]] = {}
         for run in args.runs:
             m = FOLD_RE.match(run)
-            if m:
+            if m and not is_detector(run):  # detector folds are combined by hand (N4)
                 recipes.setdefault(m["recipe"], []).append(run)
         for recipe, folds in recipes.items():
             rec = st["recipes"].setdefault(recipe, {})

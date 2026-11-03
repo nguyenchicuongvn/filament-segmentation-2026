@@ -22,6 +22,13 @@ Usage:
   python scripts/compare.py base=outputs/colab/unet1024_effb4/probs_val,tune:hyst \
       agree=outputs/colab/unet1024_effb4/probs_val,tune:hyst,filter:base+agree \
       --agree-maps outputs/colab/unet1024_r34/probs_val,outputs/colab/unet1024_r34_grp/probs_val,... --jobs 4
+
+Mask R-CNN member (PLAN card N4), detections cached by scripts/infer_detections.py:
+  name=<dets_dir>,tune:det                    the detector alone (DET_GRID cross-tuned)
+  name=<probs_dir>,tune:fuse,dets:<dets_dir>  U-Net pixels + detector grouping (filseg.maskrcnn.fuse_with_unet):
+      in each split the U-Net hysteresis grid is tuned on half A first (exactly as tune:hyst does), then the
+      fusion grid on half A given that choice, and half B is scored with both.
+The first spec must be a U-Net probs dir (it defines the images and their annotators).
 """
 from __future__ import annotations
 
@@ -39,11 +46,13 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from filseg.data import load_train, with_maps  # noqa: E402
-from filseg.dl import PostParams, load_maps  # noqa: E402
+from filseg.data import encode_masks, load_train, with_maps  # noqa: E402
+from filseg.dl import PostParams, instances_lowres, load_maps, upsample_labels  # noqa: E402
+from filseg.maskrcnn import DetParams, FuseParams, detections_to_labels, fuse_with_unet, load_detections  # noqa: E402
 from filseg.instfilter import AGREE_FEATURES, FEATURES, select  # noqa: E402
 from filseg.metric import IOU_THRESHOLD  # noqa: E402
 from fp_filter import _agree_table, _image_table, make_model, predict  # noqa: E402
+from pycocotools import mask as mask_util  # noqa: E402
 
 JOBS: int | None = None        # worker processes (None = all cores)
 CACHE: Path | None = None      # pickles of per-combo stats and filter tables (None = no cache)
@@ -167,6 +176,97 @@ def evaluate_crosstuned(probs: str, mode: str, stems: list[str], jobs_by_stem: d
     return out / repeats
 
 
+# ---------------------------------------------------------------- Mask R-CNN member (N4)
+
+# areas at 1024 px; scaled with the detection resolution like GRIDS
+DET_GRID = {"score_thresh": [0.3, 0.5, 0.7, 0.85], "min_visible": [0.3, 0.5, 0.7], "min_area": [50]}
+FUSE_GRID = {"score_thresh": [0.5, 0.7, 0.9], "claim": [0.3], "merge": [False, True],
+             "add_thresh": [1.01, 0.9], "require_det": [False, True]}
+
+
+def _labels_stats(labels: np.ndarray, gts: list) -> np.ndarray:
+    """image_stats of a low-resolution instance label image against the image's annotator entries."""
+    rles = encode_masks(upsample_labels(labels))
+    ious = [np.asarray(mask_util.iou(rles, gt, [0] * len(gt))).T if gt and rles else np.zeros((len(gt), len(rles)))
+            for gt in gts]
+    return image_stats(ious, np.ones(len(rles), bool))
+
+
+def _resized(masks: np.ndarray, res: int) -> np.ndarray:
+    import cv2
+    if not len(masks) or masks.shape[1] == res:
+        return masks
+    return np.stack([cv2.resize(m, (res, res), interpolation=cv2.INTER_LINEAR) for m in masks])
+
+
+def _det_job(args):
+    dets_dir, params, stems, jobs_by_stem = args
+    rows = []
+    for s in stems:
+        scores, masks = load_detections(Path(dets_dir), s)
+        rows.append(_labels_stats(detections_to_labels(scores, masks, params), jobs_by_stem[s][1]))
+    return np.stack(rows)
+
+
+def _fuse_job(args):
+    probs, post, dets_dir, params, stems, jobs_by_stem = args
+    rows = []
+    for s in stems:
+        prob, group = load_maps(Path(probs), s)
+        inst = instances_lowres(prob, post, group)
+        scores, masks = load_detections(Path(dets_dir), s)
+        rows.append(_labels_stats(fuse_with_unet(inst, scores, _resized(masks, inst.shape[0]), params),
+                                  jobs_by_stem[s][1]))
+    return np.stack(rows)
+
+
+def _combos(grid: dict, cls):
+    import itertools
+    return [cls(**dict(zip(grid, v))) for v in itertools.product(*grid.values())]
+
+
+def evaluate_crosstuned_det(dets_dir: str, stems: list[str], jobs_by_stem: dict) -> np.ndarray:
+    res = load_detections(Path(dets_dir), stems[0])[1].shape[-1]
+    grid = scale_grid(DET_GRID, res)
+    combos = _combos(grid, DetParams)
+    key = ("det", dets_dir, [c.to_dict() for c in combos], stems)
+    per_combo = _cached(key, lambda: _pool_stack(_det_job, [(dets_dir, c, stems, jobs_by_stem) for c in combos]))
+    out, chosen = np.zeros((len(stems), 4)), []
+    for tune_on in _splits(len(stems)):
+        best = int(np.argmax([pq(per_combo[c][tune_on].sum(0)) for c in range(len(combos))]))
+        chosen.append(best)
+        out[~tune_on] += per_combo[best][~tune_on]
+    print(f"  {dets_dir} det: combos chosen {[combos[c].to_dict() for c in sorted(set(chosen))][:3]}",
+          file=sys.stderr, flush=True)
+    return out / 3
+
+
+def evaluate_crosstuned_fuse(probs: str, dets_dir: str, stems: list[str], jobs_by_stem: dict) -> np.ndarray:
+    hyst_combos, hyst_stats = _grid_stats(probs, "hyst", stems, jobs_by_stem)
+    res = load_maps(Path(probs), stems[0])[0].shape[0]
+    fuse_combos = _combos({**FUSE_GRID, "min_area": [round(50 * (res / 1024) ** 2)]}, FuseParams)
+    fuse_stats = {}   # hyst combo index -> (n_fuse, n_images, 4)
+    out, chosen = np.zeros((len(stems), 4)), []
+    for tune_on in _splits(len(stems)):
+        h = int(np.argmax([pq(hyst_stats[c][tune_on].sum(0)) for c in range(len(hyst_combos))]))
+        if h not in fuse_stats:
+            post = hyst_combos[h]
+            key = ("fuse", probs, dets_dir, post.to_dict(), [c.to_dict() for c in fuse_combos], stems)
+            fuse_stats[h] = _cached(key, lambda: _pool_stack(
+                _fuse_job, [(probs, post, dets_dir, c, stems, jobs_by_stem) for c in fuse_combos]))
+        f = int(np.argmax([pq(fuse_stats[h][c][tune_on].sum(0)) for c in range(len(fuse_combos))]))
+        chosen.append((h, f))
+        out[~tune_on] += fuse_stats[h][f][~tune_on]
+    print(f"  {probs} + {dets_dir} fuse: chosen {[(hyst_combos[h].to_dict(), fuse_combos[f].to_dict()) for h, f in sorted(set(chosen))][:2]}",
+          file=sys.stderr, flush=True)
+    return out / 3
+
+
+def _pool_stack(fn, jobs: list) -> np.ndarray:
+    with ProcessPoolExecutor(JOBS) as pool:
+        return np.stack(list(pool.map(fn, jobs)))
+
+
 def _filter_tables(probs: str, post: PostParams, stems: list[str], jobs_by_stem: dict,
                    agree: bool) -> dict:
     """{stem: (stem, features, label, ious, exp_iou)} of the instances of `post`; with `agree` the
@@ -246,6 +346,11 @@ def evaluate(spec: str, stems: list[str], jobs_by_stem: dict, folds: int = 5) ->
     """Per-image stats (n_images, 4) of one spec, in the order of `stems`."""
     name, rest = spec.split("=", 1)
     parts = rest.split(",")
+    if parts[1] == "tune:det":
+        return evaluate_crosstuned_det(parts[0], stems, jobs_by_stem)
+    if parts[1] == "tune:fuse":
+        assert len(parts) > 2 and parts[2].startswith("dets:"), "tune:fuse needs dets:<dir>"
+        return evaluate_crosstuned_fuse(parts[0], parts[2][5:], stems, jobs_by_stem)
     if parts[1].startswith("tune:"):
         if len(parts) > 2 and parts[2].startswith("filter:"):
             return evaluate_crosstuned_filter(parts[0], parts[1][5:], parts[2][7:], stems, jobs_by_stem)
