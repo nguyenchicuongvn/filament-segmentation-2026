@@ -8,6 +8,9 @@ EXPERIMENTS dict of colab/train_unet.ipynb, so both paths share one experiment l
   python scripts/kaggle_gpu.py push effb4_s1024_f0 effb4_v2_s1024_f0   # one kernel, both runs in parallel
   python scripts/kaggle_gpu.py status
   python scripts/kaggle_gpu.py fetch <kernel>                  # outputs/colab/<run>/ + LOCAL marker
+  python scripts/kaggle_gpu.py daemon --extra "--bs 4" --kernel n1-f0f1=effb4_s1024_f0,effb4_s1024_f1 ...
+      # pushes the kernels in order whenever a GPU session is free (every 10 min), fetches each one that
+      # finishes; logs to outputs/kaggle_gpu.log
 
 After fetch, scripts/watch_colab.py (with the run names in --runs) picks the runs up from the LOCAL
 marker as if they were local maps. Kernels are private; nothing is submitted from them.
@@ -214,6 +217,61 @@ def fetch(slug: str) -> None:
     save_state(st)
 
 
+def kernel_state(slug: str) -> str:
+    s = sh(["kaggle", "kernels", "status", f"{OWNER}/{slug}"], check=False)
+    out = s.stdout + s.stderr
+    for state in ("COMPLETE", "ERROR", "CANCEL", "RUNNING", "QUEUED"):
+        if state in out.upper():
+            return state
+    return "UNKNOWN"
+
+
+def daemon(specs: list[str], extra: str, accelerator: str, poll: int) -> None:
+    """specs: name=run1,run2 in priority order. Push each when a session is free, fetch when done."""
+    queue = [(n, r.split(",")) for n, r in (x.split("=", 1) for x in specs)]
+    logf = ROOT / "outputs" / "kaggle_gpu.log"
+
+    def log(msg):
+        with open(logf, "a") as fh:
+            fh.write(f"[{time.strftime('%m-%d %H:%M')}] {msg}\n")
+
+    log(f"daemon start: {queue} extra={extra!r}")
+    while True:
+        st = load_state()
+        open_ = False
+        for name, runs in queue:
+            slug = "filseg-gpu-" + name.replace("_", "-")
+            k = st["kernels"].get(slug)
+            if k is None:
+                open_ = True
+                try:
+                    push(runs, name, accelerator, extra)
+                    log(f"{slug}: pushed {runs}")
+                except SystemExit as e:
+                    log(f"{slug}: not pushed ({e}); waiting for a free GPU session")
+                    break  # keep the priority order
+                st = load_state()
+                continue
+            if k.get("fetched"):
+                continue
+            open_ = True
+            state = kernel_state(slug)
+            if state in ("COMPLETE", "ERROR", "CANCEL"):
+                try:
+                    fetch(slug)
+                    log(f"{slug}: {state}, fetched")
+                except SystemExit as e:
+                    log(f"{slug}: {state}, fetch failed: {e}")
+                    k = load_state()["kernels"][slug]
+                    k["fetched"] = "failed"
+                    st2 = load_state(); st2["kernels"][slug] = k; save_state(st2)
+                st = load_state()
+        if not open_:
+            log("daemon: every kernel fetched, exiting")
+            return
+        time.sleep(poll)
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -226,6 +284,11 @@ def main() -> None:
     sub.add_parser("status")
     f = sub.add_parser("fetch")
     f.add_argument("kernel")
+    dm = sub.add_parser("daemon")
+    dm.add_argument("--kernel", action="append", required=True, help="name=run1[,run2], in priority order")
+    dm.add_argument("--extra", default="")
+    dm.add_argument("--accelerator", default="NvidiaTeslaT4")
+    dm.add_argument("--poll", type=int, default=600)
     a = ap.parse_args()
     if a.cmd == "push-code":
         push_code()
@@ -233,6 +296,8 @@ def main() -> None:
         push(a.runs, a.name, a.accelerator, a.extra)
     elif a.cmd == "status":
         status()
+    elif a.cmd == "daemon":
+        daemon(a.kernel, a.extra, a.accelerator, a.poll)
     else:
         fetch(a.kernel)
 
