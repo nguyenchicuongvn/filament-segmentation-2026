@@ -44,17 +44,22 @@ t0 = time.time()
 def log(msg):
     print(f"[{(time.time() - t0) / 60:6.1f} min] {msg}", flush=True)
 
+# Kaggle unpacks an uploaded zip, so the bundle arrives either as the zip or as its unpacked tree
 bundle = glob.glob("/kaggle/input/**/filseg-colab.zip", recursive=True)
+trees = [os.path.dirname(os.path.dirname(p)) for p in glob.glob("/kaggle/input/**/scripts/train_unet.py", recursive=True)]
 data = [p for p in glob.glob("/kaggle/input/**/MAGFiLO_1.0_Kaggle_2026", recursive=True) if os.path.isdir(p)]
-assert bundle and data, (bundle, data)
+assert (bundle or trees) and data, (bundle, trees, data)
 shutil.rmtree(CODE, ignore_errors=True)
-zipfile.ZipFile(bundle[0]).extractall(CODE)
+if bundle:
+    zipfile.ZipFile(bundle[0]).extractall(CODE)
+else:
+    shutil.copytree(trees[0], CODE)
 os.makedirs(f"{CODE}/data", exist_ok=True)
 os.symlink(data[0], f"{CODE}/data/MAGFiLO_1.0_Kaggle_2026")
 os.chdir(CODE)
 subprocess.run([sys.executable, "-m", "pip", "install", "-q", "segmentation-models-pytorch==0.5.0"], check=True)
 subprocess.run(["nvidia-smi", "--query-gpu=name,memory.total", "--format=csv"])
-log(f"code {bundle[0]}, data {data[0]}")
+log(f"code {(bundle or trees)[0]}, data {data[0]}")
 
 def run_one(i, name, args, gpu):
     out = f"{W}/{name}"
