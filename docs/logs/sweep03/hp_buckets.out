@@ -1,0 +1,21 @@
+GT recall by hp tercile x size (n):
+    mean                size               
+sz  <800 800-3200 >3200 <800 800-3200 >3200
+t                                          
+0   0.47     0.70  0.69  224      448   205
+1   0.51     0.64  0.62  202      340   112
+2   0.42     0.60  0.67  334      368   133
+GT recall, multi-ann, supported vs lone, by tercile:
+sup  False  True 
+t                
+0    0.309  0.830
+1    0.286  0.811
+2    0.306  0.697
+share of GTs < 800px by tercile: {0: 0.255, 1: 0.309, 2: 0.399}
+pred count/img, bad share, median area by tercile:
+     n  imgs    bad   area
+t                         
+0  523    82  0.268  350.0
+1  405    57  0.323  327.0
+2  451    66  0.322  289.0
+SQ by tercile: {0: 0.678, 1: 0.666, 2: 0.656}

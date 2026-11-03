@@ -242,3 +242,73 @@ in-sample / 0.4083 cross-tune).
 | Mask R-CNN cho lỗi chia instance (N4) | train / lỗi | 3.5 / 3 | hoãn, giữ cổng G3 | nhóm gộp + cắt chiếm ~25% FN; bằng chứng ngoài chỉ có một số (S9a) và model của họ yếu hơn của mình |
 | Chạy lại oracle/cây trên map OOF của N1 | quyết định | 3 | hoãn, chỉ khi CPU rảnh | chẩn đoán cho report |
 | Train có điều kiện theo annotator (style head) | train | 1.5 | **loại** | không có bằng chứng; annotator của test không biết (S7) |
+
+## 11. Quét toàn bộ không gian lựa chọn (03/11): input, tiền xử lý, target, model, train, inference
+
+**Cách làm**: hai agent độc lập. Một agent phụ trách phía input/target: tiền xử lý, biến đổi ảnh,
+augmentation, target, cách lấy mẫu. Agent kia phụ trách phía model/train/inference: kiến trúc,
+loss, recipe, TTA, ensemble, lịch GPU. Mỗi agent chạy thêm số đo trên CPU/MPS nếu rẻ. Báo cáo
+nguyên văn: `docs/logs/sweep03/input_targets.md`, `docs/logs/sweep03/model_training_inference.md`.
+Script: `scripts/research/sweep03/`. Mọi số đo trên E9a holdout (213 ảnh, hysteresis chặt).
+
+### 11.1 Phát hiện mới
+
+| Mã | Nhận định | Số liệu | Nguồn |
+|---|---|---|---|
+| F36 | **Model mất nhiều PQ ở ảnh seeing sắc nét; người thì không.** Độ sắc = phương sai Laplacian của đĩa đã làm phẳng; giá trị cao là seeing tốt, nhiều fibril tối, không phải nhiễu | PQ model theo tam phân vị độ sắc: **0.447 / 0.412 / 0.377**, thấp − cao = 0.070 [0.035, 0.111]. Người với người: 0.349 / 0.341 / 0.330. Ở tam phân vị sắc: recall filament có người khác cùng vẽ giảm **0.83 → 0.70**; recall filament chỉ một người vẽ giữ ~0.30; FN/bản gán nhãn 3.58 so với 2.25. Khoảng chênh có ở cả nhóm annotator 01/04 lẫn các nhóm khác | `docs/logs/sweep03/sharp.out`, `hp_buckets.out`, `human_by_sharp.out`, `hp_crops.png` |
+| F37 | Model **phụ thuộc mạnh vào chi tiết mịn** | làm mờ input σ 1.5 px @1024: −0.096 [−0.12, −0.07]; thu nhỏ input ×0.875: −0.016 [−0.028, −0.003]; phóng ×1.125: +0.0004 | `eval_tta.out` (62 ảnh, config tune trên map gốc) |
+| F38 | TTA đa tỉ lệ: trung bình D4 @1024 và @1152 cho **+0.0028 [−0.0025, +0.0082]**, chưa đủ chắc | 62 ảnh | `eval_tta.out` |
+| F39 | Các bộ lọc ảnh (vesselness Sato, top-hat, DoG, độ tương phản trên ảnh đã làm phẳng) **không thêm thông tin**: AUC tách instance tốt/xấu 0.6973 → 0.6996 khi thêm vào đặc trưng của map | GBM 5 fold theo ảnh, 3 seed | `analyze_feats.out` |
+| F40 | Ảnh đã được chuẩn hoá sẵn: trung vị trong đĩa 130–133 ở mọi trạm, tỉ lệ limb 0.61–0.63, bán kính đĩa 452–455 px @1024. Khác biệt histogram giữa các trạm ≤ 1.6 mức xám (trạm T ≤ 5), nhỏ hơn khác biệt trong cùng trạm. Test khớp train ở mọi trạm. PQ theo trạm chủ yếu là nhiễu | | `station_stats.out` |
+| F41 | Filament bị sót mờ hơn filament bắt được (AUC 0.72–0.83 theo kích thước). Filament chỉ một người vẽ cũng mờ hơn (AUC 0.70). **Mờ và bất đồng là cùng một nhóm**, nên tăng tương phản chủ yếu chỉ thêm các khớp với một annotator | | `analyze_feats.out` |
+| F42 | `tu-convnext_tiny` trong smp **không có skip stride 2** (`out_channels [1, 0, 96, 192, 384, 768]`). Đây là lời giải thích hợp lý cho E9b −0.020. MiT/SegFormer, Swin và các head FPN/DeepLabV3+ (output 1/4) có cùng vấn đề. EfficientNet, EfficientNetV2, RegNet, ResNet thì có | kiểm tra cấu trúc encoder | `model_training_inference.md` |
+| F43 | Grid `hyst` của `compare.py` (seed ≥ 0.9) **cắt mất** filament trên map target mềm: filament 2/3 annotator vẽ có đỉnh ~0.67 nhưng theo F26 vẫn đáng giữ (IoU trung bình ~0.47 > PQ/2). Đã đăng ký trước grid `hyst_soft` (seed 0.5–0.99, ngưỡng 0.2–0.5) cho mọi so sánh target mềm, cả hai nhánh như nhau | | `scripts/compare.py` |
+| F44 | Chi phí GPU thực: E9a trên L4 chạy 109 s/epoch (0.81 s/step, bs 6). Ước tính trên T4: N1 ~2.3 h/fold, v2 ~2.6 h, N2 ~2.8 h. Run **không tái lập được**: `np.random.default_rng()` trong dataset không có seed, nên hai run "cùng seed" vẫn khác nhau. Đây là lý do luật 2 fold là đúng | | `model_training_inference.md` |
+
+### 11.2 Ma trận lựa chọn: tất cả các hướng, trạng thái và lý do
+
+| Khâu | Lựa chọn | Trạng thái | Lý do / bằng chứng |
+|---|---|---|---|
+| **Độ phân giải** | crop 1024 từ ảnh 2048 (N2) | ⏳ hàng đợi Kaggle, kernel 2 | **ưu tiên tăng**: F36, F37 (model cần chi tiết mịn; khoảng chênh ở ảnh sắc nét là lỗi của model), F14; phản đối S13. Thêm chẩn đoán theo độ sắc vào G1 |
+| | input 1536 / multi-scale khi train | không làm | chỉ thử nếu N2 thắng nhưng quá đắt cho 5 fold |
+| | kênh chi tiết từ 2048 (high-pass pooled) cho model 1024 | dự phòng | chỉ khi N2 thắng mà không đủ giờ cho 5 fold; chưa có bằng chứng |
+| **Tiền xử lý** | hiệu chỉnh limb, flat-field, chiếu cực/heliographic | loại | F28 (lỗi vị trí 0.4%), F40 (đã chuẩn hoá sẵn); biconcavelens thử 8 biến thể flat-field: không lợi |
+| | CLAHE / chuẩn hoá tương phản cục bộ | loại | S9e (−0.006 đến −0.013); F41 |
+| | kênh vesselness / top-hat / DoG | loại | F39 |
+| | log/gamma, khớp histogram giữa các trạm | loại | F40 (gamma jitter đã có trong augmentation) |
+| **Augmentation** | rot90/lật/gamma/tương phản | đang dùng | – |
+| | mờ do seeing, nhiễu, JPEG, style theo trạm | loại | F40 (không có lệch train/test), F37 (bất biến với mờ đi ngược F36) |
+| | scale/shear/elastic | loại | bán kính đĩa cố định (F40); elastic làm méo đúng đường biên mà metric chấm |
+| | copy-paste / cutmix filament | loại | biconcavelens −0.015 |
+| | lấy mẫu dư ảnh sắc nét | dự phòng | chỉ nếu N2 không thu hẹp khoảng chênh F36 |
+| **Target** | target mềm đa annotator, lấy mẫu ảnh theo số annotator | đang dùng (N1) | `WeightedRandomSampler` theo số bản gán nhãn (agent input ghi nhầm là chưa có) |
+| | head phụ skeleton + core (từ mask, hợp luật) | sau G2 | S11a là gói có cả phần này; chỉ thử nếu v2 qua G2 (+0.003 kỳ vọng) |
+| | head theo annotator / style | loại | S7, judge 1.5 |
+| | làm mượt nhãn ở biên | loại | lỗi theo hai chiều ngược nhau (F13 so với F29) |
+| | tâm/offset, affinity | loại | E8 (+0.003), F23, F31 |
+| **Kiến trúc** | U-Net EfficientNet-B4 | đang dùng | F20 |
+| | EfficientNetV2-S / B5 | dự phòng | F32; Dariush dùng V2-S; chỉ khi còn giờ sau rollout |
+| | ConvNeXt, SegFormer/MiT, Swin, MaxViT, FPN, DeepLabV3+ | loại | F42 (thiếu skip stride 2), E9b −0.020 |
+| | UNet++, MAnet, HRNet | loại | không có bằng chứng trên bài này, đắt gấp đôi decoder |
+| | detector (Mask R-CNN, YOLO, RT-DETR) | hoãn / gần như loại | N4-mac âm; head mask 28×28 kém với vật dài mảnh; YOLO là AGPL; phức tạp hoá (S6b) |
+| **Loss / train** | blob Dice + phạt thành phần giả + EMA (v2) | ⏳ hàng đợi Kaggle, kernel 2–3 | S11a, S10b; G2 trên 2 fold |
+| | Lovász, Tversky, boundary/Hausdorff, clDice | loại | JML1 +0.0003 (S11), S9e, F31 |
+| | train dài/ngắn hơn, đổi LR | loại | E10; checkpoint sau anneal ổn định (F35) |
+| | SWA, model soup | loại | EMA đã có; soup giữa các fold không kiểm chứng được |
+| **Inference** | TTA D4 ×8 @1024 | đang dùng | – |
+| | + TTA @1152 | thử trên Mac (miễn phí) | F38: +0.003, CI chứa 0; chỉ nhận nếu CI > 0 trên đủ 213 ảnh |
+| | TTA thu nhỏ | loại | F37 |
+| | lưu map fp16 thay vì uint8 | dự phòng | chỉ nếu seed hysteresis của N1 ≥ 0.97 (bão hoà) |
+| **Ensemble** | 5 fold cùng công thức | ⏳ hàng đợi | H1; lợi ích không đo được trên OOF |
+| | trung bình N1 + v2 trên fold 0/1 | đo miễn phí sau G2 | đo thật lợi ích của ensemble 2 model trên cùng ảnh (đề xuất #4 của agent model) |
+| | seed thứ hai của N1 f0 | dự phòng | đo nhiễu seed (chưa có số nào) |
+| **Hậu xử lý** | mọi biến thể | cạn | F21, F27, F34 |
+
+### 11.3 Kết luận
+
+1. Lựa chọn hứa hẹn nhất còn lại là **độ phân giải gốc (N2)**. Trước đây prior của N2 gần 0; F36
+   và F37 cho một cơ chế cụ thể, đo được, và chỉ nằm ở model.
+2. Về phía input, tiền xử lý và augmentation, **không còn đòn bẩy nào** (F39–F41): ảnh đã chuẩn hoá
+   sẵn và model đã tự học các bộ lọc.
+3. Kỳ vọng trung thực vẫn khoảng +0.005 đến +0.02 OOF cho cả phần còn lại. Mức trên chỉ đạt được nếu
+   N2 thu hẹp phần lớn khoảng chênh ở ảnh sắc nét.

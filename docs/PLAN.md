@@ -185,10 +185,46 @@ cho kế hoạch:
 - Kỳ vọng trung thực: các bước còn lại cộng lại khoảng +0.01–0.03 OOF; chưa có ý tưởng nào hứa hẹn
   bước nhảy lớn.
 
+## 6c. GPU Kaggle từ 03/11 (người dùng cho phép, ~20 h tuần này)
+
+Colab vẫn chưa chạy, nên từ 03/11 GPU đi qua Kaggle. `scripts/kaggle_gpu.py` làm các việc sau:
+- đưa code lên dataset riêng tư `filseg-code`;
+- mỗi kernel (T4 ×2) train **2 run song song**, mỗi GPU một run;
+- ghi map giống hệt Colab;
+- `fetch` chuyển map về `outputs/colab/<run>` kèm marker LOCAL, rồi watcher xử lý như cũ.
+
+`daemon` đẩy kernel theo thứ tự ưu tiên mỗi khi có slot trống: tài khoản có tối đa 2 phiên GPU,
+và các project khác của người dùng cũng dùng chung slot. Mọi run dùng `--bs 4`, vì bs 6 có nguy cơ
+tràn bộ nhớ trên T4 16 GB. Hai nhánh của mỗi so sánh luôn cùng bs.
+
+| Kernel | Run (GPU0 / GPU1) | Mục đích | Ước tính |
+|---|---|---|---|
+| 1 | N1 f0 / N1 f1 | đối chứng G2, bắt đầu 5 fold | ~2.5 h |
+| 2 | v2 f0 / N2 c2048 f0 | G2 (nhánh thử), G1 | ~3 h |
+| 3 | v2 f1 / N1 f2 | G2 (fold thứ 2), 5 fold | ~2.8 h |
+| 4 | N1 f3 / N1 f4 | xong 5 fold N1 (final an toàn) | ~2.5 h |
+| (sau G1/G2) | rollout công thức thắng: 3–4 fold | | ~5–6 h |
+
+Tổng ~11 h cho 4 kernel đầu, ~17 h nếu có rollout. Nếu GPU Kaggle tính quota theo thời gian phiên
+(không tính theo số GPU) thì nằm trong ~20 h. Chưa xác nhận điều này; sau kernel đầu tiên cần xem
+đồng hồ quota trên Kaggle.
+
+**Cổng được sửa**:
+- **G1 (N2)**: giữ tiêu chí Δ ≥ +0.012 và CI > 0, chấm bằng grid `hyst_soft`. Thêm chẩn đoán
+  F36: phần tăng phải tập trung ở tam phân vị sắc nét và ở recall filament có người khác cùng vẽ.
+  Nếu tăng đều mọi tam phân vị thì nghi nhiễu seed. Chỉ một fold, nên nếu qua thì cần thêm fold 1
+  @2048 trước khi rollout.
+- **G2 (v2)**: như thẻ N3', chấm bằng `hyst_soft` (F43) trên fold 0 + 1.
+- **Đo miễn phí sau G2**: trung bình map N1 + v2 trên fold 0/1, so với model đơn tốt hơn. Đây là
+  số đo thật duy nhất về lợi ích của ensemble.
+
+**Việc trên Mac, không tốn GPU**: TTA @1152 trên đủ 213 ảnh (F38; chỉ nhận nếu CI > 0); thêm chia
+theo độ sắc vào báo cáo so sánh.
+
 ## 7. Cần người dùng quyết định
 
 1. ~~Số giờ GPU Colab còn lại~~: **đủ ~25 h** (trả lời 29/10). Làm theo kế hoạch đầy đủ; dự phòng chỉ còn ~3 h, nên một run hỏng phải được phát hiện sớm.
-2. **Có cho dùng GPU Kaggle** khi Colab không đủ hay hỏng không?
+2. ~~GPU Kaggle~~: **được dùng từ 03/11**, ~20 h tuần này, đẩy kernel khi có slot trống (trả lời 03/11).
 3. **YOLO11-seg (AGPL-3.0)** hay chỉ Mask R-CNN (BSD)?
 
 Theo dõi thêm: [discussion 753665](https://www.kaggle.com/competitions/filament-segmentation-2026/discussion/753665)

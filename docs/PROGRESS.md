@@ -33,7 +33,8 @@ việc đổi trạng thái.
 | N5: metric rubric (torchmetrics Dice, phân bố, 1:n / n:1) | nhánh `exp/rubric-metrics` | ✅ 01/11 | 08/11 | E9a: Dice 0.668, 1:n 4.9%, n:1 3.7%; chạy lại trên model final |
 | N6: final, weights fp16, notebook, report | Mac | 📝 | đóng băng 09/11; nộp 15/11 | |
 | Người dùng: số giờ Colab | – | ✅ 29/10 | – | ~25 h L4, đủ cho kế hoạch đầy đủ |
-| Người dùng: GPU Kaggle khi Colab hỏng; YOLO (AGPL) hay Mask R-CNN | – | ❓ | trước G3 (05/11) | |
+| Người dùng: GPU Kaggle | – | ✅ 03/11 | – | được dùng, ~20 h tuần này, đẩy khi có slot trống |
+| Kaggle GPU: 4 kernel (N1 ×5, v2 ×2, N2 ×1) | nhánh `exp/kaggle-gpu`, daemon | ⏳ chờ slot | G1/G2 ~05/11 | |
 
 ## Lịch sử submission
 
@@ -63,6 +64,19 @@ Val luôn cao hơn LB khoảng 0.03–0.07, nhưng thứ tự giữa các model 
 được để chọn model (xem [DATA_AND_METRIC.md](DATA_AND_METRIC.md#khoảng-cách-val--lb)).
 
 ## Nhật ký
+
+### 2026-11-03
+- Người dùng cho phép dùng GPU Kaggle (~20 h tuần này, đẩy khi có slot trống). Viết
+  `scripts/kaggle_gpu.py` (nhánh `exp/kaggle-gpu`): code thành dataset riêng tư; mỗi kernel T4 ×2
+  train 2 run song song; daemon đẩy theo hàng đợi và tự fetch. Lần push đầu bị từ chối: 2 phiên GPU
+  đang bị kernel của project khác chiếm (`casmi26-fs-class3-panel`, `umud-orient-gpu-v1`). Daemon
+  đang chờ slot.
+- Quét toàn bộ không gian lựa chọn bằng hai agent (input/target; model/train/inference):
+  [RESEARCH § 11](RESEARCH.md#11-quét-toàn-bộ-không-gian-lựa-chọn-0311-input-tiền-xử-lý-target-model-train-inference).
+  Phát hiện chính: **model mất 0.070 PQ ở ảnh seeing sắc nét, người thì không** (F36); làm mờ input
+  −0.096 (F37). Vì vậy N2 được đưa lên kernel thứ 2. Phía input, tiền xử lý và augmentation không còn
+  đòn bẩy (F39–F41). ConvNeXt thiếu skip stride 2 (F42). Grid hysteresis cũ cắt mất filament trên
+  map target mềm, nên đã đăng ký trước grid `hyst_soft` (F43).
 
 ### 2026-11-01
 - Merge `research/new-solution` và `exp/train-v2` vào main (19 test pass), đóng lại bundle Colab.
