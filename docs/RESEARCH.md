@@ -296,7 +296,7 @@ Script: `scripts/research/sweep03/`. Mọi số đo trên E9a holdout (213 ảnh
 | | train dài/ngắn hơn, đổi LR | loại | E10; checkpoint sau anneal ổn định (F35) |
 | | SWA, model soup | loại | EMA đã có; soup giữa các fold không kiểm chứng được |
 | **Inference** | TTA D4 ×8 @1024 | đang dùng | – |
-| | + TTA @1152 | thử trên Mac (miễn phí) | F38: +0.003, CI chứa 0; chỉ nhận nếu CI > 0 trên đủ 213 ảnh |
+| | + TTA @1152 | đo xong trên Mac: +0.0035 [−0.0013, +0.0082] (213 ảnh) | chưa nhận; thử lại trên OOF của N1 |
 | | TTA thu nhỏ | loại | F37 |
 | | lưu map fp16 thay vì uint8 | dự phòng | chỉ nếu seed hysteresis của N1 ≥ 0.97 (bão hoà) |
 | **Ensemble** | 5 fold cùng công thức | ⏳ hàng đợi | H1; lợi ích không đo được trên OOF |

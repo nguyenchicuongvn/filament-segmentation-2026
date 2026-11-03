@@ -1,0 +1,21 @@
+0 19s
+20 125s
+40 227s
+60 351s
+80 466s
+100 590s
+120 696s
+140 836s
+160 1030s
+180 1200s
+200 1341s
+done 1426.8931300640106
+avg maps 213
+  outputs/colab/unet1024_effb4/probs_val hyst: combos chosen [{'thresh': 0.4, 'min_area': 50, 'group_radius': 6, 'out_dilate': 0, 'mode': 'hyst', 'seed_thresh': 0.99, 'group_thresh': 0.5, 'fill_holes': False, 'small_area': 0, 'small_thresh': 0.0, 'large_area': 0, 'large_thresh': 0.0, 'large_grow': 3}, {'thresh': 0.5, 'min_area': 90, 'group_radius': 6, 'out_dilate': 0, 'mode': 'hyst', 'seed_thresh': 0.95, 'group_thresh': 0.5, 'fill_holes': False, 'small_area': 0, 'small_thresh': 0.0, 'large_area': 0, 'large_thresh': 0.0, 'large_grow': 3}, {'thresh': 0.5, 'min_area': 50, 'group_radius': 6, 'out_dilate': 0, 'mode': 'hyst', 'seed_thresh': 0.99, 'group_thresh': 0.5, 'fill_holes': False, 'small_area': 0, 'small_thresh': 0.0, 'large_area': 0, 'large_thresh': 0.0, 'large_grow': 3}]
+evaluated base
+  outputs/wf_tta/avg_1024_1152 hyst: combos chosen [{'thresh': 0.5, 'min_area': 90, 'group_radius': 6, 'out_dilate': 0, 'mode': 'hyst', 'seed_thresh': 0.97, 'group_thresh': 0.5, 'fill_holes': False, 'small_area': 0, 'small_thresh': 0.0, 'large_area': 0, 'large_thresh': 0.0, 'large_grow': 3}, {'thresh': 0.5, 'min_area': 50, 'group_radius': 6, 'out_dilate': 0, 'mode': 'hyst', 'seed_thresh': 0.99, 'group_thresh': 0.5, 'fill_holes': False, 'small_area': 0, 'small_thresh': 0.0, 'large_area': 0, 'large_thresh': 0.0, 'large_grow': 3}]
+evaluated tta1152
+213 images, 2000 bootstrap resamples
+pipeline                          PQ    TP    FP    FN     diff             95% CI   P>0
+base                          0.4083  1375   753   991
+tta1152                       0.4119  1386   756   980  +0.0035 [-0.0013, +0.0082]  0.92
