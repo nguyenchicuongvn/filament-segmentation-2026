@@ -312,3 +312,20 @@ Script: `scripts/research/sweep03/`. Mọi số đo trên E9a holdout (213 ảnh
    sẵn và model đã tự học các bộ lọc.
 3. Kỳ vọng trung thực vẫn khoảng +0.005 đến +0.02 OOF cho cả phần còn lại. Mức trên chỉ đạt được nếu
    N2 thu hẹp phần lớn khoảng chênh ở ảnh sắc nét.
+
+## 12. Rà soát lại các bước (04/11): có gì sai?
+
+Người dùng hỏi vì sao vẫn chưa đạt. Câu trả lời ngắn: submission không có bug, nhưng có hai lỗi
+phương pháp và một khoảng cách model.
+
+| Mã | Nhận định | Số liệu | Hệ quả |
+|---|---|---|---|
+| F45 | **Khoảng thiếu nằm ở OOF, không ở submission.** Mọi đội trung thực có LB thấp hơn OOF 0.05–0.06 (§ 6.2); mình: OOF 0.428 (ens), LB 0.37, cùng mức chênh. Số dự đoán mỗi ảnh và diện tích nền trên test khớp val (F10) | ens OOF 0.428 so với 0.45–0.46 của các đội 0.40 | cần +0.02–0.03 OOF; không tìm lỗi ở bước nộp nữa |
+| F46 | **Map bão hoà: target mềm bị loss Dice phá.** Target là tỉ lệ annotator, nhưng 70% thành phần của N1 có đỉnh p = 1.0. Pixel dự đoán 0.5–0.9 chỉ có 37–45% annotator vẽ; pixel ≥ 0.9 có 78% | 60 ảnh fold 0 | giải thích F34 (AUC 0.72), H6 thất bại (bộ dự đoán IoU R² 0.26) và việc seed 0.99 luôn thắng: map không còn cho biết bao nhiêu người sẽ vẽ filament. Thẻ N7 (BCE thuần) đang chạy |
+| F47 | **Hậu xử lý ở 1024, phóng nhãn bằng nearest** làm biên răng cưa ở 2048 | +0.0024 [+0.0003, +0.0045] khi hậu xử lý ở 2048 | sửa cho final 2; ensemble vốn đã ở 2048 |
+| F48 | **Tiêu chí nhận quá chặt cho lợi ích nhỏ.** Ngưỡng Δ ≥ +0.010–0.012 trên một fold (CI ±0.012) chỉ nhận được thay đổi lớn. Các đội 0.40 cộng dồn nhiều bước +0.003–0.008 (S10b, S11a, S11c). Mình đã bỏ TTA1152 (+0.0035), UP2048 (+0.0024) | | từ giờ, thay đổi **rẻ** (không tốn GPU, không thêm độ phức tạp) được nhận nếu CI > 0 trên OOF 707 ảnh; ngưỡng Δ chỉ giữ cho thay đổi tốn GPU |
+| F49 | v2 thất bại vì **trọng số không được dò**: phạt thành phần giả 0.3 trên map còn mềm làm model dè dặt (FN +230/fold). Chỉ có smoke test 256 px 2 epoch trước khi tốn 5 h GPU | | lần sau: dò trọng số trên run ngắn @512 trước |
+| F50 | Chưa kiểm: input 1 kênh không chuẩn hoá ImageNet; bs 4 với BatchNorm; chỉ 30 epoch; chọn checkpoint trên chính fold val (lạc quan nhẹ) | | ưu tiên thấp, không có bằng chứng |
+
+**Thứ tự ưu tiên mới**: N7 (BCE) fold 0+1 → nếu map hiệu chỉnh tốt hơn thì thử lại tầng quyết định
+F26 trên map mới (CPU) → TTA1152 + UP2048 trên OOF (CPU/MPS).
