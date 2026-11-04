@@ -85,6 +85,8 @@ Val luôn cao hơn LB khoảng 0.03–0.07, nhưng thứ tự giữa các model 
   được trung bình, nên phần lợi do "trung bình nhiều model" có thể đã nằm sẵn trong LB 0.37; OOF
   không tách được phần này. Phần riêng của N2 là tính đa dạng về độ phân giải.
 - Watcher tự nộp 4 bài (0.36, 0.32, 0.36, 0.37).
+- Kiểm tra thêm: N1 + v2 trên fold 1 chỉ +0.0005 [−0.005, +0.005] (fold 0 là +0.011), và thêm v2 vào
+  N1 + N2 −0.002. Lợi ích ensemble đổi nhiều theo fold, nên kỳ vọng cho G4 hạ xuống khoảng +0.005.
 
 ### 2026-11-03
 - Người dùng cho phép dùng GPU Kaggle (~20 h tuần này, đẩy khi có slot trống). Viết
