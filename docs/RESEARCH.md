@@ -326,6 +326,7 @@ phương pháp và một khoảng cách model.
 | F48 | **Tiêu chí nhận quá chặt cho lợi ích nhỏ.** Ngưỡng Δ ≥ +0.010–0.012 trên một fold (CI ±0.012) chỉ nhận được thay đổi lớn. Các đội 0.40 cộng dồn nhiều bước +0.003–0.008 (S10b, S11a, S11c). Mình đã bỏ TTA1152 (+0.0035), UP2048 (+0.0024) | | từ giờ, thay đổi **rẻ** (không tốn GPU, không thêm độ phức tạp) được nhận nếu CI > 0 trên OOF 707 ảnh; ngưỡng Δ chỉ giữ cho thay đổi tốn GPU |
 | F49 | v2 thất bại vì **trọng số không được dò**: phạt thành phần giả 0.3 trên map còn mềm làm model dè dặt (FN +230/fold). Chỉ có smoke test 256 px 2 epoch trước khi tốn 5 h GPU | | lần sau: dò trọng số trên run ngắn @512 trước |
 | F50 | Chưa kiểm: input 1 kênh không chuẩn hoá ImageNet; bs 4 với BatchNorm; chỉ 30 epoch; chọn checkpoint trên chính fold val (lạc quan nhẹ) | | ưu tiên thấp, không có bằng chứng |
+| F51 | **Hiệu chỉnh map không đổi PQ.** BCE thuần cho map p ≈ tỉ lệ annotator (p 0.7–0.9 → 80% vẽ; N1 49%), nhưng PQ đơn lẻ bằng N1 (−0.0002 / −0.0018) và bộ lọc instance trên map mới vẫn ≈ 0 (+0.0004 / −0.0013). Làm thành viên ensemble thì +0.004 (gộp 2 fold, CI > 0) | fold 0+1, 284 ảnh | F46 đúng về hiện tượng nhưng sai về hệ quả: hysteresis với seed tune được đã bù cho map bão hoà. Giới hạn nằm ở chất lượng mask/tách instance, không ở độ tự tin |
 
 **Thứ tự ưu tiên mới**: N7 (BCE) fold 0+1 → nếu map hiệu chỉnh tốt hơn thì thử lại tầng quyết định
 F26 trên map mới (CPU) → TTA1152 + UP2048 trên OOF (CPU/MPS).

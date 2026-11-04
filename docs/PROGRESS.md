@@ -37,6 +37,7 @@ việc đổi trạng thái.
 | Kaggle GPU: 4 kernel (N1 ×5, v2 ×2, N2 ×1) | nhánh `exp/kaggle-gpu`, daemon | ✅ 04/11 04:07 | G1/G2 ~05/11 | 8 run xong, không lỗi; kernel đầu lỗi tìm code (Kaggle giải nén zip), đã sửa |
 | Kaggle GPU: kernel 5–6 (N2 f1–f4) | daemon | ✅ 04/11 10:42 | ~11:00 04/11 | 4 run xong, ~6 h GPU; tổng đã dùng ~14 h / 20 h |
 | ENS: N1 + N2 OOF 5 fold (G4) | Mac | ✅ qua 04/11 | trước 09/11 | **+0.0105 [+0.0072, +0.0140]**, 707 ảnh, dương 5/5 fold → final 1 |
+| N7: BCE thuần (bỏ Dice), fold 0+1 | Kaggle kernel 7 | ❌ 04/11 22:28 | – | đơn lẻ −0.0002 / −0.0018; thêm vào N1 + N2: +0.0060 [+0.001, +0.011] (f0), +0.0038 [−0.001, +0.009] (f1), chưa đạt tiêu chí. Map hiệu chỉnh tốt nhưng bộ lọc vẫn không giúp. Tổng GPU ~16.3 h / 20 h |
 
 ## Lịch sử submission
 
@@ -96,6 +97,15 @@ Val luôn cao hơn LB khoảng 0.03–0.07, nhưng thứ tự giữa các model 
   5 fold ở test.
 - Nộp ensemble 10 model: **LB 0.37**, bằng N1 (LB chỉ hiển thị 2 chữ số, và khoảng ±0.01 là nhiễu theo
   `docs/logs/lb_noise_effb4_hyst.txt`). Không đổi quyết định: chọn theo OOF.
+- **Rà soát lại các bước** (RESEARCH § 12, F45–F50): submission không có bug; khoảng thiếu nằm ở OOF
+  (0.428 so với 0.45–0.46 của các đội 0.40). Hai lỗi phương pháp: map bị loss Dice làm bão hoà, và
+  phóng nhãn nearest (hậu xử lý ở 2048 cho +0.0024 [+0.0003, +0.0045]).
+- **N7 (BCE thuần, fold 0+1)**, kernel 7 xong 22:28 (~2.3 h GPU). Map hiệu chỉnh tốt hẳn (p ≈ tỉ lệ
+  annotator), nhưng PQ đơn lẻ bằng N1 (−0.0002 / −0.0018). Làm thành viên thứ ba của ensemble: +0.0060
+  (f0, CI > 0), +0.0038 (f1, CI chạm 0), nên chưa đạt tiêu chí đăng ký. Gộp 2 fold (ngoài đăng ký) cho
+  +0.0041 [+0.0004, +0.0077]. Bộ lọc instance trên map BCE: +0.0004 / −0.0013, bỏ.
+- Kết luận: bão hoà map là có thật nhưng **không phải** nguyên nhân giới hạn PQ. Train BCE fold 2–4
+  (~3.5 h GPU, vượt ngân sách ~1 h) chỉ hứa hẹn khoảng +0.004 OOF; cần người dùng quyết.
 
 ### 2026-11-03
 - Người dùng cho phép dùng GPU Kaggle (~20 h tuần này, đẩy khi có slot trống). Viết

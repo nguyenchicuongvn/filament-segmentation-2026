@@ -256,6 +256,11 @@ final. GPU còn ~6 h: chưa dùng; ứng viên rẻ nhất là một họ thứ 
   làm thành viên ensemble thứ ba nếu N1 + N2 + BCE hơn N1 + N2 với CI > 0 trên 2 fold. Nếu qua, train
   fold 2–4 (~3.5 h, vượt ~1 h so với 20 h, cần hỏi người dùng).
 - Kỳ vọng: không chắc. Dice thường giúp vật mảnh; BCE thuần có thể mất recall.
+- **Kết quả (04/11 22:28)**: không qua cả hai tiêu chí. Thay N1: −0.0002 [−0.010, +0.009] (f0),
+  −0.0018 [−0.012, +0.008] (f1). Thành viên thứ ba: +0.0060 [+0.0012, +0.0110] (f0), +0.0038
+  [−0.0014, +0.0093] (f1). Gộp 284 ảnh, ngoài đăng ký: +0.0041 [+0.0004, +0.0077]. Map hiệu chỉnh tốt
+  (seed chọn 0.6–0.7), nhưng bộ lọc trên map mới vẫn ≈ 0. Fold 2–4 chỉ train nếu người dùng duyệt
+  thêm giờ GPU (lợi kỳ vọng ~+0.004 OOF; inference 15 model).
 
 **Việc trên Mac, không tốn GPU**: TTA @1152 trên đủ 213 ảnh (F38; chỉ nhận nếu CI > 0); thêm chia
 theo độ sắc vào báo cáo so sánh.
