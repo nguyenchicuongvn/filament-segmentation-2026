@@ -15,7 +15,7 @@ Mỗi phiên làm việc thêm một mục ở **đầu** phần "Nhật ký" (m
 | Deadline | Kaggle: **2026-11-15 06:00 UTC** (13:00 VN). Report + code (Google form): Nov 15 11:59 pm CDT |
 | Repo | https://github.com/nguyenchicuongvn/filament-segmentation-2026 (**private** đến khi cuộc thi đóng) |
 | GPU | Kaggle GPU (T4 ×2, `scripts/kaggle_gpu.py`), ~20 h tuần này; đã dùng ~8 h cho 4 kernel, thêm ~6 h cho kernel 5–6 đang chạy. Colab chưa dùng |
-| Đang chờ | Kernel 5–6 trên Kaggle (đẩy 04/11 07:45): N2 @2048 fold 1–4, để đo OOF đủ 707 ảnh cho ensemble N1 + N2 |
+| Đang chờ | Nộp final 1 ứng viên (ensemble 10 model N1 + N2); đo thời gian inference trên Kaggle cho notebook final |
 
 ## Theo dõi kế hoạch
 
@@ -35,8 +35,8 @@ việc đổi trạng thái.
 | Người dùng: số giờ Colab | – | ✅ 29/10 | – | ~25 h L4, đủ cho kế hoạch đầy đủ |
 | Người dùng: GPU Kaggle | – | ✅ 03/11 | – | được dùng, ~20 h tuần này, đẩy khi có slot trống |
 | Kaggle GPU: 4 kernel (N1 ×5, v2 ×2, N2 ×1) | nhánh `exp/kaggle-gpu`, daemon | ✅ 04/11 04:07 | G1/G2 ~05/11 | 8 run xong, không lỗi; kernel đầu lỗi tìm code (Kaggle giải nén zip), đã sửa |
-| Kaggle GPU: kernel 5–6 (N2 f1–f4) | daemon | ⏳ chạy từ 04/11 07:45 | ~11:00 04/11 | |
-| ENS: N1 + N2 OOF 5 fold | Mac | chờ kernel 5–6 | trước 09/11 | tiêu chí: Δ ≥ +0.010, CI > 0 trên 707 ảnh; nếu qua là final 1 |
+| Kaggle GPU: kernel 5–6 (N2 f1–f4) | daemon | ✅ 04/11 10:42 | ~11:00 04/11 | 4 run xong, ~6 h GPU; tổng đã dùng ~14 h / 20 h |
+| ENS: N1 + N2 OOF 5 fold (G4) | Mac | ✅ qua 04/11 | trước 09/11 | **+0.0105 [+0.0072, +0.0140]**, 707 ảnh, dương 5/5 fold → final 1 |
 
 ## Lịch sử submission
 
@@ -87,6 +87,12 @@ Val luôn cao hơn LB khoảng 0.03–0.07, nhưng thứ tự giữa các model 
 - Watcher tự nộp 4 bài (0.36, 0.32, 0.36, 0.37).
 - Kiểm tra thêm: N1 + v2 trên fold 1 chỉ +0.0005 [−0.005, +0.005] (fold 0 là +0.011), và thêm v2 vào
   N1 + N2 −0.002. Lợi ích ensemble đổi nhiều theo fold, nên kỳ vọng cho G4 hạ xuống khoảng +0.005.
+- Kernel 5–6 xong lúc 10:42 (N2 fold 1–4). **G4 qua**: OOF 707 ảnh N1 0.4179, N2 0.4129, trung bình
+  N1 + N2 **0.4284, +0.0105 [+0.0072, +0.0140]**, dương cả 5 fold (fold 1 yếu nhất, +0.003). Lợi
+  ích đến từ giảm FP (−222) chứ không phải tăng recall. Kỳ vọng +0.005 ở trên là quá bi quan.
+- Final 1 = 10 model (N1 ×5 + N2 ×5, trọng số 1:1 giữa hai họ), hysteresis tune trên OOF ensemble +
+  lọc FP. Final 2 = N1 5 fold (LB 0.37). Vẫn cần lưu ý: OOF không đo được phần lợi do trung bình
+  5 fold ở test.
 
 ### 2026-11-03
 - Người dùng cho phép dùng GPU Kaggle (~20 h tuần này, đẩy khi có slot trống). Viết

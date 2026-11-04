@@ -239,6 +239,12 @@ Tổng ~11 h cho 4 kernel đầu, ~17 h nếu có rollout. Nếu GPU Kaggle tín
 - Lưu ý: OOF không đo được phần lợi do trung bình nhiều fold trên test (5 model N1 đã được trung
   bình ở test), nên lợi ích thật của N2 trên test có thể nhỏ hơn số OOF. Không dùng LB để quyết.
 
+**Kết quả G4 (04/11)**: qua. OOF 707 ảnh +0.0105 [+0.0072, +0.0140], dương 5/5 fold. Final 1 là
+ensemble 10 model. Việc còn lại cho final: đo thời gian inference 10 model × TTA 8 trên Kaggle,
+weights fp16 (10 × ~35 MB, kiểm tra giới hạn repo), notebook end-to-end, metric rubric (N5) trên
+final. GPU còn ~6 h: chưa dùng; ứng viên rẻ nhất là một họ thứ ba khác biệt (ví dụ EfficientNetV2-S
+@1024, F32) nếu thời gian cho phép, nhưng cần cổng riêng trước khi đẩy.
+
 **Việc trên Mac, không tốn GPU**: TTA @1152 trên đủ 213 ảnh (F38; chỉ nhận nếu CI > 0); thêm chia
 theo độ sắc vào báo cáo so sánh.
 
