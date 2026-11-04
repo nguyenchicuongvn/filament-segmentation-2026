@@ -11,7 +11,7 @@ Mỗi phiên làm việc thêm một mục ở **đầu** phần "Nhật ký" (m
 | Submission tốt nhất | **Public LB 0.37**: 5 fold EffNet-B4 @1024 target mềm (N1) + hysteresis + lọc FP (OOF 0.425, 707 ảnh), 04/11 |
 | Hạng | 483 / 1,260 với 0.36 (LB 2026-10-29 08:16 UTC) |
 | LB tham chiếu | #1 0.70 nhưng bị nhiễm (rò rỉ nhãn, payload 0.55 × 82 đội); tầng trung thực cao nhất 0.42 (1 đội), 0.41 (11), 0.40 (46); xem [RESEARCH S16](RESEARCH.md#3-leaderboard-và-khoảng-cách-val--lb) |
-| Submissions đã dùng | 27 (tối đa 5/ngày, reset 00:00 UTC) |
+| Submissions đã dùng | 28 (tối đa 5/ngày, reset 00:00 UTC) |
 | Deadline | Kaggle: **2026-11-15 06:00 UTC** (13:00 VN). Report + code (Google form): Nov 15 11:59 pm CDT |
 | Repo | https://github.com/nguyenchicuongvn/filament-segmentation-2026 (**private** đến khi cuộc thi đóng) |
 | GPU | Kaggle GPU (T4 ×2, `scripts/kaggle_gpu.py`), ~20 h tuần này; đã dùng ~8 h cho 4 kernel, thêm ~6 h cho kernel 5–6 đang chạy. Colab chưa dùng |
@@ -42,6 +42,7 @@ việc đổi trạng thái.
 
 | Ngày (UTC) | File | Mô tả | val PQ | Public LB |
 |---|---|---|---|---|
+| 2026-11-04 09:27 | `submission_ens_n1n2.csv` | **final 1 ứng viên**: N1 ×5 @1024 + N2 ×5 @2048 (1:1) + hysteresis (t 0.4, seed 0.99, area 200, r 12) + lọc FP | 0.431 (OOF, in-sample); cross-tune +0.0105 so với N1 | 0.37 |
 | 2026-11-04 02:47 | `submission_effb4_s1024.csv` | N1 5 fold + hysteresis + lọc FP | 0.425 (OOF, in-sample) | **0.37** |
 | 2026-11-03 23:19 | `submission_effb4_c2048_f0.csv` | N2 fold 0 + lọc FP | 0.434 (in-sample) | 0.36 |
 | 2026-11-03 22:05 | `submission_effb4_v2_s1024_f0.csv` | v2 fold 0 + lọc FP | 0.368 (in-sample) | 0.32 |
@@ -93,6 +94,8 @@ Val luôn cao hơn LB khoảng 0.03–0.07, nhưng thứ tự giữa các model 
 - Final 1 = 10 model (N1 ×5 + N2 ×5, trọng số 1:1 giữa hai họ), hysteresis tune trên OOF ensemble +
   lọc FP. Final 2 = N1 5 fold (LB 0.37). Vẫn cần lưu ý: OOF không đo được phần lợi do trung bình
   5 fold ở test.
+- Nộp ensemble 10 model: **LB 0.37**, bằng N1 (LB chỉ hiển thị 2 chữ số, và khoảng ±0.01 là nhiễu theo
+  `docs/logs/lb_noise_effb4_hyst.txt`). Không đổi quyết định: chọn theo OOF.
 
 ### 2026-11-03
 - Người dùng cho phép dùng GPU Kaggle (~20 h tuần này, đẩy khi có slot trống). Viết
