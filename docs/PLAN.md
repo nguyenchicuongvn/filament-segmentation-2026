@@ -218,6 +218,27 @@ Tổng ~11 h cho 4 kernel đầu, ~17 h nếu có rollout. Nếu GPU Kaggle tín
 - **Đo miễn phí sau G2**: trung bình map N1 + v2 trên fold 0/1, so với model đơn tốt hơn. Đây là
   số đo thật duy nhất về lợi ích của ensemble.
 
+**Kết quả (04/11)**: N1 5 fold xong (OOF hyst 0.4208, LB 0.37). G1 không qua (N2 đơn −0.0018
+[−0.011, +0.007]). G2 bỏ (v2 −0.050 / −0.080). Đo miễn phí trên fold 0: **N1 + N2 +0.0133
+[+0.0066, +0.0203]**, N1 + v2 +0.0109 [+0.0053, +0.0170]. Chi tiết ở ledger (ENS-n1n2, ENS-n1v2).
+
+**Hàng đợi tiếp theo** (đẩy 04/11 07:45, ~6 h GPU, tổng ~14 h / 20 h):
+
+| Kernel | Run (GPU0 / GPU1) | Mục đích |
+|---|---|---|
+| 5 | N2 f1 / N2 f2 | thành viên ensemble N2 |
+| 6 | N2 f3 / N2 f4 | thành viên ensemble N2 |
+
+**Cổng G4 (ensemble N1 + N2)**, đăng ký trước khi có số:
+- so `ens=avg(N1 fk, N2 fk)` với N1 fk trên từng fold, grid `hyst_soft` cross-tune, gộp 707 ảnh;
+- nhận nếu Δ ≥ +0.010, CI > 0, và Δ > 0 trên ít nhất 4/5 fold;
+- nếu qua: final 1 = 10 model (N1 ×5 + N2 ×5), trọng số 1:1, hậu xử lý tune trên OOF ensemble;
+  final 2 = N1 5 fold (an toàn, LB 0.37). Thời gian inference test: 10 model × TTA 8, cần đo trên
+  Kaggle trước khi đóng băng 09/11;
+- nếu không qua: final 1 = N1 5 fold.
+- Lưu ý: OOF không đo được phần lợi do trung bình nhiều fold trên test (5 model N1 đã được trung
+  bình ở test), nên lợi ích thật của N2 trên test có thể nhỏ hơn số OOF. Không dùng LB để quyết.
+
 **Việc trên Mac, không tốn GPU**: TTA @1152 trên đủ 213 ảnh (F38; chỉ nhận nếu CI > 0); thêm chia
 theo độ sắc vào báo cáo so sánh.
 

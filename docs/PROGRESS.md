@@ -4,18 +4,18 @@ Mỗi phiên làm việc thêm một mục ở **đầu** phần "Nhật ký" (m
 "Trạng thái". Chi tiết từng thí nghiệm nằm ở [EXPERIMENTS.md](EXPERIMENTS.md), kế hoạch ở
 [PLAN.md](PLAN.md).
 
-## Trạng thái (cập nhật 2026-10-29)
+## Trạng thái (cập nhật 2026-11-04)
 
 | | |
 |---|---|
-| Submission tốt nhất | **Public LB 0.36**: U-Net EfficientNet-B4 @1024 + lọc FP (val 0.408) |
+| Submission tốt nhất | **Public LB 0.37**: 5 fold EffNet-B4 @1024 target mềm (N1) + hysteresis + lọc FP (OOF 0.425, 707 ảnh), 04/11 |
 | Hạng | 483 / 1,260 với 0.36 (LB 2026-10-29 08:16 UTC) |
 | LB tham chiếu | #1 0.70 nhưng bị nhiễm (rò rỉ nhãn, payload 0.55 × 82 đội); tầng trung thực cao nhất 0.42 (1 đội), 0.41 (11), 0.40 (46); xem [RESEARCH S16](RESEARCH.md#3-leaderboard-và-khoảng-cách-val--lb) |
-| Submissions đã dùng | 23 (tối đa 5/ngày, reset 00:00 UTC) |
+| Submissions đã dùng | 27 (tối đa 5/ngày, reset 00:00 UTC) |
 | Deadline | Kaggle: **2026-11-15 06:00 UTC** (13:00 VN). Report + code (Google form): Nov 15 11:59 pm CDT |
 | Repo | https://github.com/nguyenchicuongvn/filament-segmentation-2026 (**private** đến khi cuộc thi đóng) |
-| GPU | Kaggle GPU quota tuần này đã hết → train GPU trên Colab (`colab/train_unet.ipynb`); Mac M5 (MPS) cho run nhỏ |
-| Đang chờ | Hàng đợi Colab thứ ba (Q3, ~8 h L4, người dùng chạy từ 29/10): 5 fold EffNet-B4 @1024 target mềm (N1) + fold 0 @2048 (N2); watcher local đang chờ |
+| GPU | Kaggle GPU (T4 ×2, `scripts/kaggle_gpu.py`), ~20 h tuần này; đã dùng ~8 h cho 4 kernel, thêm ~6 h cho kernel 5–6 đang chạy. Colab chưa dùng |
+| Đang chờ | Kernel 5–6 trên Kaggle (đẩy 04/11 07:45): N2 @2048 fold 1–4, để đo OOF đủ 707 ảnh cho ensemble N1 + N2 |
 
 ## Theo dõi kế hoạch
 
@@ -25,21 +25,27 @@ việc đổi trạng thái.
 | Việc | Ở đâu | Trạng thái | Hạn / cổng | Kết quả |
 |---|---|---|---|---|
 | N0: sửa bug cache, bundle Colab mới | Mac | ✅ 29/10 | – | `dl.py` ghi atomic; bundle 2.2 MB |
-| N1: 5 fold EffNet-B4 @1024 + target mềm | Colab Q3 | ⏳ chờ người dùng chạy | 31/10 | |
-| N2: crop @2048 so với @1024, fold 0 | Colab Q3 | ⏳ | G1 30/10 | |
+| N1: 5 fold EffNet-B4 @1024 + target mềm | Kaggle kernel 1, 3, 4 | ✅ 04/11 | 31/10 | OOF hyst 0.4208, + lọc FP 0.4249; **LB 0.37** |
+| N2: crop @2048 so với @1024, fold 0 | Kaggle kernel 2 | ❌ G1 04/11 | G1 30/10 | −0.0018 [−0.011, +0.007] đơn lẻ; nhưng **N1 + N2 trung bình +0.0133 [+0.007, +0.020]** → train fold 1–4 làm thành viên ensemble (kernel 5–6) |
 | P1: `compare.py` scale grid theo độ phân giải | Mac | ✅ 29/10 | trước G1 | diện tích × r², bán kính × r; grid cc thêm ngưỡng 0.2 cho map target mềm. Chạy lại trên E9a ra đúng số cũ (cc 0.4015, hyst 0.4083, Δ +0.0068 [+0.003, +0.011]); mất 8.4 phút cho 213 ảnh @1024 |
-| N3: gói v2 (EMA + blob loss + loss thành phần giả) | nhánh `exp/train-v2` → Colab Q4 | 📝 code + 8 test xong; smoke MPS 256 px 2 epoch (reviewer chạy): loss hữu hạn và giảm, PQ trọng số thô 0.089, EMA ~0 vì trễ ở run ngắn (bình thường, nên giờ ghi cả PQ thô); chưa merge vào main, chờ GPU | G2 01–02/11 | |
+| N3: gói v2 (EMA + blob loss + loss thành phần giả) | nhánh `exp/train-v2` → Colab Q4 | ❌ G2 04/11: −0.050 (f0), −0.080 (f1), FN tăng mạnh. Bỏ; trung bình N1 + v2 f0 vẫn +0.011 | G2 01–02/11 | |
 | N4: Mask R-CNN ghép với U-Net | nhánh `exp/maskrcnn` → Colab | 📝 code + 5 test xong; thử @512 trên Mac **âm** (ghép −0.006) | G3 05/11 (go/no-go) | chỉ chạy fold 0 @1024 nếu còn giờ GPU |
 | N5: metric rubric (torchmetrics Dice, phân bố, 1:n / n:1) | nhánh `exp/rubric-metrics` | ✅ 01/11 | 08/11 | E9a: Dice 0.668, 1:n 4.9%, n:1 3.7%; chạy lại trên model final |
 | N6: final, weights fp16, notebook, report | Mac | 📝 | đóng băng 09/11; nộp 15/11 | |
 | Người dùng: số giờ Colab | – | ✅ 29/10 | – | ~25 h L4, đủ cho kế hoạch đầy đủ |
 | Người dùng: GPU Kaggle | – | ✅ 03/11 | – | được dùng, ~20 h tuần này, đẩy khi có slot trống |
-| Kaggle GPU: 4 kernel (N1 ×5, v2 ×2, N2 ×1) | nhánh `exp/kaggle-gpu`, daemon | ⏳ chờ slot | G1/G2 ~05/11 | |
+| Kaggle GPU: 4 kernel (N1 ×5, v2 ×2, N2 ×1) | nhánh `exp/kaggle-gpu`, daemon | ✅ 04/11 04:07 | G1/G2 ~05/11 | 8 run xong, không lỗi; kernel đầu lỗi tìm code (Kaggle giải nén zip), đã sửa |
+| Kaggle GPU: kernel 5–6 (N2 f1–f4) | daemon | ⏳ chạy từ 04/11 07:45 | ~11:00 04/11 | |
+| ENS: N1 + N2 OOF 5 fold | Mac | chờ kernel 5–6 | trước 09/11 | tiêu chí: Δ ≥ +0.010, CI > 0 trên 707 ảnh; nếu qua là final 1 |
 
 ## Lịch sử submission
 
 | Ngày (UTC) | File | Mô tả | val PQ | Public LB |
 |---|---|---|---|---|
+| 2026-11-04 02:47 | `submission_effb4_s1024.csv` | N1 5 fold + hysteresis + lọc FP | 0.425 (OOF, in-sample) | **0.37** |
+| 2026-11-03 23:19 | `submission_effb4_c2048_f0.csv` | N2 fold 0 + lọc FP | 0.434 (in-sample) | 0.36 |
+| 2026-11-03 22:05 | `submission_effb4_v2_s1024_f0.csv` | v2 fold 0 + lọc FP | 0.368 (in-sample) | 0.32 |
+| 2026-11-03 20:58 | `submission_effb4_s1024_f0.csv` | N1 fold 0 + lọc FP | 0.427 (in-sample) | 0.36 |
 | 2026-10-27 23:38 | `submission_ens6_all_hyst_small07.csv` | ensemble 6 + hysteresis + co mask nhỏ | – | 0.35 |
 | 2026-10-27 23:38 | `submission_ens6_all_hyst.csv` | ensemble 6 + hysteresis chặt | 0.409 (cross-tune) | 0.35 |
 | 2026-10-27 23:24 | `submission_unet1024_effb4_hyst_strict150.csv` | EffNet-B4 + hysteresis, min_area 150 | – | 0.35 |
@@ -64,6 +70,21 @@ Val luôn cao hơn LB khoảng 0.03–0.07, nhưng thứ tự giữa các model 
 được để chọn model (xem [DATA_AND_METRIC.md](DATA_AND_METRIC.md#khoảng-cách-val--lb)).
 
 ## Nhật ký
+
+### 2026-11-04
+- 4 kernel Kaggle chạy xong lúc 04:07 (8 run, mọi exit code 0, ~8 h GPU). Kernel đầu tiên lỗi ở bước
+  tìm code vì Kaggle giải nén zip của dataset; đã sửa (commit d8381a0), không tốn giờ GPU.
+- **N1 5 fold**: OOF 707 ảnh hyst 0.4208, + lọc FP 0.4249; **LB 0.37** (tốt nhất mới, trước 0.36).
+- **G1 (N2 @2048) không qua**: −0.0018 [−0.0114, +0.0074]. N2 bắt thêm 33 filament nhưng thêm 116 FP.
+- **G2 (v2) bỏ**: −0.050 (f0), −0.080 (f1). Model quá dè dặt, FN tăng ~+230 mỗi fold.
+- **Đo miễn phí ensemble** (fold 0, cùng 142 ảnh): N1 + N2 **+0.0133 [+0.0066, +0.0203]**, N1 + v2
+  +0.0109 [+0.0053, +0.0170]. Trung bình 2 model giúp thật, kể cả khi model thứ hai yếu hơn. Trước
+  đây E-ens6 (−0.001) là ensemble các model holdout yếu hơn hẳn E9a, nên số này là bằng chứng mới.
+- Quyết định: dùng ~6 h GPU còn lại cho N2 fold 1–4 (kernel 5–6, đẩy lúc 07:45). Khi xong thì đo
+  OOF N1 + N2 trên 707 ảnh (tiêu chí Δ ≥ +0.010, CI > 0). Câu hỏi còn mở: trên test, 5 fold N1 đã
+  được trung bình, nên phần lợi do "trung bình nhiều model" có thể đã nằm sẵn trong LB 0.37; OOF
+  không tách được phần này. Phần riêng của N2 là tính đa dạng về độ phân giải.
+- Watcher tự nộp 4 bài (0.36, 0.32, 0.36, 0.37).
 
 ### 2026-11-03
 - Người dùng cho phép dùng GPU Kaggle (~20 h tuần này, đẩy khi có slot trống). Viết
