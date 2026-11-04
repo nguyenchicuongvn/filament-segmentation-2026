@@ -215,13 +215,17 @@ def instance_labels(soft: np.ndarray, min_area: int) -> np.ndarray:
     return lut[lab]
 
 
-def bce_dice_loss(logits: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
-    """BCE + soft Dice, Dice computed per sample and channel."""
+def bce_dice_loss(logits: torch.Tensor, target: torch.Tensor, dice_weight: float = 1.0) -> torch.Tensor:
+    """BCE + dice_weight * soft Dice, Dice computed per sample and channel. With soft targets the Dice
+    term pushes probabilities to 0/1 (maps stop meaning "fraction of annotators"); BCE alone is
+    calibrated, so dice_weight < 1 trades overlap for calibration."""
     bce = F.binary_cross_entropy_with_logits(logits, target)
+    if not dice_weight:
+        return bce
     p = torch.sigmoid(logits)
     inter = (p * target).sum((2, 3))
     dice = 1 - (2 * inter + 1) / (p.sum((2, 3)) + target.sum((2, 3)) + 1)
-    return bce + dice.mean()
+    return bce + dice_weight * dice.mean()
 
 
 def blob_dice_loss(logits: torch.Tensor, target: torch.Tensor, labels: torch.Tensor,

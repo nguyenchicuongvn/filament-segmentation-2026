@@ -245,6 +245,18 @@ weights fp16 (10 × ~35 MB, kiểm tra giới hạn repo), notebook end-to-end, 
 final. GPU còn ~6 h: chưa dùng; ứng viên rẻ nhất là một họ thứ ba khác biệt (ví dụ EfficientNetV2-S
 @1024, F32) nếu thời gian cho phép, nhưng cần cổng riêng trước khi đẩy.
 
+**Thẻ N7: map hiệu chỉnh (BCE, bỏ Dice)**, đăng ký 04/11 trước khi có số.
+- Lý do (rà soát 04/11): target mềm là tỉ lệ annotator, nhưng loss Dice đẩy map về 0/1. Trên 60 ảnh
+  fold 0 của N1: 70% thành phần có đỉnh p = 1.0; pixel dự đoán 0.5–0.9 chỉ có 37–45% annotator vẽ.
+  Map bão hoà thì không biết filament nào chỉ một người vẽ, nên luật giữ tối ưu F26 không áp được và
+  bộ lọc chỉ đạt AUC 0.72 (F34).
+- Thiết kế: `effb4_bce_s1024_f0/f1` = N1 với `--dice-weight 0`, cùng bs 4, 30 epoch; một kernel
+  (~2.3 h GPU). So với N1 f0/f1 bằng `hyst_soft`, và đo ensemble N1 + N2 + BCE so với N1 + N2.
+- Tiêu chí: nhận làm công thức thay N1 nếu gộp 2 fold Δ ≥ +0.008, CI > 0, dương cả 2 fold; nhận
+  làm thành viên ensemble thứ ba nếu N1 + N2 + BCE hơn N1 + N2 với CI > 0 trên 2 fold. Nếu qua, train
+  fold 2–4 (~3.5 h, vượt ~1 h so với 20 h, cần hỏi người dùng).
+- Kỳ vọng: không chắc. Dice thường giúp vật mảnh; BCE thuần có thể mất recall.
+
 **Việc trên Mac, không tốn GPU**: TTA @1152 trên đủ 213 ảnh (F38; chỉ nhận nếu CI > 0); thêm chia
 theo độ sắc vào báo cáo so sánh.
 

@@ -74,7 +74,10 @@ def resolve_inst_min_area(args) -> int:
 def run_meta(args) -> dict:
     """The run's arguments for <name>.json and the checkpoint. Recipe v2 options appear only when
     their feature is on, so the meta of a default run is unchanged."""
-    meta = {k: v for k, v in vars(args).items() if k not in ("out_dir", "resume") and k not in V2_DEFAULTS}
+    meta = {k: v for k, v in vars(args).items()
+            if k not in ("out_dir", "resume", "dice_weight") and k not in V2_DEFAULTS}
+    if args.dice_weight != 1.0:
+        meta["dice_weight"] = args.dice_weight
     if instance_loss_on(args):
         meta.update(blob_weight=args.blob_weight, fpc_weight=args.fpc_weight, fpc_thresh=args.fpc_thresh,
                     inst_min_area=resolve_inst_min_area(args))
@@ -139,6 +142,8 @@ def build_parser() -> argparse.ArgumentParser:
                     help="0..4: train on the other four folds, validate on this one (overrides --split)")
     ap.add_argument("--crop", type=int, default=0,
                     help="random crop size for --targets soft (e.g. 1024 with --res 2048); 0 = whole image")
+    ap.add_argument("--dice-weight", type=float, default=1.0,
+                    help="weight of the soft Dice term next to BCE (0 = BCE only: calibrated soft maps)")
     ap.add_argument("--val-every", type=int, default=5)
     ap.add_argument("--workers", type=int, default=4)
     ap.add_argument("--name", default="unet")
@@ -257,7 +262,7 @@ def main() -> None:
                                         args.fpc_weight, args.fpc_thresh, min_area)
                 parts.append((comp["blob"], comp["fpc"]))
             else:
-                loss = bce_dice_loss(logits.float(), y)
+                loss = bce_dice_loss(logits.float(), y, args.dice_weight)
             opt.zero_grad(set_to_none=True)
             scaler.scale(loss).backward()
             scaler.step(opt)
