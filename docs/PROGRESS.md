@@ -47,6 +47,11 @@ việc đổi trạng thái.
 |---|---|---|---|---|
 | 2026-11-05 09:10 | `submission_ens_n1n2bce.csv` | **15 model** N1 + N2 + BCE (1:1:1) + hysteresis (t 0.4, seed 0.9, area 200, r 12) + lọc FP. Giả thuyết: 15 so với 10 model trên test | 0.4325 (OOF, in-sample); cross-tune +0.0018 so với N1 + N2, CI chạm 0 → không vào final | 0.37 |
 | 2026-11-05 09:00 | `submission_ens_n1n2_r0.csv` | ablation: N1 + N2, hysteresis t 0.4, **không gộp mảnh** (r 0), không lọc FP. Giả thuyết: gộp r 12 đáng +0.0026 OOF, LB không thấy | – | 0.37 |
+| 2026-11-06 (kế hoạch) | `submission_ens_n1n2_orient.csv` | **final 1 mới**: N1 + N2 + hysteresis + gộp theo hướng (L16, r6) + lọc FP mới | OOF +0.0021 cross-tune (0.4327 sau lọc) | |
+| 2026-11-06 (kế hoạch) | `submission_n1up.csv` | **final 2**: N1 5 fold, map phóng lên 2048 trước hậu xử lý, không lọc FP | OOF 0.4229 (+0.0050 so với N1 @1024) | |
+| 2026-11-06 (kế hoạch) | `submission_ens_n1n2_drop15.csv` | thang suy giảm: final 1 bỏ 15% instance điểm lọc thấp nhất | Δ OOF +0.005 (in-sample) → LB 0.37 | |
+| 2026-11-06 (kế hoạch) | `submission_ens_n1n2_drop30.csv` | thang suy giảm 30% | Δ OOF −0.019 → LB ~0.35 | |
+| 2026-11-06 (kế hoạch) | `submission_ens_n1n2_drop50.csv` | thang suy giảm 50% | Δ OOF −0.085 → LB ~0.30 | |
 | 2026-11-05 08:35 | `submission_ens_n1n2_t0.5.csv` | thăm dò P/R (PLAN § 5b): N1 + N2, hysteresis t 0.5, **không** lọc FP. Giả thuyết: nếu test thưa annotator hơn train thì extent hẹp (0.5) ≥ rộng (0.3) | – (t 0.4 OOF cross-tune 0.4284) | 0.37 |
 | 2026-11-05 08:35 | `submission_ens_n1n2_t0.4.csv` | như trên, t 0.4 (final 1 bỏ lọc FP; đo riêng phần lọc FP so với dòng 04/11) | – | 0.37 |
 | 2026-11-05 08:35 | `submission_ens_n1n2_t0.3.csv` | như trên, t 0.3 | – | 0.37 |
@@ -102,7 +107,13 @@ Val luôn cao hơn LB khoảng 0.03–0.07, nhưng thứ tự giữa các model 
 - **UP2048 cho final 2 qua F48**: N1 5 fold phóng map lên 2048 trước hậu xử lý: **+0.0050 [+0.0029,
   +0.0069]** trên 707 OOF (0.4179 → 0.4229). Final 2 = `submission_n1up.csv` (cấu hình hysteresis
   trùng final 1, chưa lọc FP). CSV cho 06/11 dựng sẵn: `n1up`, `n1n2_a120`, `n1n2_a300`.
-- **Workflow nghiên cứu 06** (4 sweep + critic, `docs/logs/research06/`): xem log ngày 06/11.
+- **Workflow nghiên cứu 06** (4 sweep; critic hai lần lỗi vì giới hạn model, phần phản biện làm trong
+  phiên chính; `docs/logs/research06/`): tiền xử lý H-alpha là ngõ cụt; thêm seed (N8) dự kiến trượt
+  gate; thành viên khác encoder (N9, EffNetV2-S) và độ phân giải 1536 (N10) xếp **trước** N8 trên Colab
+  (bundle đóng gói lại); gate gộp đăng ký trước; lượt nộp chỉ cho tái lập / thang suy giảm / số report.
+- **Gộp theo hướng qua F48**: +0.0021 [+0.0005, +0.0037] trên 707 OOF; sau lọc FP 0.4312 → 0.4327.
+  Final 1 mới = `submission_ens_n1n2_orient.csv` (`PostParams.group_line`, có test).
+- **Thang suy giảm** trên OOF: bỏ 15/30/50% → +0.005 / −0.019 / −0.085; 3 CSV test cho 06/11.
 - **N8** (N1 seed 2, 5 fold) chuẩn bị cho Colab vì GPU Kaggle đã hết ("GPU hết thì qua Colab", người
   dùng 05/11): cờ `--seed`, queue trong notebook, bundle đóng gói.
 
