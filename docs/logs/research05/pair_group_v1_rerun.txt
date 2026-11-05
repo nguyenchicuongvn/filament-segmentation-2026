@@ -1,0 +1,13 @@
+images 707; candidate pairs 519; labelled 428 (same 247, different 181); radius rule joins 310
+AUC learned 0.767; radius-rule accuracy on labelled 0.621; learned@0.5 0.701
+radius PQ 0.4294
+  learned t=0.2: PQ 0.4318 (in-sample threshold)
+  learned t=0.3: PQ 0.4328 (in-sample threshold)
+  learned t=0.4: PQ 0.4326 (in-sample threshold)
+  learned t=0.5: PQ 0.4326 (in-sample threshold)
+  learned t=0.6: PQ 0.4325 (in-sample threshold)
+  learned t=0.7: PQ 0.4331 (in-sample threshold)
+  learned t=0.8: PQ 0.4331 (in-sample threshold)
+cross-tuned delta vs radius: mean +0.0030 (halves: [0.0017, 0.0042, -0.0022, 0.007, 0.0025, 0.0046]), picks [0.8, 0.3, 0.3, 0.8, 0.8, 0.7]
+t=0.8: delta +0.0036  bootstrap 95% [-0.0000, +0.0072]
+t=0.8: per-fold delta [-0.0015, 0.0103, -0.0001, 0.0046, 0.0047] (3/5 positive)

@@ -11,7 +11,7 @@ Mỗi phiên làm việc thêm một mục ở **đầu** phần "Nhật ký" (m
 | Submission tốt nhất | **Public LB 0.37**: 5 fold EffNet-B4 @1024 target mềm (N1) + hysteresis + lọc FP (OOF 0.425, 707 ảnh), 04/11 |
 | Hạng | 483 / 1,260 với 0.36 (LB 2026-10-29 08:16 UTC) |
 | LB tham chiếu | #1 0.70 nhưng bị nhiễm (rò rỉ nhãn, payload 0.55 × 82 đội); tầng trung thực cao nhất 0.42 (1 đội), 0.41 (11), 0.40 (46); xem [RESEARCH S16](RESEARCH.md#3-leaderboard-và-khoảng-cách-val--lb) |
-| Submissions đã dùng | 28 (tối đa 5/ngày, reset 00:00 UTC) |
+| Submissions đã dùng | 33 (tối đa 5/ngày, reset 00:00 UTC) |
 | Deadline | Kaggle: **2026-11-15 06:00 UTC** (13:00 VN). Report + code (Google form): Nov 15 11:59 pm CDT |
 | Repo | https://github.com/nguyenchicuongvn/filament-segmentation-2026 (**private** đến khi cuộc thi đóng) |
 | GPU | Kaggle GPU (T4 ×2, `scripts/kaggle_gpu.py`), ~20 h tuần này; đã dùng ~8 h cho 4 kernel, thêm ~6 h cho kernel 5–6 đang chạy. Colab chưa dùng |
@@ -45,6 +45,11 @@ việc đổi trạng thái.
 
 | Ngày (UTC) | File | Mô tả | val PQ | Public LB |
 |---|---|---|---|---|
+| 2026-11-05 09:10 | `submission_ens_n1n2bce.csv` | **15 model** N1 + N2 + BCE (1:1:1) + hysteresis (t 0.4, seed 0.9, area 200, r 12) + lọc FP. Giả thuyết: 15 so với 10 model trên test | 0.4325 (OOF, in-sample); cross-tune +0.0018 so với N1 + N2, CI chạm 0 → không vào final | 0.37 |
+| 2026-11-05 09:00 | `submission_ens_n1n2_r0.csv` | ablation: N1 + N2, hysteresis t 0.4, **không gộp mảnh** (r 0), không lọc FP. Giả thuyết: gộp r 12 đáng +0.0026 OOF, LB không thấy | – | 0.37 |
+| 2026-11-05 08:35 | `submission_ens_n1n2_t0.5.csv` | thăm dò P/R (PLAN § 5b): N1 + N2, hysteresis t 0.5, **không** lọc FP. Giả thuyết: nếu test thưa annotator hơn train thì extent hẹp (0.5) ≥ rộng (0.3) | – (t 0.4 OOF cross-tune 0.4284) | 0.37 |
+| 2026-11-05 08:35 | `submission_ens_n1n2_t0.4.csv` | như trên, t 0.4 (final 1 bỏ lọc FP; đo riêng phần lọc FP so với dòng 04/11) | – | 0.37 |
+| 2026-11-05 08:35 | `submission_ens_n1n2_t0.3.csv` | như trên, t 0.3 | – | 0.37 |
 | 2026-11-04 09:27 | `submission_ens_n1n2.csv` | **final 1 ứng viên**: N1 ×5 @1024 + N2 ×5 @2048 (1:1) + hysteresis (t 0.4, seed 0.99, area 200, r 12) + lọc FP | 0.431 (OOF, in-sample); cross-tune +0.0105 so với N1 | 0.37 |
 | 2026-11-04 02:47 | `submission_effb4_s1024.csv` | N1 5 fold + hysteresis + lọc FP | 0.425 (OOF, in-sample) | **0.37** |
 | 2026-11-03 23:19 | `submission_effb4_c2048_f0.csv` | N2 fold 0 + lọc FP | 0.434 (in-sample) | 0.36 |
