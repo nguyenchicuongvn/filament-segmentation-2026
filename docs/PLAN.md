@@ -150,6 +150,16 @@ Trạng thái: ⏳ đang chạy/chờ · 📝 chuẩn bị · ✅ xong · ❌ b�
 | Tiêu chí (đăng ký trước) | Trên 707 ảnh OOF, cross-tune `hyst_soft`: ensemble có N8 hơn ensemble không có N8 (cùng các thành viên khác đã qua gate) với **CI 95% > 0**. Đạt thì N8 vào final 1; không đạt thì final 1 giữ nguyên. Kiểm tra hợp lý từng fold: PQ fold của s2 nằm trong ±0.01 so với N1 cùng fold |
 | Sau đó | Nộp ensemble có N8 (08/11, lịch § 5b). Nếu chỉ về được 2–3 fold trước 08/11 thì gate trên các fold đó, nhưng chỉ nhận nếu CI > 0 trên tập ảnh đó |
 
+### N9 / N10 — Thành viên khác encoder (EfficientNetV2-S) và độ phân giải thứ ba (1536) (📝 Colab, 05/11 tối)
+
+| | |
+|---|---|
+| Giả thuyết | Lợi của một thành viên ensemble tăng theo độ khác biệt với N1 (đo: N2 khác độ phân giải +0.0105, BCE khác loss +0.0018). Một họ khác encoder (N9) hoặc độ phân giải 1536 (N10) cho +0.002…+0.006 mỗi họ, nhiều hơn seed 2 (N8) |
+| Bằng chứng | `docs/logs/research06/train_recipe.md`, `ensemble_diversity.md`: Wenzel 2020 (hyper-deep ensembles hơn deep ensembles chỉ khác init); notebook Kaggle 5 R34 + 5 EffNetV2-S OOF 0.450; E9a R34 → B4 +0.013. Ngược lại: N2 đơn lẻ kém N1 (−0.005, +643 FP), N10 có thể thừa hưởng FP; V2-S với 1 kênh chưa từng chạy ở đây |
+| Thiết kế | `effv2s_s1024_f0..f4` = N1 với `--encoder tu-tf_efficientnetv2_s.in21k_ft_in1k` (timm, Apache-2.0; build kiểm tra trên Mac: 22.1 M tham số, output đúng kích thước). `effb4_c1536_f0..f4` = N2 với `--res 1536 --crop 1024`. Hàng đợi Colab: N9 → N10 → N8 |
+| Chi phí | ~6.5 h L4 mỗi họ; T4 chỉ kịp N9 |
+| Tiêu chí (đăng ký trước) | Gate gộp § 5b (a)(b)(c). Không đổi sau khi thấy số |
+
 ## 5. Cổng quyết định và lịch dự kiến
 
 | Ngày | Colab (người dùng chạy) | Mac (mình làm) | Cổng |
@@ -170,9 +180,90 @@ chờ, nhưng chỉ tiêu giờ GPU khi đã qua G2.
 **Nếu Colab lại không ra kết quả**: sau 12 h không có run nào lên Kaggle thì hỏi người dùng log và
 hỏi có dùng Kaggle GPU không (30 h/tuần). Không tự ý dùng Kaggle GPU.
 
-## 5b. Lịch 05–15/11: ngày nào nộp gì (bản 05/11, thay bảng § 5 từ 06/11)
+## 5b. Lịch 06–15/11: ngày nào nộp gì (bản 2, 05/11 tối, sau workflow research06)
 
-### Xuất phát điểm (05/11)
+### Xuất phát điểm (05/11 tối)
+
+- **Final 1** = N1 ×5 + N2 ×5 (1:1), hysteresis t 0.4 / seed 0.99 / area 200 / r 12 + lọc FP: OOF
+  **0.4284** cross-tune, LB 0.37. Trọng số 2:1 / 1:2 đo trên 707 OOF: +0.0004 / −0.0018 → giữ 1:1.
+- **Final 2** = N1 ×5 **UP2048** (map phóng lên 2048 trước hậu xử lý): **+0.0050 [+0.0029, +0.0069]**
+  so với N1 @1024 trên 707 OOF (0.4229), qua F48. CSV `outputs/submission_n1up.csv` dựng sẵn.
+- 33 lượt đã dùng; 7 bài gần nhất đều 0.37. Còn ~50 lượt (5/ngày, reset 00:00 UTC = 04:00 giờ máy).
+- GPU: Kaggle hết (~20.8 h). Colab ~25 h L4 (người dùng chạy). Đóng băng model 09/11.
+
+### Kết luận workflow research06 (4 sweep + critic, `docs/logs/research06/`)
+
+| Sweep | Kết luận | Hệ quả cho lịch |
+|---|---|---|
+| `train_recipe` | Mọi thay đổi loss/aug/schedule/pseudo-label đã có số âm hoặc ≈ 0 ở đây hoặc ở đội khác. Hướng duy nhất có lý: **thành viên khác encoder** (EfficientNetV2-S in21k, giữ skip stride 2, 22 M tham số, đã kiểm tra build được với `build_model`) | thêm **N9** vào Colab, chạy **trước** N8 |
+| `ensemble_diversity` | Lợi của thành viên tăng theo độ khác biệt: độ phân giải (N2) +0.0105 ≫ loss (BCE) +0.0018 > seed (dự báo ≤ +0.002, nhiều khả năng trượt gate CI > 0). Model soup, SWA, logit-average, tune trọng số: ngõ cụt có lý do. Đề xuất **gate gộp** cho các thành viên "rẻ" và một thành viên độ phân giải thứ ba (1536) | thêm **N10** (N2 ở 1536); gate gộp đăng ký trước (dưới) |
+| `halpha_preprocessing` | Ngõ cụt: ảnh GONG đã được trạm remap + chuẩn hoá (median đĩa 130–133 ở cả 6 trạm, train = test), lỗi model không phụ thuộc r/R, không paper nào có ablation limb-darkening trước CNN, hai đội Kaggle có/không chỉnh limb bằng nhau | không thêm việc; một đoạn "vì sao không tiền xử lý vật lý" cho report |
+| `kaggle_endgame` | LB 2 chữ số trên ~90 ảnh: P(thấy bậc) ≈ 0.12–0.26 cho Δ ≤ 0.003, bằng tỉ lệ của thay đổi rỗng 0.12; thấy chắc chắn khi \|Δ\| ≥ 0.02. Bỏ các bài dò knob; dùng lượt cho **tái lập**, **thang suy giảm** (đo độ dốc LB/OOF) và **ablation cho report**. Chạy notebook end-to-end **sớm** (07/11, không đợi 11/11). Final 2 nên là bước đã qua gate trước đó, không phải N1 đơn | lịch nộp viết lại; final 2 xét lại ở 09/11 |
+
+### Luật dùng lượt nộp (thay bản 05/11)
+
+Một bài chỉ được nộp nếu thuộc một trong ba loại, và dòng giả thuyết + Δ OOF dự báo được ghi vào bảng
+submission (PROGRESS) **trước** khi nộp:
+
+1. **Tái lập**: CSV từ notebook Kaggle / clone sạch phải trùng từng byte với CSV từ Mac và cho cùng LB.
+2. **Đo có độ phân giải**: \|Δ OOF dự báo\| ≥ 0.01 (thang suy giảm, model đơn so với ensemble).
+3. **Số cho report**: LB của từng thành viên / từng fold (bảng "ensemble so với model đơn trên test").
+
+Knob hậu xử lý (trọng số, min_area, seed_thresh, bán kính gộp, cc/hyst, có/không lọc FP) **không**
+nộp nữa: OOF đã trả lời, LB không thấy. Vì vậy hai bài `min_area 120/300` và `2:1 / 1:2` của lịch cũ
+bị bỏ (CSV đã dựng vẫn giữ trong `outputs/`). Lượt không có bài hợp lệ thì để trống — dự kiến dùng
+~25 / 50.
+
+### Gate gộp cho thành viên mới (đăng ký trước 05/11, trước khi có số N8/N9/N10)
+
+Ứng viên: BCE (đã có), N8 (seed 2), N9 (V2-S), N10 (1536). Mỗi họ 5 fold trung bình trước, các họ
+trộn trọng số bằng nhau; trên 707 OOF, cross-tune `hyst_soft`, bootstrap 2000 theo ảnh.
+
+- (a) Pool = N1 + N2 + mọi họ đã về, so với N1 + N2: **CI 95% > 0**.
+- (b) Mỗi họ trong pool: đóng góp biên (pool so với pool bỏ họ đó) có **P > 0 ≥ 0.8**; họ nào trượt
+  thì bỏ họ có đóng góp biên thấp nhất rồi kiểm lại (a)(b) **một lần**; vẫn trượt thì final 1 giữ N1 + N2.
+- (c) Hợp lý từng fold: PQ fold của họ mới nằm trong ±0.02 so với N1 cùng fold (V2-S, 1536) hoặc
+  ±0.01 (seed 2).
+- Họ về chỉ 2–3 fold trước 09/11: không vào final (OOF thiếu ảnh → không so được trên 707 ảnh).
+
+### Hàng đợi Colab (người dùng chạy; bundle đóng gói lại 05/11 tối)
+
+| Thứ tự | Run | Chi phí L4 | Về muộn nhất |
+|---|---|---|---|
+| 1 | **N9** `effv2s_s1024_f0..f4` (N1 + encoder `tu-tf_efficientnetv2_s.in21k_ft_in1k`) | ~6.5 h | 07/11 |
+| 2 | **N10** `effb4_c1536_f0..f4` (N2 ở `--res 1536 --crop 1024`) | ~6.5 h | 08/11 |
+| 3 | N8 `effb4_s1024_s2_f0..f4` (seed 2) | ~6.3 h | 08/11 tối |
+
+Nếu người dùng đã bắt đầu N8 trước khi tải bundle mới thì cứ để N8 chạy xong; queue mới bỏ qua run đã
+xong. Trên T4: `--bs 4`, ~2.3 h/fold → chỉ kịp **một** họ trước 09/11 (chọn N9).
+
+### Lịch theo ngày (ngày UTC)
+
+| Ngày | Mac / Colab | Lượt nộp (loại · giả thuyết) | Cổng |
+|---|---|---|---|
+| **06/11** Thứ 6 | Người dùng tải bundle mới, chạy Colab (N9 → N10 → N8). Mac: script thang suy giảm (bỏ 15/30/50% instance tin cậy thấp nhất của final 1), tính Δ OOF trên 707 ảnh **trước**; dry-run gate gộp trên N1 + N2 + BCE. Bắt đầu `notebooks/final_inference.ipynb` | 1. **final 2 = N1 UP2048** (loại 2/3: Δ OOF +0.005, LB dự báo 0.37–0.38) · 2–4. **thang suy giảm** 15/30/50% (loại 2: Δ OOF dự báo ≈ −0.02/−0.05/−0.10; đo độ dốc LB/OOF) · 5. **N2 5 fold đơn** (loại 3: OOF −0.005 so với N1) | thang: 3 LB phải đi đúng chiều và thứ tự, không thì nghi lỗi file nộp |
+| **07/11** Thứ 7 | N9 về → gate gộp bước 1 (N1 + N2 + BCE + N9). Notebook end-to-end chạy trên kernel Kaggle mới (repo + weights fp32 qua dataset riêng, không Internet), ghi SHA256 CSV, đo thời gian | 1. **CSV final 1 từ notebook** (loại 1: phải trùng byte, LB 0.37) · 2. CSV final 2 từ notebook (loại 1) · 3. **BCE 5 fold đơn** (loại 3) · 4–5. **N1 fold 1, fold 2 đơn** (loại 3; fold 0 đã 0.36) | notebook đạt nếu `cmp` trùng; lệch thì so map uint8 và ghim phiên bản torch/timm/smp |
+| **08/11** CN | N10, N8 về → gate gộp đầy đủ (a)(b)(c). Bảng OOF mọi tổ hợp. Rubric N5 cho các ứng viên | 1. **pool đã qua gate** (loại 3: chỉ ghi số, không quyết định) · 2. **N9 5 fold đơn** (loại 3) · 3–4. **N1 fold 3, fold 4 đơn** (loại 3) · 5. N10 5 fold đơn nếu đã về (loại 3) | gate gộp; chưa đủ 5 fold thì họ đó ở ngoài |
+| **09/11** Thứ 2 | **Đóng băng**, tag git `freeze`. Chọn theo OOF: final 1 = pipeline OOF cao nhất trong số đã qua gate; final 2 = bước đã qua gate ngay trước đó (ví dụ N1 + N2 nếu pool vào final 1; N1 UP2048 nếu không có gì mới). Xuất notebook cho cả hai | 1. final 1 từ notebook (loại 1) · 2. final 2 từ notebook (loại 1) · 3. N8 5 fold đơn nếu về (loại 3) · 4–5. trống | chốt 2 final |
+| **10/11** Thứ 3 | Weights vào `weights/` + `SHA256SUMS`: fp32 nếu tổng ≤ ~1 GB (10 model = 817 MB; mỗi file 81.7 MB < 100 MiB), quá thì fp16 (plan B, gate: \|Δ PQ OOF\| < 0.0005 và LB bằng). Không dùng Git LFS (băng thông 10 GiB/tháng). Clone sạch + pytest | 1–2. final 1 / final 2 từ **clone sạch** (loại 1) · 3–5. trống | trùng byte |
+| **11/11** Thứ 4 | Notebook chạy từ tag `freeze` trên kernel mới; ghi phiên bản torch/timm/smp của kernel vào README | 1–2. dự phòng cho sửa tái lập | – |
+| **12/11** Thứ 5 | Report 4 trang bản 1: phân rã lỗi (F52), inter-annotator 0.34, bảng thành viên / fold OOF + LB, thang suy giảm, "vì sao không tiền xử lý vật lý", các hướng đã loại có số | trống | – |
+| **13/11** Thứ 6 | Report bản cuối; **tick 2 final bằng tay** trên Kaggle (không để Kaggle tự chọn giữa 7 bài 0.37), chụp màn hình; tag `final` | không nộp sau khi tick | – |
+| **14/11** Thứ 7 | Không đổi code, không nộp | – | – |
+| **15/11** CN | Hạn 06:00 UTC. Sau khi đóng: repo sang public, thử clone ẩn danh, nộp Google form buổi sáng UTC | – | – |
+
+### Kỳ vọng thật
+
+Nếu N9 và N10 cùng qua gate gộp: OOF final 1 khoảng **0.430–0.436** (+0.002…+0.008); một mình N8
+nhiều khả năng không qua. LB gần như chắc vẫn 0.37–0.38: khoảng cách val → LB chủ yếu do lệch annotator
+(inter-annotator PQ 0.34), và LB không thấy Δ < 0.01. Phần đáng giá nhất của tuần này là **tái lập
+chắc chắn** và **report có số** (rubric 30% định tính), không phải thêm điểm LB.
+
+<details><summary>Lịch bản 1 (05/11 sáng)</summary>
+
+### Bản 1 (05/11 sáng, đã thay bằng bản 2 ở trên)
+
+#### Xuất phát điểm (05/11)
 
 - OOF tốt nhất: N1+N2 (10 model) **0.4294** cross-tune; LB 0.37 (bằng N1 5 fold). BCE làm thành viên
   thứ ba: +0.004 trên fold 0+1, đang chạy gate trên 707 ảnh.
@@ -185,7 +276,7 @@ hỏi có dùng Kaggle GPU không (30 h/tuần). Không tự ý dùng Kaggle GPU
   thứ Bảy 00:00 UTC, cần kiểm tra trên trang quota). Train thêm cần người dùng đồng ý (§ 7 mục 4).
 - Lượt nộp: 5/ngày, reset 00:00 UTC (04:00 giờ máy). Từ 05/11 đến hạn còn ~50 lượt.
 
-### Cách dùng lượt nộp (sửa quy tắc § 3 mục 6)
+#### Cách dùng lượt nộp (sửa quy tắc § 3 mục 6)
 
 LB chỉ hiện 2 chữ số và nhiễu ±0.01 (`docs/logs/lb_noise_effb4_hyst.txt`), nên **một** bài nộp không
 phân biệt được hai phương án cách nhau < 0.01, và LB vẫn **không quyết định** gì. Nhưng lượt nộp
@@ -202,7 +293,7 @@ không khan hiếm, nên dùng hết 5 lượt/ngày cho ba việc mà OOF khôn
 Mỗi bài nộp ghi **trước** vào bảng lịch sử submission (PROGRESS) một dòng: giả thuyết và Δ OOF dự
 báo; sau khi có LB ghi kết quả. Không nộp bài nào không có giả thuyết.
 
-### Lịch theo ngày (ngày UTC)
+#### Lịch theo ngày (ngày UTC)
 
 | Ngày | Việc trên Mac / GPU | 5 lượt nộp (giả thuyết) | Cổng |
 |---|---|---|---|
@@ -217,7 +308,7 @@ báo; sau khi có LB ghi kết quả. Không nộp bài nào không có giả th
 | 13–14/11 | Report bản cuối; chọn 2 final trên Kaggle; chuẩn bị Google form | chỉ nộp lại nếu phát hiện lỗi | – |
 | 15/11 | Hạn 06:00 UTC. Sau khi đóng: repo sang public, nộp form | – | – |
 
-### Kỳ vọng thật
+#### Kỳ vọng thật
 
 Nếu BCE, gộp GBM, TTA và N8 đều qua gate thì OOF vào khoảng **0.435–0.44**; LB nhiều khả năng vẫn
 0.37–0.38 vì LB hiện 2 chữ số và lệch annotator chiếm phần lớn khoảng cách val → LB. Phần lớn
@@ -225,6 +316,8 @@ Nếu BCE, gộp GBM, TTA và N8 đều qua gate thì OOF vào khoảng **0.435�
 của annotator khác), nên không kỳ vọng bước nhảy nào từ hậu xử lý. Các hướng cần GPU và mang tính
 suy đoán (head distance kiểu Omnipose, head affinity + mutex watershed, lớp "khe hở") **không** làm
 trong tuần này: mỗi hướng tốn ~9 h GPU cho hiệu ứng dự kiến dưới ngưỡng phát hiện (±0.009).
+
+</details>
 
 ## 6. Không làm (và lý do)
 

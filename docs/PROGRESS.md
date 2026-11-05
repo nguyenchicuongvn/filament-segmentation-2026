@@ -97,6 +97,12 @@ Val luôn cao hơn LB khoảng 0.03–0.07, nhưng thứ tự giữa các model 
 - **Gộp mảnh GBM không qua gate** (v1 +0.0036, CI chạm 0, 3/5 fold; v2 +0.0026). Giữ bán kính 12.
 - **TTA theo tỉ lệ** (N1 f0 ở 1152): −0.0031; trung bình 1024 + 1152: −0.0002 → bỏ. Mọi map đã có
   TTA 8 hướng từ trước, nên mục "TTA" trong lịch 06/11 được thay bằng UP2048 và trọng số ensemble.
+- **Trọng số N1:N2 trên 707 OOF**: 2:1 +0.0004 [−0.0014, +0.0022], 1:2 −0.0018 → giữ 1:1; bỏ hai bài
+  thăm dò 2:1/1:2 khỏi lịch 06/11 (OOF đã trả lời, LB 2 chữ số không thấy được).
+- **UP2048 cho final 2 qua F48**: N1 5 fold phóng map lên 2048 trước hậu xử lý: **+0.0050 [+0.0029,
+  +0.0069]** trên 707 OOF (0.4179 → 0.4229). Final 2 = `submission_n1up.csv` (cấu hình hysteresis
+  trùng final 1, chưa lọc FP). CSV cho 06/11 dựng sẵn: `n1up`, `n1n2_a120`, `n1n2_a300`.
+- **Workflow nghiên cứu 06** (4 sweep + critic, `docs/logs/research06/`): xem log ngày 06/11.
 - **N8** (N1 seed 2, 5 fold) chuẩn bị cho Colab vì GPU Kaggle đã hết ("GPU hết thì qua Colab", người
   dùng 05/11): cờ `--seed`, queue trong notebook, bundle đóng gói.
 
