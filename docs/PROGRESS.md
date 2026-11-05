@@ -38,6 +38,7 @@ việc đổi trạng thái.
 | Kaggle GPU: kernel 5–6 (N2 f1–f4) | daemon | ✅ 04/11 10:42 | ~11:00 04/11 | 4 run xong, ~6 h GPU; tổng đã dùng ~14 h / 20 h |
 | ENS: N1 + N2 OOF 5 fold (G4) | Mac | ✅ qua 04/11 | trước 09/11 | **+0.0105 [+0.0072, +0.0140]**, 707 ảnh, dương 5/5 fold → final 1 |
 | N7: BCE thuần (bỏ Dice), fold 0+1 | Kaggle kernel 7 | ❌ 04/11 22:28 | – | đơn lẻ −0.0002 / −0.0018; thêm vào N1 + N2: +0.0060 [+0.001, +0.011] (f0), +0.0038 [−0.001, +0.009] (f1), chưa đạt tiêu chí. Map hiệu chỉnh tốt nhưng bộ lọc vẫn không giúp. Tổng GPU ~16.3 h / 20 h |
+| N7: BCE fold 2–4 (người dùng duyệt 05/11) | Kaggle kernel 8–9 (`bce-f2f3`, `bce-f4`) | ⏳ đẩy 05/11 07:20 | ~09:40 05/11 | chạy song song; ~4.5 h giờ phiên GPU, tổng ~20.8 h. Tiêu chí: OOF 707 ảnh N1 + N2 + BCE hơn N1 + N2 với CI > 0 |
 
 ## Lịch sử submission
 
