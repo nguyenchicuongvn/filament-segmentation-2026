@@ -92,6 +92,11 @@ Val luôn cao hơn LB khoảng 0.03–0.07, nhưng thứ tự giữa các model 
   cường độ **âm** (−0.001 đến −0.05), ngưỡng theo kích thước, gộp theo hướng, làm mượt ≈ 0; gộp mảnh
   bằng GBM +0.0036 [−0.0001, +0.0071] (v2 đang chạy).
 - **PLAN § 5b**: lịch 05–15/11, ngày nào nộp 5 bài gì, mỗi bài một giả thuyết; LB vẫn không quyết định.
+- **Nộp 5 bài** (hết lượt ngày): 15 model, N1 + N2 ngưỡng 0.3/0.4/0.5 không lọc FP, không gộp mảnh:
+  **tất cả 0.37**. Bỏ lọc FP không đổi LB; LB 2 chữ số không phân biệt hậu xử lý.
+- **Gộp mảnh GBM không qua gate** (v1 +0.0036, CI chạm 0, 3/5 fold; v2 +0.0026). Giữ bán kính 12.
+- **TTA theo tỉ lệ** (N1 f0 ở 1152): −0.0031; trung bình 1024 + 1152: −0.0002 → bỏ. Mọi map đã có
+  TTA 8 hướng từ trước, nên mục "TTA" trong lịch 06/11 được thay bằng UP2048 và trọng số ensemble.
 - **N8** (N1 seed 2, 5 fold) chuẩn bị cho Colab vì GPU Kaggle đã hết ("GPU hết thì qua Colab", người
   dùng 05/11): cờ `--seed`, queue trong notebook, bundle đóng gói.
 
