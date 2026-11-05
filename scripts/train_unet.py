@@ -75,7 +75,9 @@ def run_meta(args) -> dict:
     """The run's arguments for <name>.json and the checkpoint. Recipe v2 options appear only when
     their feature is on, so the meta of a default run is unchanged."""
     meta = {k: v for k, v in vars(args).items()
-            if k not in ("out_dir", "resume", "dice_weight") and k not in V2_DEFAULTS}
+            if k not in ("out_dir", "resume", "dice_weight", "seed") and k not in V2_DEFAULTS}
+    if args.seed:
+        meta["seed"] = args.seed
     if args.dice_weight != 1.0:
         meta["dice_weight"] = args.dice_weight
     if instance_loss_on(args):
@@ -148,6 +150,9 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--workers", type=int, default=4)
     ap.add_argument("--name", default="unet")
     ap.add_argument("--out-dir", type=Path, default=Path("outputs/models"))
+    ap.add_argument("--seed", type=int, default=0,
+                    help="seed of the weight init and the sampler (PLAN N8: a second seed of the N1 recipe "
+                         "as an extra ensemble member); the augmentation rng is unseeded as before")
     ap.add_argument("--resume", action="store_true",
                     help="continue from <out-dir>/<name>.last.pt (written after every epoch)")
     # recipe v2 (docs/PLAN.md N3); defaults reproduce the plain recipe exactly
@@ -177,7 +182,7 @@ def parse_args(argv=None) -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
 
-    torch.manual_seed(0)
+    torch.manual_seed(args.seed)
     dev = device()
     data = load_train()
     if args.fold >= 0:

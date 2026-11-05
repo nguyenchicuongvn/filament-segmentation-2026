@@ -139,6 +139,17 @@ Trạng thái: ⏳ đang chạy/chờ · 📝 chuẩn bị · ✅ xong · ❌ b�
 | Việc | F1: chọn 2 bài final. F2: weights fp16 trong repo (kiểm tra chênh lệch map fp16 so với fp32 < 1e-3 và PQ không đổi). F3: notebook end-to-end load weights từ repo. F4: report 4 trang. F5: chuyển repo sang public lúc đóng cuộc thi |
 | Quy tắc chọn final | Bài 1: pipeline có OOF cross-tune cao nhất. Bài 2: ensemble 5 fold N1 (rủi ro thấp nhất). Nếu hai bài trùng nhau thì bài 2 là phương án tốt thứ nhì theo OOF |
 
+### N8 — Thành viên thứ 4: công thức N1 với seed 2, 5 fold (📝 Colab, người dùng duyệt 05/11)
+
+| | |
+|---|---|
+| Giả thuyết | Thêm một bộ 5 fold cùng công thức N1 nhưng seed khởi tạo và sampler khác làm thành viên thứ 4 của ensemble cho +0.003–0.005 OOF, như hiệu ứng "thêm thành viên" đo được với BCE (F51: +0.004 trên fold 0+1) |
+| Bằng chứng | Mọi đòn bẩy khác còn lại đều ≤ +0.005 và mang tính suy đoán (RESEARCH § 13); đây là cách dùng GPU duy nhất có hiệu ứng đã đo. Ngược lại: ensemble các model yếu hơn trước đây không giúp (Δ −0.0001), nên lợi chỉ có khi thành viên mạnh ngang N1 |
+| Thiết kế | `effb4_s1024_s2_f0..f4` = N1 + `--seed 2` (`scripts/train_unet.py`, seed cho torch: init và sampler; rng augmentation vẫn không seed như trước). Chạy trên **Colab** (`colab/train_unet.ipynb`, `RUN_NAMES` đã trỏ vào 5 run này) vì GPU Kaggle đã dùng ~20.8 h. Người dùng upload `build/colab/filseg-colab.zip` (đã đóng gói 05/11) lên `MyDrive/filseg/` rồi chạy notebook; map về dataset riêng `filseg-effb4_s1024_s2_f<k>`. Mình tải về bằng `kaggle datasets download`, **không** đưa vào watcher để khỏi tốn lượt nộp cho từng fold |
+| Chi phí | ~75 phút/fold trên L4 (~6.3 h), ~2.3 h/fold trên T4 (`--bs 4`). Phải về trước **08/11** để kịp gate và đóng băng 09/11 |
+| Tiêu chí (đăng ký trước) | Trên 707 ảnh OOF, cross-tune `hyst_soft`: ensemble có N8 hơn ensemble không có N8 (cùng các thành viên khác đã qua gate) với **CI 95% > 0**. Đạt thì N8 vào final 1; không đạt thì final 1 giữ nguyên. Kiểm tra hợp lý từng fold: PQ fold của s2 nằm trong ±0.01 so với N1 cùng fold |
+| Sau đó | Nộp ensemble có N8 (08/11, lịch § 5b). Nếu chỉ về được 2–3 fold trước 08/11 thì gate trên các fold đó, nhưng chỉ nhận nếu CI > 0 trên tập ảnh đó |
+
 ## 5. Cổng quyết định và lịch dự kiến
 
 | Ngày | Colab (người dùng chạy) | Mac (mình làm) | Cổng |
@@ -331,9 +342,8 @@ theo độ sắc vào báo cáo so sánh.
 1. ~~Số giờ GPU Colab còn lại~~: **đủ ~25 h** (trả lời 29/10). Làm theo kế hoạch đầy đủ; dự phòng chỉ còn ~3 h, nên một run hỏng phải được phát hiện sớm.
 2. ~~GPU Kaggle~~: **được dùng từ 03/11**, ~20 h tuần này, đẩy kernel khi có slot trống (trả lời 03/11).
 3. **YOLO11-seg (AGPL-3.0)** hay chỉ Mask R-CNN (BSD)?
-4. **GPU thêm cho N8 (05/11)**: đã dùng ~20.8 h trong ~20 h được cho. Có dùng thêm ~9 h Kaggle
-   (sau khi quota reset) để train N1 seed 2, 5 fold, làm thành viên thứ 4 không? Lợi dự kiến
-   +0.003–0.005 OOF; nếu không thì đóng băng ở các thành viên hiện có.
+4. ~~GPU thêm cho N8~~: **trả lời 05/11: "GPU hết thì viết code qua thí nghiệm trên Colab"**. N8
+   chạy trên Colab (thẻ N8); người dùng upload bundle và chạy notebook.
 5. **Quy tắc "chỉ dùng mask" trong CLAUDE.md**: host đã cho phép spine/bbox/area (S20), nhưng
    nghiên cứu 05/11 cho thấy chúng gần như không mang thông tin mới so với mask, nên **đề nghị giữ
    nguyên** quy tắc.
