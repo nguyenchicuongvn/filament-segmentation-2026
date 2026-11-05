@@ -159,6 +159,62 @@ chờ, nhưng chỉ tiêu giờ GPU khi đã qua G2.
 **Nếu Colab lại không ra kết quả**: sau 12 h không có run nào lên Kaggle thì hỏi người dùng log và
 hỏi có dùng Kaggle GPU không (30 h/tuần). Không tự ý dùng Kaggle GPU.
 
+## 5b. Lịch 05–15/11: ngày nào nộp gì (bản 05/11, thay bảng § 5 từ 06/11)
+
+### Xuất phát điểm (05/11)
+
+- OOF tốt nhất: N1+N2 (10 model) **0.4294** cross-tune; LB 0.37 (bằng N1 5 fold). BCE làm thành viên
+  thứ ba: +0.004 trên fold 0+1, đang chạy gate trên 707 ảnh.
+- Nghiên cứu 05/11 (RESEARCH § 13, `docs/logs/research05/`): mọi đòn bẩy còn lại đều **≤ +0.005 OOF**.
+  Đã thử và âm hoặc ≈ 0 trong ngày: chỉnh biên theo cường độ ảnh (−0.001 đến −0.05), ngưỡng theo
+  kích thước (+0.0001), gộp theo hướng (−0.001), làm mượt (−0.0003). Còn dương nhẹ: gộp mảnh bằng GBM
+  (+0.0036, CI chạm 0). Paper trong ngành không có cách tách instance nào hơn heuristic, và Hao & Li
+  2026 đo trên MAGFiLO thấy các loss skeleton/component **không** cho lợi ổn định.
+- GPU: đã dùng ~20.8 h Kaggle trong ~20 h người dùng cho. Quota Kaggle là 30 h/tuần (thường reset
+  thứ Bảy 00:00 UTC, cần kiểm tra trên trang quota). Train thêm cần người dùng đồng ý (§ 7 mục 4).
+- Lượt nộp: 5/ngày, reset 00:00 UTC (04:00 giờ máy). Từ 05/11 đến hạn còn ~50 lượt.
+
+### Cách dùng lượt nộp (sửa quy tắc § 3 mục 6)
+
+LB chỉ hiện 2 chữ số và nhiễu ±0.01 (`docs/logs/lb_noise_effb4_hyst.txt`), nên **một** bài nộp không
+phân biệt được hai phương án cách nhau < 0.01, và LB vẫn **không quyết định** gì. Nhưng lượt nộp
+không khan hiếm, nên dùng hết 5 lượt/ngày cho ba việc mà OOF không đo được hoặc không thay được:
+
+1. **Hiệu ứng chỉ có trên test**: lợi do trung bình nhiều model (OOF là model đơn), TTA, lệch
+   annotator giữa train và test. Đo bằng **xu hướng qua nhiều điểm** (ví dụ 3 ngưỡng trong một ngày),
+   không bằng một bài.
+2. **Kiểm tra tái lập**: weights fp16, notebook end-to-end chạy trên Kaggle phải cho đúng LB của bài
+   nộp từ Mac.
+3. **Ablation cho report**: bỏ từng thành phần của final để có bảng "mỗi thành phần đóng góp gì" trên
+   cả OOF và LB (rubric 30% định tính coi trọng lập luận rõ).
+
+Mỗi bài nộp ghi **trước** vào bảng lịch sử submission (PROGRESS) một dòng: giả thuyết và Δ OOF dự
+báo; sau khi có LB ghi kết quả. Không nộp bài nào không có giả thuyết.
+
+### Lịch theo ngày (ngày UTC)
+
+| Ngày | Việc trên Mac / GPU | 5 lượt nộp (giả thuyết) | Cổng |
+|---|---|---|---|
+| **05/11** Thứ 5 | Gate BCE trên 707 OOF (đang chạy); gộp GBM v1/v2 (đang chạy); tối: đo TTA (flip/rot) trên fold 0 bằng Mac; viết RESEARCH § 13, commit | 1. N1+N2+BCE 15 model (15 so với 10 model: +0.00–0.01) · 2. N1+N2 + gộp GBM (≈ +0.003) · 3. N1+N2+BCE + gộp GBM · 4. N1+N2 thresh 0.3 · 5. N1+N2 thresh 0.5 (điểm P/R: nếu test thưa annotator hơn train thì 0.5 ≥ 0.3) | BCE vào final 1 nếu CI > 0 trên 707 ảnh. Gộp GBM vào nếu CI > 0 **và** Δ > 0 ở ≥ 4/5 fold |
+| **06/11** Thứ 6 | Nếu TTA fold 0 CI ≥ 0: infer test có TTA cho mọi thành viên (Mac, qua đêm, N2 @2048 nặng nhất); đo UP2048 trên OOF | 1. N1+N2 TTA · 2. N1+N2+BCE TTA · 3. N1+N2 UP2048 · 4. min_area 120 · 5. min_area 300 (điểm P/R theo kích thước) | TTA vào final nếu CI > 0 trên fold 0 (cộng dồn với ensemble) |
+| **07/11** Thứ 7 | **Quyết định GPU** (§ 7 mục 4). Nếu được: đẩy N8 = công thức N1, seed 2, fold 0–4 (2 kernel ≈ 9 h T4), cách dùng GPU duy nhất có lợi đo được (+0.004/thành viên, F51). Song song: tune trọng số ensemble trên OOF | 1. trọng số N1:N2 tune OOF · 2. N1:N2 = 2:1 · 3. N1:N2 = 1:2 · 4. seed_thresh 0.9 · 5. group_radius 6 (xu hướng gộp lỏng/chặt trên test) | N8 chỉ chạy khi người dùng đồng ý và quota còn |
+| **08/11** CN | N8 về (nếu chạy): gate thành viên thứ 4 trên OOF. Chạy rubric N5 cho các ứng viên | 1. ensemble 4 thành viên · 2. 4 thành viên + TTA · 3. final 1 bỏ gộp (r = 0) · 4. final 1 mode cc (không hysteresis) · 5. final 1 không lọc FP (ablation) | thành viên 4 vào nếu CI > 0 trên 707 OOF |
+| **09/11** Thứ 2 | **Đóng băng**. Bảng OOF cuối cho mọi tổ hợp đã qua gate; chọn **final 1** và **final 2** theo OOF cross-tune | 1. final 1 · 2. final 2 · 3–5. model đơn fold 1, 2, 3 (bảng "ensemble so với model đơn" trên test cho report) | Chốt 2 final |
+| **10/11** Thứ 3 | Weights fp16 vào repo; đo map fp16 so với fp32 (max \|Δ\|, PQ fold 0); dọn `configs/` | 1. final 1 từ weights fp16 (phải bằng LB fp32) · 2. final 2 fp16 · 3. N2 5 fold một mình · 4. BCE 5 fold một mình · 5. dự phòng | fp16 đạt nếu LB bằng và PQ fold 0 lệch < 0.001 |
+| **11/11** Thứ 4 | Notebook end-to-end chạy trên kernel Kaggle mới (chỉ repo + ảnh test) → CSV; đo thời gian inference | 1. CSV từ notebook final 1 (phải trùng) · 2. CSV từ notebook final 2 · 3–5. dự phòng cho sửa lỗi tái lập | Notebook đạt nếu CSV trùng từng byte với bài nộp từ Mac |
+| **12/11** Thứ 5 | Report 4 trang bản 1 (rubric, phân rã lỗi, ablation, so với inter-annotator 0.34); bảng kết quả README | ablation còn thiếu cho hình trong report; còn lại để dự phòng | – |
+| 13–14/11 | Report bản cuối; chọn 2 final trên Kaggle; chuẩn bị Google form | chỉ nộp lại nếu phát hiện lỗi | – |
+| 15/11 | Hạn 06:00 UTC. Sau khi đóng: repo sang public, nộp form | – | – |
+
+### Kỳ vọng thật
+
+Nếu BCE, gộp GBM, TTA và N8 đều qua gate thì OOF vào khoảng **0.435–0.44**; LB nhiều khả năng vẫn
+0.37–0.38 vì LB hiện 2 chữ số và lệch annotator chiếm phần lớn khoảng cách val → LB. Phần lớn
+1 − PQ còn lại là bất đồng giữa annotator (inter-annotator PQ 0.34, F31: 59% dự đoán gần trúng là TP
+của annotator khác), nên không kỳ vọng bước nhảy nào từ hậu xử lý. Các hướng cần GPU và mang tính
+suy đoán (head distance kiểu Omnipose, head affinity + mutex watershed, lớp "khe hở") **không** làm
+trong tuần này: mỗi hướng tốn ~9 h GPU cho hiệu ứng dự kiến dưới ngưỡng phát hiện (±0.009).
+
 ## 6. Không làm (và lý do)
 
 | Việc | Lý do | Nguồn |
@@ -275,6 +331,12 @@ theo độ sắc vào báo cáo so sánh.
 1. ~~Số giờ GPU Colab còn lại~~: **đủ ~25 h** (trả lời 29/10). Làm theo kế hoạch đầy đủ; dự phòng chỉ còn ~3 h, nên một run hỏng phải được phát hiện sớm.
 2. ~~GPU Kaggle~~: **được dùng từ 03/11**, ~20 h tuần này, đẩy kernel khi có slot trống (trả lời 03/11).
 3. **YOLO11-seg (AGPL-3.0)** hay chỉ Mask R-CNN (BSD)?
+4. **GPU thêm cho N8 (05/11)**: đã dùng ~20.8 h trong ~20 h được cho. Có dùng thêm ~9 h Kaggle
+   (sau khi quota reset) để train N1 seed 2, 5 fold, làm thành viên thứ 4 không? Lợi dự kiến
+   +0.003–0.005 OOF; nếu không thì đóng băng ở các thành viên hiện có.
+5. **Quy tắc "chỉ dùng mask" trong CLAUDE.md**: host đã cho phép spine/bbox/area (S20), nhưng
+   nghiên cứu 05/11 cho thấy chúng gần như không mang thông tin mới so với mask, nên **đề nghị giữ
+   nguyên** quy tắc.
 
 Theo dõi thêm: [discussion 753665](https://www.kaggle.com/competitions/filament-segmentation-2026/discussion/753665)
 (`S18`). Host chưa trả lời về barb, filament đứt đoạn, và việc để ~800 MB weights thẳng trong repo.

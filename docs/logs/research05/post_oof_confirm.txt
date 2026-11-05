@@ -1,0 +1,17 @@
+base grid done 469s
+baseline chosen: [{'thresh': 0.4, 'seed_thresh': 0.95, 'min_area': 200, 'group_radius': 12}, {'thresh': 0.4, 'seed_thresh': 0.95, 'min_area': 360, 'group_radius': 12}, {'thresh': 0.4, 'seed_thresh': 0.99, 'min_area': 200, 'group_radius': 12}, {'thresh': 0.5, 'seed_thresh': 0.99, 'min_area': 200, 'group_radius': 12}]
+variants done 8027s
+outputs/ens/n1n2_oof: 707 images, 2000 bootstrap resamples, res 2048
+pipeline          PQ      TP      FP      FN     diff             95% CI   P>0
+hyst_soft     0.4284  2442.8  1172.2  1656.7
+small         0.4284  2442.8  1172.2  1656.7  +0.0000 [+0.0000, +0.0000]  0.00
+smooth        0.4283  2438.0  1164.7  1661.5  -0.0001 [-0.0005, +0.0002]  0.28
+peakrel       0.4285  2442.2  1172.8  1657.3  +0.0001 [-0.0006, +0.0007]  0.56
+extmix        0.4284  2442.8  1172.2  1656.7  +0.0000 [+0.0000, +0.0000]  0.00
+orient        0.4305  2458.2  1166.7  1641.3  +0.0021 [+0.0005, +0.0037]  1.00
+  small picks per split: [{'small_area': 0}, {'small_area': 0}, {'small_area': 0}, {'small_area': 0}, {'small_area': 0}, {'small_area': 0}]
+  smooth picks per split: [{'sigma': 1.0, 'fill': True}, {'sigma': 0.0, 'fill': True}, {'sigma': 0.0, 'fill': True}, {'sigma': 0.0, 'fill': True}, {'sigma': 0.0, 'fill': True}, {'sigma': 0.0, 'fill': True}]
+  peakrel picks per split: [{'a': 0.5, 't_lo': 0.1, 'grow': 8}, {'a': 0.5, 't_lo': 0.1, 'grow': 0}, {'a': 0.0}, {'a': 0.0}, {'a': 0.0}, {'a': 0.5, 't_lo': 0.1, 'grow': 0}]
+  extmix picks per split: [{'alpha': None}, {'alpha': None}, {'alpha': None}, {'alpha': None}, {'alpha': None}, {'alpha': None}]
+  orient picks per split: [{'L': 16, 'r': 6}, {'L': 16, 'r': 6}, {'L': 16, 'r': 6}, {'L': 16, 'r': 6}, {'L': 16, 'r': 6}, {'L': 16, 'r': 6}]
+total 8028s

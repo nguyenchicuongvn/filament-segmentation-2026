@@ -1,0 +1,14 @@
+area               p10   421.900 med  1228.000 p90  4452.700 mean  2071.569
+mask_px            p10   481.900 med  1365.000 p90  4815.200 mean  2241.558
+ncc                p10     1.000 med     1.000 p90     1.000 mean     1.000
+spine_len          p10    50.257 med   109.817 p90   271.068 mean   143.964
+width              p10     7.503 med    12.427 p90    21.786 mean    13.958
+skel_spur_frac     p10     0.000 med     0.000 p90     0.065 mean     0.018
+spine_near_skel    p10     0.991 med     1.000 p90     1.000 mean     0.997
+spine_out_frac     p10     0.000 med     0.000 p90     0.007 mean     0.003
+spine_max_out_px   p10     0.000 med     0.000 p90     1.000 mean     0.179
+spine_len/feret    p10     0.951 med     1.029 p90     1.216 mean     1.064
+npts               p10     5.000 med    10.000 p90    23.000 mean    12.200
+masks with >1 component: 0 / 1500
+spines with >10% outside mask: 6 ; max out >= 5px: 6
+skeletons with >20% spur pixels: 1

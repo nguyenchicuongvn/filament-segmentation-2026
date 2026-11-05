@@ -1,0 +1,9 @@
+base grid done 115s
+baseline chosen: [{'thresh': 0.4, 'seed_thresh': 0.95, 'min_area': 200, 'group_radius': 12}, {'thresh': 0.5, 'seed_thresh': 0.9, 'min_area': 200, 'group_radius': 12}, {'thresh': 0.5, 'seed_thresh': 0.99, 'min_area': 200, 'group_radius': 12}]
+variants done 368s
+outputs/ens/n1n2_f0: 142 images, 2000 bootstrap resamples, res 2048
+pipeline          PQ      TP      FP      FN     diff             95% CI   P>0
+hyst_soft     0.4291   484.0   252.5   310.5
+extmix        0.4291   483.3   251.0   311.2  -0.0001 [-0.0017, +0.0016]  0.48
+  extmix picks per split: [{'alpha': 0.75, 'delta': 0.1, 'grow': 8}, {'alpha': None}, {'alpha': 0.75, 'delta': 0.1, 'grow': 8}, {'alpha': None}, {'alpha': 0.25, 'delta': 0.1, 'grow': 8}, {'alpha': None}]
+total 368s

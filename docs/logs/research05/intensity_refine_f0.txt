@@ -1,0 +1,17 @@
+142 images, folds [0], maps n1n2_oof, cfg {'thresh': 0.4, 'min_area': 200, 'group_radius': 12, 'out_dilate': 0, 'mode': 'hyst', 'seed_thresh': 0.99, 'group_thresh': 0.5, 'fill_holes': False, 'small_area': 0, 'small_thresh': 0.0, 'large_area': 0, 'large_thresh': 0.0, 'large_grow': 3}
+  None                         PQ 0.4321  TP 963 FP 468 FN 626  d +0.0000
+  ('add', 0.5, 2)              PQ 0.4107  TP 940 FP 491 FN 649  d -0.0214
+  ('add', 0.5, 4)              PQ 0.3797  TP 892 FP 539 FN 697  d -0.0524
+  ('add', 1.0, 2)              PQ 0.4228  TP 955 FP 476 FN 634  d -0.0093
+  ('add', 1.0, 4)              PQ 0.4112  TP 942 FP 489 FN 647  d -0.0209
+  ('add', 1.5, 2)              PQ 0.4294  TP 962 FP 469 FN 627  d -0.0027
+  ('add', 1.5, 4)              PQ 0.4267  TP 962 FP 469 FN 627  d -0.0054
+  ('rm', 0.0, 2)               PQ 0.4316  TP 965 FP 466 FN 624  d -0.0005
+  ('rm', 0.5, 2)               PQ 0.4229  TP 953 FP 478 FN 636  d -0.0092
+  ('rm', 1.0, 2)               PQ 0.4047  TP 921 FP 510 FN 668  d -0.0274
+  ('both', (0.5, 1.0), 2)      PQ 0.4137  TP 947 FP 484 FN 642  d -0.0183
+  ('both', (0.5, 1.0), 4)      PQ 0.3870  TP 901 FP 530 FN 688  d -0.0451
+  ('both', (0.0, 1.0), 2)      PQ 0.4214  TP 955 FP 476 FN 634  d -0.0107
+cross-tuned delta: mean -0.0009 halves [0.0, -0.0024, 0.0, 0.0, -0.0028, 0.0] picks ['None', "('rm', 0.0, 2)", 'None', 'None', "('rm', 0.0, 2)", 'None']
+most picked None: delta +0.0000 bootstrap 95% [+0.0000, +0.0000]
+per-fold delta [np.float64(0.0)]
