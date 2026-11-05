@@ -333,3 +333,22 @@ phương pháp và một khoảng cách model.
 
 **Thứ tự ưu tiên mới**: N7 (BCE) fold 0+1 → nếu map hiệu chỉnh tốt hơn thì thử lại tầng quyết định
 F26 trên map mới (CPU) → TTA1152 + UP2048 trên OOF (CPU/MPS).
+
+## 13. Nghiên cứu đa agent 05/11: phân rã lỗi, spine, paper và code mở, hậu xử lý rẻ
+
+Bốn agent chạy song song trên map N1 + N2 OOF (707 ảnh, config final 1). Log và script:
+`docs/logs/research05/`, `scripts/research/`. Mọi số là OOF, không phải LB.
+
+| Mã | Kết luận | Bằng chứng | Hệ quả |
+|---|---|---|---|
+| F52 | **1 − PQ chia ra**: biên 36%, FN 38%, FP 26%. Trần nếu sửa hoàn hảo từng loại: dự đoán gần trúng (IoU 0.3–0.5, 1,047 FN) thành TP **+0.055**; gộp nhầm +0.028 (260 dự đoán) và tách nhầm +0.015; bỏ FP không chạm GT nào chỉ +0.010. 787 FP (34%) trùng filament của annotator khác; 38% FN là filament chỉ một người vẽ | `error_decomp.txt`, 1,154 bản gán nhãn | Lọc FP đã cạn. Chỗ còn lại là biên và tách/gộp instance, nhưng phần lớn là bất đồng annotator |
+| F53 | **Inter-annotator PQ 0.340**; model trên cùng bản gán nhãn đạt 0.430. Filament < 1k px: 54% FN, precision 0.59, bị vẽ to quá (tỉ lệ diện tích 1.18); filament > 10k px bị vẽ nhỏ (0.91). Dãn/co toàn cục 1 px ở 2048: −0.014 / −0.029 | `error_decomp.txt` | Chỉnh biên phải theo kích thước và dưới 1 px; đã thử (R4c, F56) đều ≈ 0 |
+| F54 | **Spine, bbox, area không có thông tin mới**: `area` = diện tích mask 100%, `bbox` = bbox mask ±0.5 px; spine nằm trong mask ở 99.5% bản vẽ và cách `skeletonize(mask)` dưới nửa bề rộng ở 99.7% pixel; mỗi filament là một polygon, nên spine không "nối mảnh đứt" hơn mask. Oracle gộp/cắt mảnh hoàn hảo chỉ **+0.023** [+0.019, +0.027]; 257 gộp nhầm nằm trong một thành phần liên thông nên oracle cũng không sửa | `spine_stats.txt`, `spine_vs_skel.txt`, `spine_group_oracle.txt` | Giữ quy tắc "chỉ dùng mask". Head spine dự kiến 0 đến +0.005, dưới ngưỡng phát hiện; không train |
+| F55 | **Gộp mảnh bằng GBM** (519 cặp thành phần cách ≤ 48 px, nhãn từ mask, 17 đặc trưng hình học và xác suất, 5 fold theo ảnh): AUC 0.767 so với luật bán kính đúng 0.62; cross-tune **+0.0030**, t = 0.8: +0.0036 [−0.0001, +0.0071] | `spine_pair_group.txt` | Chưa qua CI > 0. v2 thêm tiếp tuyến cục bộ ở điểm tiếp xúc và khoảng 64 px (đăng ký trước, `pair_group_v2.txt`) |
+| F56 | **Hậu xử lý rẻ ≈ 0 hoặc âm** (fold 0, cross-tune, 2,000 bootstrap): gộp theo hướng −0.0009; ngưỡng theo kích thước +0.0001; grow theo kích thước lớn −0.0000; ngưỡng tương đối theo đỉnh −0.0004; làm mượt/lấp lỗ −0.0003; trộn extent −0.0001. **Chỉnh biên theo cường độ ảnh** (z-score so với nền cục bộ, thêm điểm tối / bỏ điểm sáng ở mép) **âm** mọi biến thể: −0.0005 đến −0.052; combo được chọn nhiều nhất là "không chỉnh" | `post_f0_screen.txt`, `post_f0_extmix.txt`, `intensity_refine_f0.txt` | Annotator không vẽ theo mép tối của ảnh. Không còn gì rẻ để tune ngoài F55 |
+| S22 | **Paper trong ngành không có cách tách instance nào hơn heuristic, và không paper nào báo PQ.** Code mở: MORDEN (MIT; DenseCRF + DBSCAN, chuyên gia đánh giá 84% cụm đúng), Diercke 2024 (GPL-3.0; chỉnh limb darkening đa thức + Zernike, luật `I ≤ mean − std` trong box), Zhu 2019 (MIT), EdgeAttNet (MIT, **thiếu code model**, weights train trên MAGFiLO v1.0 → cấm), human-com-h (MIT, weights MAGFiLO v1.0 → cấm). **Hao & Li 2026** đo 8 phương pháp × 3 seed trên MAGFiLO @1024: Skeleton Recall, clDice, loss cân theo component **không cho lợi ổn định**. Cách gộp mảnh cổ điển của Hao 2013/2015: khoảng cách đầu mút nhỏ **và** góc nghiêng giống nhau | `filament_papers.md`; repo clone chỉ đọc, không chạy | Bỏ hướng loss skeleton/component; không dùng weights MAGFiLO; ý tưởng góc nghiêng đã vào F55 v2 |
+| S23 | **Phương pháp vật mảnh ngoài ngành**: Omnipose (distance field + flow, license **không OSI**, chỉ được viết lại), mutex watershed (elf, MIT; affinity xa + gần), Skeleton Recall (Apache; DRIVE β0 57 → 39, Dice +0.1), per-instance Lovász (MIT), cbDice/Topograph (bỏ). Mỗi hướng cần head mới + ~9 h GPU cho hiệu ứng dự kiến +0.003–0.01, dưới ngưỡng phát hiện ±0.009 với 2 fold | `thin_methods.md` | Không làm trước hạn; ghi lại cho report như hướng tương lai |
+
+**Hệ quả cho kế hoạch** (PLAN § 5b): đòn bẩy còn lại đều ≤ +0.005 OOF. Dùng GPU còn lại cho thành
+viên ensemble cùng công thức (N8, seed 2), là hiệu ứng duy nhất đã đo được; mọi thứ khác đi vào report
+như phân tích giới hạn (inter-annotator 0.34).

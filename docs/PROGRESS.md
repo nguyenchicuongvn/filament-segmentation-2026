@@ -75,6 +75,21 @@ Val luôn cao hơn LB khoảng 0.03–0.07, nhưng thứ tự giữa các model 
 
 ## Nhật ký
 
+### 2026-11-05
+- Kernel BCE fold 2–4 về 09:26 (~4.5 h phiên GPU, tổng ~20.8 h). **Gate N7 không qua**: trên 707 ảnh
+  OOF, N1 + N2 + BCE +0.0018 [−0.0008, +0.0045] so với N1 + N2 (0.4302 so với 0.4284). Final 1 giữ
+  10 model; bài 15 model nộp một lần làm điểm LB.
+- **Nghiên cứu đa agent** (RESEARCH § 13, `docs/logs/research05/`): phân rã lỗi OOF (biên 36%, FN 38%,
+  FP 26% của 1 − PQ; inter-annotator PQ 0.34 so với model 0.43); spine/bbox/area gần như không có thông
+  tin mới so với mask; paper trong ngành không có cách tách instance nào hơn heuristic, Hao & Li 2026
+  đo trên MAGFiLO thấy loss skeleton/component không giúp; phương pháp vật mảnh (Omnipose, mutex
+  watershed, Skeleton Recall) đều cần GPU và dự kiến < ngưỡng phát hiện. Hậu xử lý rẻ: chỉnh biên theo
+  cường độ **âm** (−0.001 đến −0.05), ngưỡng theo kích thước, gộp theo hướng, làm mượt ≈ 0; gộp mảnh
+  bằng GBM +0.0036 [−0.0001, +0.0071] (v2 đang chạy).
+- **PLAN § 5b**: lịch 05–15/11, ngày nào nộp 5 bài gì, mỗi bài một giả thuyết; LB vẫn không quyết định.
+- **N8** (N1 seed 2, 5 fold) chuẩn bị cho Colab vì GPU Kaggle đã hết ("GPU hết thì qua Colab", người
+  dùng 05/11): cờ `--seed`, queue trong notebook, bundle đóng gói.
+
 ### 2026-11-04
 - 4 kernel Kaggle chạy xong lúc 04:07 (8 run, mọi exit code 0, ~8 h GPU). Kernel đầu tiên lỗi ở bước
   tìm code vì Kaggle giải nén zip của dataset; đã sửa (commit d8381a0), không tốn giờ GPU.

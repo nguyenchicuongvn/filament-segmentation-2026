@@ -333,6 +333,12 @@ final. GPU còn ~6 h: chưa dùng; ứng viên rẻ nhất là một họ thứ 
   số: nhận BCE làm thành viên thứ ba của final 1 nếu trên OOF 707 ảnh N1 + N2 + BCE hơn N1 + N2 với
   CI > 0 (cross-tune `hyst_soft`), **và** inference 15 model trên Kaggle vừa giới hạn thời gian
   notebook. Nếu không qua, final 1 giữ nguyên 10 model.
+- **Kết quả gate (05/11 11:40, `docs/logs/kgpu04/n7ens_oof.txt`)**: trên 707 ảnh OOF, N1 + N2 + BCE
+  0.4302 so với N1 + N2 0.4284: **+0.0018 [−0.0008, +0.0045], P>0 0.91**. CI chứa 0 → **không qua**,
+  final 1 giữ 10 model. Hiệu ứng +0.004 trên fold 0+1 không giữ được trên fold 2–4 (BCE giảm 100 FP
+  nhưng mất 25 TP, thêm 25 FN). Bài 15 model vẫn nộp một lần làm điểm dữ liệu LB "15 so với 10 model"
+  (lịch § 5b), không vào final. Bài học: hiệu ứng +0.004 đo trên 2 fold không đủ để duyệt GPU; ngưỡng
+  F48 (Δ ≥ +0.005, CI > 0 trên 2 fold) phải giữ nghiêm cho N8.
 
 **Việc trên Mac, không tốn GPU**: TTA @1152 trên đủ 213 ảnh (F38; chỉ nhận nếu CI > 0); thêm chia
 theo độ sắc vào báo cáo so sánh.
