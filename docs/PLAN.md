@@ -261,6 +261,11 @@ final. GPU còn ~6 h: chưa dùng; ứng viên rẻ nhất là một họ thứ 
   [−0.0014, +0.0093] (f1). Gộp 284 ảnh, ngoài đăng ký: +0.0041 [+0.0004, +0.0077]. Map hiệu chỉnh tốt
   (seed chọn 0.6–0.7), nhưng bộ lọc trên map mới vẫn ≈ 0. Fold 2–4 chỉ train nếu người dùng duyệt
   thêm giờ GPU (lợi kỳ vọng ~+0.004 OOF; inference 15 model).
+- **05/11: người dùng duyệt** train BCE fold 2–4 (kernel `bce-f2f3` + `bce-f4`, chạy song song,
+  ~4.5 h giờ phiên GPU vì kernel 1 run vẫn tính cả phiên; tổng ~20.8 h). Tiêu chí đăng ký trước khi có
+  số: nhận BCE làm thành viên thứ ba của final 1 nếu trên OOF 707 ảnh N1 + N2 + BCE hơn N1 + N2 với
+  CI > 0 (cross-tune `hyst_soft`), **và** inference 15 model trên Kaggle vừa giới hạn thời gian
+  notebook. Nếu không qua, final 1 giữ nguyên 10 model.
 
 **Việc trên Mac, không tốn GPU**: TTA @1152 trên đủ 213 ảnh (F38; chỉ nhận nếu CI > 0); thêm chia
 theo độ sắc vào báo cáo so sánh.
