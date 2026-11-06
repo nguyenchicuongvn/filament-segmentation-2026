@@ -11,7 +11,7 @@ Mỗi phiên làm việc thêm một mục ở **đầu** phần "Nhật ký" (m
 | Submission tốt nhất | **Public LB 0.37**: 5 fold EffNet-B4 @1024 target mềm (N1) + hysteresis + lọc FP (OOF 0.425, 707 ảnh), 04/11 |
 | Hạng | 483 / 1,260 với 0.36 (LB 2026-10-29 08:16 UTC) |
 | LB tham chiếu | #1 0.70 nhưng bị nhiễm (rò rỉ nhãn, payload 0.55 × 82 đội); tầng trung thực cao nhất 0.42 (1 đội), 0.41 (11), 0.40 (46); xem [RESEARCH S16](RESEARCH.md#3-leaderboard-và-khoảng-cách-val--lb) |
-| Submissions đã dùng | 33 (tối đa 5/ngày, reset 00:00 UTC) |
+| Submissions đã dùng | 38 (tối đa 5/ngày, reset 00:00 UTC) |
 | Deadline | Kaggle: **2026-11-15 06:00 UTC** (13:00 VN). Report + code (Google form): Nov 15 11:59 pm CDT |
 | Repo | https://github.com/nguyenchicuongvn/filament-segmentation-2026 (**private** đến khi cuộc thi đóng) |
 | GPU | Kaggle GPU (T4 ×2, `scripts/kaggle_gpu.py`), ~20 h tuần này; đã dùng ~8 h cho 4 kernel, thêm ~6 h cho kernel 5–6 đang chạy. Colab chưa dùng |
@@ -47,11 +47,11 @@ việc đổi trạng thái.
 |---|---|---|---|---|
 | 2026-11-05 09:10 | `submission_ens_n1n2bce.csv` | **15 model** N1 + N2 + BCE (1:1:1) + hysteresis (t 0.4, seed 0.9, area 200, r 12) + lọc FP. Giả thuyết: 15 so với 10 model trên test | 0.4325 (OOF, in-sample); cross-tune +0.0018 so với N1 + N2, CI chạm 0 → không vào final | 0.37 |
 | 2026-11-05 09:00 | `submission_ens_n1n2_r0.csv` | ablation: N1 + N2, hysteresis t 0.4, **không gộp mảnh** (r 0), không lọc FP. Giả thuyết: gộp r 12 đáng +0.0026 OOF, LB không thấy | – | 0.37 |
-| 2026-11-06 (kế hoạch) | `submission_ens_n1n2_orient.csv` | **final 1 mới**: N1 + N2 + hysteresis + gộp theo hướng (L16, r6) + lọc FP mới | OOF +0.0021 cross-tune (0.4327 sau lọc) | |
-| 2026-11-06 (kế hoạch) | `submission_n1up.csv` | **final 2**: N1 5 fold, map phóng lên 2048 trước hậu xử lý, không lọc FP | OOF 0.4229 (+0.0050 so với N1 @1024) | |
-| 2026-11-06 (kế hoạch) | `submission_ens_n1n2_drop15.csv` | thang suy giảm: final 1 bỏ 15% instance điểm lọc thấp nhất | Δ OOF +0.005 (in-sample) → LB 0.37 | |
-| 2026-11-06 (kế hoạch) | `submission_ens_n1n2_drop30.csv` | thang suy giảm 30% | Δ OOF −0.019 → LB ~0.35 | |
-| 2026-11-06 (kế hoạch) | `submission_ens_n1n2_drop50.csv` | thang suy giảm 50% | Δ OOF −0.085 → LB ~0.30 | |
+| 2026-11-06 02:07 | `submission_ens_n1n2_orient.csv` | **final 1 mới**: N1 + N2 + hysteresis + gộp theo hướng (L16, r6) + lọc FP mới | OOF +0.0021 cross-tune (0.4327 sau lọc) | **0.37** |
+| 2026-11-06 01:49 | `submission_n1up.csv` | **final 2**: N1 5 fold, map phóng lên 2048 trước hậu xử lý, không lọc FP | OOF 0.4229 (+0.0050 so với N1 @1024) | **0.37** |
+| 2026-11-06 01:49 | `submission_ens_n1n2_drop15.csv` | thang suy giảm: final 1 bỏ 15% instance điểm lọc thấp nhất | Δ OOF +0.005 (in-sample) → LB 0.37 | **0.35** |
+| 2026-11-06 01:50 | `submission_ens_n1n2_drop30.csv` | thang suy giảm 30% | Δ OOF −0.019 → LB ~0.35 | **0.33** |
+| 2026-11-06 01:50 | `submission_ens_n1n2_drop50.csv` | thang suy giảm 50% | Δ OOF −0.085 → LB ~0.30 | **0.27** |
 | 2026-11-05 08:35 | `submission_ens_n1n2_t0.5.csv` | thăm dò P/R (PLAN § 5b): N1 + N2, hysteresis t 0.5, **không** lọc FP. Giả thuyết: nếu test thưa annotator hơn train thì extent hẹp (0.5) ≥ rộng (0.3) | – (t 0.4 OOF cross-tune 0.4284) | 0.37 |
 | 2026-11-05 08:35 | `submission_ens_n1n2_t0.4.csv` | như trên, t 0.4 (final 1 bỏ lọc FP; đo riêng phần lọc FP so với dòng 04/11) | – | 0.37 |
 | 2026-11-05 08:35 | `submission_ens_n1n2_t0.3.csv` | như trên, t 0.3 | – | 0.37 |
@@ -84,6 +84,18 @@ Val luôn cao hơn LB khoảng 0.03–0.07, nhưng thứ tự giữa các model 
 được để chọn model (xem [DATA_AND_METRIC.md](DATA_AND_METRIC.md#khoảng-cách-val--lb)).
 
 ## Nhật ký
+
+### 2026-11-06
+- **Nộp 5 bài** (hết lượt ngày). Bài final 1 lúc 00:02 UTC lỗi mạng (không phân giải được
+  api.kaggle.com), nộp lại lúc 02:07. Final 1 + gộp theo hướng **0.37**, final 2 N1 UP2048 **0.37**:
+  cả hai bằng bài cũ, đúng dự báo (Δ OOF +0.002/+0.005 dưới độ phân giải LB).
+- **Thang suy giảm** (bỏ 15/30/50% instance điểm lọc thấp nhất): LB **0.35 / 0.33 / 0.27** so với 0.37,
+  OOF +0.005 / −0.019 / −0.085. Từ 30% trở đi LB giảm song song với OOF (độ dốc ≈ 1: −0.04 → −0.10 so
+  với −0.019 → −0.085, lệch ~−0.02). Riêng 15% OOF dương mà LB **−0.02**: bậc +0.005 là in-sample (bộ
+  lọc fit trên chính OOF), nhưng kể cả vậy thì trên test các instance điểm thấp **đúng nhiều hơn** trên
+  OOF. Kết hợp với 05/11 (bỏ lọc FP vẫn 0.37): trên test không có dấu hiệu lọc chặt hơn có lợi, và lọc
+  chặt hơn chắc chắn hại → giữ ngưỡng lọc hiện tại, không siết. LB phân giải được bước ~0.02, không
+  phân giải được 0.005 — đúng mô hình làm tròn ở `kaggle_endgame.md`.
 
 ### 2026-11-05
 - Kernel BCE fold 2–4 về 09:26 (~4.5 h phiên GPU, tổng ~20.8 h). **Gate N7 không qua**: trên 707 ảnh
