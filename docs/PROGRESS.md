@@ -47,6 +47,11 @@ việc đổi trạng thái.
 |---|---|---|---|---|
 | 2026-11-05 09:10 | `submission_ens_n1n2bce.csv` | **15 model** N1 + N2 + BCE (1:1:1) + hysteresis (t 0.4, seed 0.9, area 200, r 12) + lọc FP. Giả thuyết: 15 so với 10 model trên test | 0.4325 (OOF, in-sample); cross-tune +0.0018 so với N1 + N2, CI chạm 0 → không vào final | 0.37 |
 | 2026-11-05 09:00 | `submission_ens_n1n2_r0.csv` | ablation: N1 + N2, hysteresis t 0.4, **không gộp mảnh** (r 0), không lọc FP. Giả thuyết: gộp r 12 đáng +0.0026 OOF, LB không thấy | – | 0.37 |
+| 2026-11-07 (kế hoạch) | `submission_effb4_s1024_f1.csv` | loại 3 (số cho report): N1 fold 1 đơn, hysteresis + lọc FP cấu hình fold 0 | OOF fold 1 ~0.41–0.43 → LB 0.35–0.37 (fold 0 đã 0.36) | |
+| 2026-11-07 (kế hoạch) | `submission_effb4_s1024_f2.csv` | loại 3 (số cho report): N1 fold 2 đơn, hysteresis + lọc FP cấu hình fold 0 | OOF fold 2 ~0.41–0.43 → LB 0.35–0.37 (fold 0 đã 0.36) | |
+| 2026-11-07 (kế hoạch) | `submission_effb4_s1024_f3.csv` | loại 3 (số cho report): N1 fold 3 đơn, hysteresis + lọc FP cấu hình fold 0 | OOF fold 3 ~0.41–0.43 → LB 0.35–0.37 (fold 0 đã 0.36) | |
+| 2026-11-07 (kế hoạch) | `submission_effb4_s1024_f4.csv` | loại 3 (số cho report): N1 fold 4 đơn, hysteresis + lọc FP cấu hình fold 0 | OOF fold 4 ~0.41–0.43 → LB 0.35–0.37 (fold 0 đã 0.36) | |
+| 2026-11-07 (kế hoạch) | `submission_effb4_c2048.csv` | loại 3: N2 5 fold đơn (crop 1024 @2048), cấu hình fold 0 | OOF 0.4129 (N1 −0.005) → LB 0.36–0.37 | |
 | 2026-11-06 02:07 | `submission_ens_n1n2_orient.csv` | **final 1 mới**: N1 + N2 + hysteresis + gộp theo hướng (L16, r6) + lọc FP mới | OOF +0.0021 cross-tune (0.4327 sau lọc) | **0.37** |
 | 2026-11-06 01:49 | `submission_n1up.csv` | **final 2**: N1 5 fold, map phóng lên 2048 trước hậu xử lý, không lọc FP | OOF 0.4229 (+0.0050 so với N1 @1024) | **0.37** |
 | 2026-11-06 01:49 | `submission_ens_n1n2_drop15.csv` | thang suy giảm: final 1 bỏ 15% instance điểm lọc thấp nhất | Δ OOF +0.005 (in-sample) → LB 0.37 | **0.35** |
