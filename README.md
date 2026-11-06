@@ -4,7 +4,7 @@ Instance segmentation of solar filaments in GONG H-alpha images (MAGFiLO dataset
 Competition: https://www.kaggle.com/competitions/filament-segmentation-2026 (PQ metric, deadline 2026-11-15).
 Prize conditions: [PRIZE_RULES.md](PRIZE_RULES.md).
 
-**Current best:** public LB 0.37 — 5-fold U-Net EfficientNet-B4 @1024, soft multi-annotator targets, hysteresis + instance FP filter (OOF PQ 0.425 on 707 images), 2026-11-04.
+**Current best:** public LB 0.37 — final 1: 5-fold U-Net EfficientNet-B4 @1024 + 5-fold @2048 (1024 crops), map average, hysteresis + oriented fragment grouping + instance FP filter (OOF PQ 0.4327 on 707 images), 2026-11-06. Final 2: the @1024 model alone with maps upsampled to 2048 before post-processing (OOF 0.4229, LB 0.37).
 
 ## Documentation
 
