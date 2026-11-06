@@ -150,6 +150,16 @@ Trạng thái: ⏳ đang chạy/chờ · 📝 chuẩn bị · ✅ xong · ❌ b�
 | Tiêu chí (đăng ký trước) | Trên 707 ảnh OOF, cross-tune `hyst_soft`: ensemble có N8 hơn ensemble không có N8 (cùng các thành viên khác đã qua gate) với **CI 95% > 0**. Đạt thì N8 vào final 1; không đạt thì final 1 giữ nguyên. Kiểm tra hợp lý từng fold: PQ fold của s2 nằm trong ±0.01 so với N1 cùng fold |
 | Sau đó | Nộp ensemble có N8 (08/11, lịch § 5b). Nếu chỉ về được 2–3 fold trước 08/11 thì gate trên các fold đó, nhưng chỉ nhận nếu CI > 0 trên tập ảnh đó |
 
+### N9' — Chép công thức Dariush: EfficientNetV2-S, crop 512 ở 2048, bs 16 (📝 Colab, 06/11, đầu hàng đợi)
+
+| | |
+|---|---|
+| Giả thuyết | Khoảng cách 0.02 LB với đội trung thực là do công thức map, không phải hậu xử lý (F57, F60). Chép công thức có số công khai cho một họ model tốt hơn N1 +0.005…+0.025, và pool +0.006…+0.015 |
+| Bằng chứng | Notebook Dariush Afshar (cùng luật): R34 0.4299 / LB 0.37 → V2-S 0.4461 / LB 0.39, 5/5 fold. Ngược chiều: BSergey crop 640 @2048 kém 0.07; N2 của mình (crop 1024 @2048) đơn lẻ −0.005 |
+| Thiết kế | `effv2s_c512_f0..f4`: `--res 2048 --crop 512 --bs 16 --lr 3e-4 --encoder tu-tf_efficientnetv2_s.in21k_ft_in1k --targets soft --epochs 184 --val-every 184` (~57 bước/epoch → ~10.5k bước, ckpt cuối), infer cả ảnh 2048 + TTA. Chỉ đổi cờ, không code mới. Khác Dariush còn lại: lịch lr (OneCycle thay warmup + cosine), chuẩn hoá /255 thay z-score theo đĩa, không ép tỉ lệ crop có filament |
+| Chi phí | ~1.5–2 h L4 mỗi fold (~1.6 lần N1), ~9 h cho 5 fold; T4 `--bs 8` |
+| Tiêu chí (đăng ký trước 06/11) | **Fold 0 (dừng sớm):** chạy tiếp fold 1–4 chỉ khi `hyst_soft` fold 0 đơn lẻ ≥ 0.4163 (N1 f0 0.4158 + 0.0005) **hoặc** N1 + N2 + N9' trên fold 0 hơn N1 + N2 ≥ +0.005. **Vào final:** gate gộp § 5b (a)(b) và (c) một phía |
+
 ### N9 / N10 — Thành viên khác encoder (EfficientNetV2-S) và độ phân giải thứ ba (1536) (📝 Colab, 05/11 tối)
 
 | | |
@@ -222,14 +232,16 @@ trộn trọng số bằng nhau; trên 707 OOF, cross-tune `hyst_soft`, bootstra
 - (a) Pool = N1 + N2 + mọi họ đã về, so với N1 + N2: **CI 95% > 0**.
 - (b) Mỗi họ trong pool: đóng góp biên (pool so với pool bỏ họ đó) có **P > 0 ≥ 0.8**; họ nào trượt
   thì bỏ họ có đóng góp biên thấp nhất rồi kiểm lại (a)(b) **một lần**; vẫn trượt thì final 1 giữ N1 + N2.
-- (c) Hợp lý từng fold: PQ fold của họ mới nằm trong ±0.02 so với N1 cùng fold (V2-S, 1536) hoặc
-  ±0.01 (seed 2).
+- (c) Hợp lý từng fold: PQ fold của họ mới **≥** N1 cùng fold − 0.02 (V2-S, 1536, N9') hoặc − 0.01
+  (seed 2). *(Sửa 06/11, trước khi có số nào của N8/N9/N9'/N10: bản cũ ±0.02 hai phía sẽ loại cả một
+  họ tốt hơn hẳn N1.)*
 - Họ về chỉ 2–3 fold trước 09/11: không vào final (OOF thiếu ảnh → không so được trên 707 ảnh).
 
 ### Hàng đợi Colab (người dùng chạy; bundle đóng gói lại 05/11 tối)
 
 | Thứ tự | Run | Chi phí L4 | Về muộn nhất |
 |---|---|---|---|
+| 0 | **N9'** `effv2s_c512_f0..f4` (công thức Dariush, thẻ N9'; fold 0 là pilot dừng sớm) | ~9 h | fold 0: 06/11; đủ: 08/11 |
 | 1 | **N9** `effv2s_s1024_f0..f4` (N1 + encoder `tu-tf_efficientnetv2_s.in21k_ft_in1k`) | ~6.5 h | 07/11 |
 | 2 | **N10** `effb4_c1536_f0..f4` (N2 ở `--res 1536 --crop 1024`) | ~6.5 h | 08/11 |
 | 3 | N8 `effb4_s1024_s2_f0..f4` (seed 2) | ~6.3 h | 08/11 tối |

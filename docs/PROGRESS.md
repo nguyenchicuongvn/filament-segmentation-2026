@@ -92,9 +92,9 @@ Val luôn cao hơn LB khoảng 0.03–0.07, nhưng thứ tự giữa các model 
 - **Thang suy giảm** (bỏ 15/30/50% instance điểm lọc thấp nhất): LB **0.35 / 0.33 / 0.27** so với 0.37,
   OOF +0.005 / −0.019 / −0.085. Từ 30% trở đi LB giảm song song với OOF (độ dốc ≈ 1: −0.04 → −0.10 so
   với −0.019 → −0.085, lệch ~−0.02). Riêng 15% OOF dương mà LB **−0.02**: bậc +0.005 là in-sample (bộ
-  lọc fit trên chính OOF), nhưng kể cả vậy thì trên test các instance điểm thấp **đúng nhiều hơn** trên
-  OOF. Kết hợp với 05/11 (bỏ lọc FP vẫn 0.37): trên test không có dấu hiệu lọc chặt hơn có lợi, và lọc
-  chặt hơn chắc chắn hại → giữ ngưỡng lọc hiện tại, không siết. LB phân giải được bước ~0.02, không
+  lọc fit trên chính OOF). *(Sửa 06/11, F59: chấm bằng điểm lọc cross-fit thì OOF là −0.008 / −0.035 /
+  −0.093, khớp LB trong nhiễu + làm tròn; câu cũ "trên test instance điểm thấp đúng nhiều hơn" rút lại.)*
+  Giữ ngưỡng lọc hiện tại. LB phân giải được bước ~0.02, không
   phân giải được 0.005 — đúng mô hình làm tròn ở `kaggle_endgame.md`.
 
 ### 2026-11-05

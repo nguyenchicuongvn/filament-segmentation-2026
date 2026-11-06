@@ -352,3 +352,23 @@ Bốn agent chạy song song trên map N1 + N2 OOF (707 ảnh, config final 1). 
 **Hệ quả cho kế hoạch** (PLAN § 5b): đòn bẩy còn lại đều ≤ +0.005 OOF. Dùng GPU còn lại cho thành
 viên ensemble cùng công thức (N8, seed 2), là hiệu ứng duy nhất đã đo được; mọi thứ khác đi vào report
 như phân tích giới hạn (inter-annotator 0.34).
+
+## 14. Brainstorm đa agent 06/11: tìm lời giải "vượt mọi đội" (`docs/logs/research07/`)
+
+Sáu góc nhìn độc lập (giải mã tối ưu theo PQ, mô hình hoá annotator, mô hình kiểu mới, dữ liệu ngoài,
+cấu trúc cuộc thi, đối chiếu đội trung thực) và một giám khảo phản biện. Kết luận: **không có mẹo nào
+vượt mọi đội**; trần do annotator đã đo được; đòn bẩy duy nhất đủ lớn là chép công thức map có bằng chứng.
+
+| # | Phát hiện | Số | Hệ quả |
+|---|---|---|---|
+| F57 | **Trần annotator đo được.** Oracle dùng nhãn thật của annotator *khác* để quyết định giữ/bỏ/biên rồi chấm trên annotator còn lại: giữ/bỏ +0.0000, biên −0.0074, cả hai −0.0039; oracle tự-chấm +0.084 (giữ/bỏ + biên). Khoảng ~0.16 PQ là phong cách riêng từng người, không đoán được từ ảnh. Trộn hai annotator để đoán người thứ ba ≤ 0.332, model 0.425 trên cùng entry | `metric_decoding.md` | đóng hướng giải mã / hậu xử lý; câu chính cho report |
+| F58 | **Biết annotator cũng gần như không giúp.** Tune biên/ngưỡng theo nhóm annotator: +0.0000; theo số annotator của ảnh: ≤ +0.0016; theo từng annotator (37, CV): +0.0053. Annotator của ảnh test không đoán được (ảnh train gần nhất theo thời gian trùng annotator 6.8%, thấp hơn mức ngẫu nhiên 10.9%) | `annotator_modeling.md` | bỏ head theo annotator / theo nhóm |
+| F59 | **Thang suy giảm 06/11 khớp OOF khi chấm trung thực.** Với điểm lọc cross-fit: bỏ 15/30/50% → OOF −0.008 / −0.035 / −0.093, LB −0.02 / −0.04 / −0.10, đều trong nhiễu + làm tròn. Câu "instance điểm thấp trên test đúng nhiều hơn OOF" (commit f2879ee) là do điểm lọc in-sample, **rút lại** | `annotator_modeling.md` § 2c | không có dấu hiệu lệch test; ngưỡng lọc giữ nguyên |
+| F60 | **Khoảng cách với đội trung thực nằm ở công thức map.** Dariush (notebook công khai, cùng luật): R34 0.4299 / LB 0.37 → EffNetV2-S in21k, crop 512 ở 2048, bs 16, lr 3e-4, ~10.5k bước, ckpt cuối: **0.4461 / LB 0.39**, 5/5 fold. Khác N2 của mình (crop 1024, bs 4–6, OneCycle 1e-3, chọn theo val) ở nhiều điểm chưa tách riêng | `competitor_gap.md` § 4A | **N9'** lên đầu hàng đợi Colab |
+| F61 | **Model khớp chuyên gia hơn chuyên gia khớp nhau**: +0.090 [+0.077, +0.103] trên 296 ảnh, ổn định theo số annotator (nên diễn đạt là model ước lượng đồng thuận, mỗi người là một mẫu) | `competition_structure.md` | tiêu đề report |
+| – | Loại có số: DINOv3 (không OSI), foundation encoder / thin-object instance / diffusion (không kiểm được trước 09/11), dữ liệu ngoài (trùng ngày test, host duyệt tay), ứng viên rộng + GBM (+0.002 [−0.002, +0.007], trượt F48), Mask R-CNN bỏ phiếu (N4 đã âm), tự chưng cất "annotator ảo" (chưa có số PQ) | `judge.md` | ghi vào report như hướng đã loại |
+
+Xác suất trung thực theo giám khảo (ước lượng chủ quan): N9' về đủ 5 fold trước 09/11 ~0.75; pool qua
+gate với Δ ≥ +0.008 ~0.45; LB ≥ 0.39 ~0.3; giải top-3 theo PQ thuần gần 0 (rất nhiều đội trung thực ở
+0.38–0.42), theo rubric giám khảo 3–8%, chủ yếu nhờ report, repo và notebook đầy đủ.
+
