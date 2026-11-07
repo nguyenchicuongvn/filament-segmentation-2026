@@ -11,7 +11,7 @@ Mỗi phiên làm việc thêm một mục ở **đầu** phần "Nhật ký" (m
 | Submission tốt nhất | **Public LB 0.37**: 5 fold EffNet-B4 @1024 target mềm (N1) + hysteresis + lọc FP (OOF 0.425, 707 ảnh), 04/11 |
 | Hạng | 483 / 1,260 với 0.36 (LB 2026-10-29 08:16 UTC) |
 | LB tham chiếu | #1 0.70 nhưng bị nhiễm (rò rỉ nhãn, payload 0.55 × 82 đội); tầng trung thực cao nhất 0.42 (1 đội), 0.41 (11), 0.40 (46); xem [RESEARCH S16](RESEARCH.md#3-leaderboard-và-khoảng-cách-val--lb) |
-| Submissions đã dùng | 38 (tối đa 5/ngày, reset 00:00 UTC) |
+| Submissions đã dùng | 43 (tối đa 5/ngày, reset 00:00 UTC) |
 | Deadline | Kaggle: **2026-11-15 06:00 UTC** (13:00 VN). Report + code (Google form): Nov 15 11:59 pm CDT |
 | Repo | https://github.com/nguyenchicuongvn/filament-segmentation-2026 (**private** đến khi cuộc thi đóng) |
 | GPU | Kaggle GPU (T4 ×2, `scripts/kaggle_gpu.py`), ~20 h tuần này; đã dùng ~8 h cho 4 kernel, thêm ~6 h cho kernel 5–6 đang chạy. Colab chưa dùng |
@@ -47,11 +47,11 @@ việc đổi trạng thái.
 |---|---|---|---|---|
 | 2026-11-05 09:10 | `submission_ens_n1n2bce.csv` | **15 model** N1 + N2 + BCE (1:1:1) + hysteresis (t 0.4, seed 0.9, area 200, r 12) + lọc FP. Giả thuyết: 15 so với 10 model trên test | 0.4325 (OOF, in-sample); cross-tune +0.0018 so với N1 + N2, CI chạm 0 → không vào final | 0.37 |
 | 2026-11-05 09:00 | `submission_ens_n1n2_r0.csv` | ablation: N1 + N2, hysteresis t 0.4, **không gộp mảnh** (r 0), không lọc FP. Giả thuyết: gộp r 12 đáng +0.0026 OOF, LB không thấy | – | 0.37 |
-| 2026-11-07 (kế hoạch) | `submission_effb4_s1024_f1.csv` | loại 3 (số cho report): N1 fold 1 đơn, hysteresis + lọc FP cấu hình fold 0 | OOF fold 1 ~0.41–0.43 → LB 0.35–0.37 (fold 0 đã 0.36) | |
-| 2026-11-07 (kế hoạch) | `submission_effb4_s1024_f2.csv` | loại 3 (số cho report): N1 fold 2 đơn, hysteresis + lọc FP cấu hình fold 0 | OOF fold 2 ~0.41–0.43 → LB 0.35–0.37 (fold 0 đã 0.36) | |
-| 2026-11-07 (kế hoạch) | `submission_effb4_s1024_f3.csv` | loại 3 (số cho report): N1 fold 3 đơn, hysteresis + lọc FP cấu hình fold 0 | OOF fold 3 ~0.41–0.43 → LB 0.35–0.37 (fold 0 đã 0.36) | |
-| 2026-11-07 (kế hoạch) | `submission_effb4_s1024_f4.csv` | loại 3 (số cho report): N1 fold 4 đơn, hysteresis + lọc FP cấu hình fold 0 | OOF fold 4 ~0.41–0.43 → LB 0.35–0.37 (fold 0 đã 0.36) | |
-| 2026-11-07 (kế hoạch) | `submission_effb4_c2048.csv` | loại 3: N2 5 fold đơn (crop 1024 @2048), cấu hình fold 0 | OOF 0.4129 (N1 −0.005) → LB 0.36–0.37 | |
+| 2026-11-07 00:02 | `submission_effb4_s1024_f1.csv` | loại 3 (số cho report): N1 fold 1 đơn, hysteresis + lọc FP cấu hình fold 0 | OOF fold 1 ~0.41–0.43 → LB 0.35–0.37 (fold 0 đã 0.36) | 0.36 |
+| 2026-11-07 00:03 | `submission_effb4_s1024_f2.csv` | loại 3 (số cho report): N1 fold 2 đơn, hysteresis + lọc FP cấu hình fold 0 | OOF fold 2 ~0.41–0.43 → LB 0.35–0.37 (fold 0 đã 0.36) | 0.36 |
+| 2026-11-07 00:03 | `submission_effb4_s1024_f3.csv` | loại 3 (số cho report): N1 fold 3 đơn, hysteresis + lọc FP cấu hình fold 0 | OOF fold 3 ~0.41–0.43 → LB 0.35–0.37 (fold 0 đã 0.36) | 0.36 |
+| 2026-11-07 00:03 | `submission_effb4_s1024_f4.csv` | loại 3 (số cho report): N1 fold 4 đơn, hysteresis + lọc FP cấu hình fold 0 | OOF fold 4 ~0.41–0.43 → LB 0.35–0.37 (fold 0 đã 0.36) | 0.36 |
+| 2026-11-07 00:04 | `submission_effb4_c2048.csv` | loại 3: N2 5 fold đơn (crop 1024 @2048), cấu hình fold 0 | OOF 0.4129 (N1 −0.005) → LB 0.36–0.37 | 0.37 |
 | 2026-11-06 02:07 | `submission_ens_n1n2_orient.csv` | **final 1 mới**: N1 + N2 + hysteresis + gộp theo hướng (L16, r6) + lọc FP mới | OOF +0.0021 cross-tune (0.4327 sau lọc) | **0.37** |
 | 2026-11-06 01:49 | `submission_n1up.csv` | **final 2**: N1 5 fold, map phóng lên 2048 trước hậu xử lý, không lọc FP | OOF 0.4229 (+0.0050 so với N1 @1024) | **0.37** |
 | 2026-11-06 01:49 | `submission_ens_n1n2_drop15.csv` | thang suy giảm: final 1 bỏ 15% instance điểm lọc thấp nhất | Δ OOF +0.005 (in-sample) → LB 0.37 | **0.35** |
@@ -89,6 +89,15 @@ Val luôn cao hơn LB khoảng 0.03–0.07, nhưng thứ tự giữa các model 
 được để chọn model (xem [DATA_AND_METRIC.md](DATA_AND_METRIC.md#khoảng-cách-val--lb)).
 
 ## Nhật ký
+
+### 2026-11-07
+
+- **Nộp 5 bài số cho report** (hết lượt ngày, tự động lúc 00:02–00:04 UTC, không lỗi mạng): N1 fold 1/2/3/4
+  đơn đều **0.36** (fold 0 trước đây cũng 0.36); N2 5 fold đơn **0.37**. Cả năm khớp dự đoán đăng ký trước.
+  Kết luận cho report: một fold N1 đơn ≈ 0.36 ổn định trên cả 5 fold; ensemble 5 fold hoặc N2 lên 0.37;
+  final 1 (N1 + N2) cũng 0.37, nên trên LB 2 chữ số không tách được ensemble với N2 đơn (chênh OOF ~0.01–0.02
+  nằm dưới độ phân giải ~0.02). Chọn final vẫn theo OOF.
+- Chờ người dùng tải bundle `build/colab/filseg-colab.zip` lên Drive và chạy N9' fold 0 (gate PLAN § 5b).
 
 ### 2026-11-06
 - **Nộp 5 bài** (hết lượt ngày). Bài final 1 lúc 00:02 UTC lỗi mạng (không phân giải được
