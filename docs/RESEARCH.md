@@ -90,6 +90,9 @@ quy đổi từ "N ngày trước". Kể từ 27/10, không repo nào trong số
 | S8 | **Rubric** (Overview > Evaluation, cập nhật 7/8): 70% định lượng gồm Dice trung bình (`torchmetrics.segmentation.DiceScore`), PQ, phân bố Dice, phân bố IoU, phân bố 1:n / n:1; 30% định tính. Host sẽ xem kỹ mọi bài có PQ > 0.35 (bài 747399 viết nhầm thành "3.5"). Về hiệu năng: chỉ loại pipeline "quá chậm hoặc rò bộ nhớ", "không phải yếu tố cạnh tranh". Host **không** nói rõ ensemble lớn hay TTA được chấp nhận; đó là suy luận của mình | [Overview](https://www.kaggle.com/competitions/filament-segmentation-2026/overview), [747399](https://www.kaggle.com/competitions/filament-segmentation-2026/discussion/747399) (~8/10), [749526](https://www.kaggle.com/competitions/filament-segmentation-2026/discussion/749526) (~15/10) |
 | S17 | Được dùng frame GONG lân cận (chuyển nhãn sang, hoặc dùng làm ảnh không nhãn), miễn loại các frame trong ±1 h quanh thời điểm ảnh test | [discussion 748045](https://www.kaggle.com/competitions/filament-segmentation-2026/discussion/748045) (~11/10) |
 | S18 | Câu hỏi mở, host chưa trả lời: barb có thuộc cùng instance không; filament đứt đoạn là một hay nhiều instance; có được dùng metadata/frame lân cận lúc infer không; ~800 MB weights để thẳng trong repo có được không. **Cần theo dõi** | [discussion 753665](https://www.kaggle.com/competitions/filament-segmentation-2026/discussion/753665) (~28/10) |
+| S19 | **Host trả lời S18 (29/10)**: xếp hạng LB theo PQ, nhưng top 3 do ban giám khảo chấm theo rubric. Test chấm PQ theo cùng giao thức. Không cần dự đoán gì riêng cho barb, nhưng mask nên bắt được chi tiết mảnh (cả barb) nếu nhìn thấy. Lúc infer **chỉ dùng ảnh test** (không metadata, không frame lân cận, không MAGFiLO công khai). Toàn bộ code và weights nằm trong một repo; notebook demo chỉ cần load model tốt nhất, **ensemble được chấp nhận**, miễn chạy được trọn vẹn trên máy khác | [discussion 753665](https://www.kaggle.com/competitions/filament-segmentation-2026/discussion/753665) |
+| S20 | **Được dùng `spine`, `bbox`, `area` trong JSON train làm tín hiệu train** (host, 04/11); model không được cần các trường này lúc infer. Quy tắc "chỉ mask" của mình chặt hơn luật | [discussion 755241](https://www.kaggle.com/competitions/filament-segmentation-2026/discussion/755241) |
+| S21 | Mask chồng nhau sẽ bị báo lỗi khi nộp (host, 01/11). Một người dùng mới công bố lại lỗi metric đếm trùng (755906, giống S3); nhãn train có nhiễu (755770, chỉ một ảnh chụp). Tab Code 05/11: không có notebook công khai mới nào tốt hơn ~0.34 | [753816](https://www.kaggle.com/competitions/filament-segmentation-2026/discussion/753816), [755906](https://www.kaggle.com/competitions/filament-segmentation-2026/discussion/755906) |
 
 **Hệ quả** (suy luận): S6b ưu tiên một pipeline **gọn, giải thích được** hơn một ensemble khổng lồ.
 Mỗi thành phần thêm vào phải có lợi đo được (CI > 0). Đây là lý do PLAN đặt tiêu chí chấp nhận chặt.
@@ -242,3 +245,130 @@ in-sample / 0.4083 cross-tune).
 | Mask R-CNN cho lỗi chia instance (N4) | train / lỗi | 3.5 / 3 | hoãn, giữ cổng G3 | nhóm gộp + cắt chiếm ~25% FN; bằng chứng ngoài chỉ có một số (S9a) và model của họ yếu hơn của mình |
 | Chạy lại oracle/cây trên map OOF của N1 | quyết định | 3 | hoãn, chỉ khi CPU rảnh | chẩn đoán cho report |
 | Train có điều kiện theo annotator (style head) | train | 1.5 | **loại** | không có bằng chứng; annotator của test không biết (S7) |
+
+## 11. Quét toàn bộ không gian lựa chọn (03/11): input, tiền xử lý, target, model, train, inference
+
+**Cách làm**: hai agent độc lập. Một agent phụ trách phía input/target: tiền xử lý, biến đổi ảnh,
+augmentation, target, cách lấy mẫu. Agent kia phụ trách phía model/train/inference: kiến trúc,
+loss, recipe, TTA, ensemble, lịch GPU. Mỗi agent chạy thêm số đo trên CPU/MPS nếu rẻ. Báo cáo
+nguyên văn: `docs/logs/sweep03/input_targets.md`, `docs/logs/sweep03/model_training_inference.md`.
+Script: `scripts/research/sweep03/`. Mọi số đo trên E9a holdout (213 ảnh, hysteresis chặt).
+
+### 11.1 Phát hiện mới
+
+| Mã | Nhận định | Số liệu | Nguồn |
+|---|---|---|---|
+| F36 | **Model mất nhiều PQ ở ảnh seeing sắc nét; người thì không.** Độ sắc = phương sai Laplacian của đĩa đã làm phẳng; giá trị cao là seeing tốt, nhiều fibril tối, không phải nhiễu | PQ model theo tam phân vị độ sắc: **0.447 / 0.412 / 0.377**, thấp − cao = 0.070 [0.035, 0.111]. Người với người: 0.349 / 0.341 / 0.330. Ở tam phân vị sắc: recall filament có người khác cùng vẽ giảm **0.83 → 0.70**; recall filament chỉ một người vẽ giữ ~0.30; FN/bản gán nhãn 3.58 so với 2.25. Khoảng chênh có ở cả nhóm annotator 01/04 lẫn các nhóm khác | `docs/logs/sweep03/sharp.out`, `hp_buckets.out`, `human_by_sharp.out`, `hp_crops.png` |
+| F37 | Model **phụ thuộc mạnh vào chi tiết mịn** | làm mờ input σ 1.5 px @1024: −0.096 [−0.12, −0.07]; thu nhỏ input ×0.875: −0.016 [−0.028, −0.003]; phóng ×1.125: +0.0004 | `eval_tta.out` (62 ảnh, config tune trên map gốc) |
+| F38 | TTA đa tỉ lệ: trung bình D4 @1024 và @1152 cho **+0.0028 [−0.0025, +0.0082]**, chưa đủ chắc | 62 ảnh | `eval_tta.out` |
+| F39 | Các bộ lọc ảnh (vesselness Sato, top-hat, DoG, độ tương phản trên ảnh đã làm phẳng) **không thêm thông tin**: AUC tách instance tốt/xấu 0.6973 → 0.6996 khi thêm vào đặc trưng của map | GBM 5 fold theo ảnh, 3 seed | `analyze_feats.out` |
+| F40 | Ảnh đã được chuẩn hoá sẵn: trung vị trong đĩa 130–133 ở mọi trạm, tỉ lệ limb 0.61–0.63, bán kính đĩa 452–455 px @1024. Khác biệt histogram giữa các trạm ≤ 1.6 mức xám (trạm T ≤ 5), nhỏ hơn khác biệt trong cùng trạm. Test khớp train ở mọi trạm. PQ theo trạm chủ yếu là nhiễu | | `station_stats.out` |
+| F41 | Filament bị sót mờ hơn filament bắt được (AUC 0.72–0.83 theo kích thước). Filament chỉ một người vẽ cũng mờ hơn (AUC 0.70). **Mờ và bất đồng là cùng một nhóm**, nên tăng tương phản chủ yếu chỉ thêm các khớp với một annotator | | `analyze_feats.out` |
+| F42 | `tu-convnext_tiny` trong smp **không có skip stride 2** (`out_channels [1, 0, 96, 192, 384, 768]`). Đây là lời giải thích hợp lý cho E9b −0.020. MiT/SegFormer, Swin và các head FPN/DeepLabV3+ (output 1/4) có cùng vấn đề. EfficientNet, EfficientNetV2, RegNet, ResNet thì có | kiểm tra cấu trúc encoder | `model_training_inference.md` |
+| F43 | Grid `hyst` của `compare.py` (seed ≥ 0.9) **cắt mất** filament trên map target mềm: filament 2/3 annotator vẽ có đỉnh ~0.67 nhưng theo F26 vẫn đáng giữ (IoU trung bình ~0.47 > PQ/2). Đã đăng ký trước grid `hyst_soft` (seed 0.5–0.99, ngưỡng 0.2–0.5) cho mọi so sánh target mềm, cả hai nhánh như nhau | | `scripts/compare.py` |
+| F44 | Chi phí GPU thực: E9a trên L4 chạy 109 s/epoch (0.81 s/step, bs 6). Ước tính trên T4: N1 ~2.3 h/fold, v2 ~2.6 h, N2 ~2.8 h. Run **không tái lập được**: `np.random.default_rng()` trong dataset không có seed, nên hai run "cùng seed" vẫn khác nhau. Đây là lý do luật 2 fold là đúng | | `model_training_inference.md` |
+
+### 11.2 Ma trận lựa chọn: tất cả các hướng, trạng thái và lý do
+
+| Khâu | Lựa chọn | Trạng thái | Lý do / bằng chứng |
+|---|---|---|---|
+| **Độ phân giải** | crop 1024 từ ảnh 2048 (N2) | ⏳ hàng đợi Kaggle, kernel 2 | **ưu tiên tăng**: F36, F37 (model cần chi tiết mịn; khoảng chênh ở ảnh sắc nét là lỗi của model), F14; phản đối S13. Thêm chẩn đoán theo độ sắc vào G1 |
+| | input 1536 / multi-scale khi train | không làm | chỉ thử nếu N2 thắng nhưng quá đắt cho 5 fold |
+| | kênh chi tiết từ 2048 (high-pass pooled) cho model 1024 | dự phòng | chỉ khi N2 thắng mà không đủ giờ cho 5 fold; chưa có bằng chứng |
+| **Tiền xử lý** | hiệu chỉnh limb, flat-field, chiếu cực/heliographic | loại | F28 (lỗi vị trí 0.4%), F40 (đã chuẩn hoá sẵn); biconcavelens thử 8 biến thể flat-field: không lợi |
+| | CLAHE / chuẩn hoá tương phản cục bộ | loại | S9e (−0.006 đến −0.013); F41 |
+| | kênh vesselness / top-hat / DoG | loại | F39 |
+| | log/gamma, khớp histogram giữa các trạm | loại | F40 (gamma jitter đã có trong augmentation) |
+| **Augmentation** | rot90/lật/gamma/tương phản | đang dùng | – |
+| | mờ do seeing, nhiễu, JPEG, style theo trạm | loại | F40 (không có lệch train/test), F37 (bất biến với mờ đi ngược F36) |
+| | scale/shear/elastic | loại | bán kính đĩa cố định (F40); elastic làm méo đúng đường biên mà metric chấm |
+| | copy-paste / cutmix filament | loại | biconcavelens −0.015 |
+| | lấy mẫu dư ảnh sắc nét | dự phòng | chỉ nếu N2 không thu hẹp khoảng chênh F36 |
+| **Target** | target mềm đa annotator, lấy mẫu ảnh theo số annotator | đang dùng (N1) | `WeightedRandomSampler` theo số bản gán nhãn (agent input ghi nhầm là chưa có) |
+| | head phụ skeleton + core (từ mask, hợp luật) | sau G2 | S11a là gói có cả phần này; chỉ thử nếu v2 qua G2 (+0.003 kỳ vọng) |
+| | head theo annotator / style | loại | S7, judge 1.5 |
+| | làm mượt nhãn ở biên | loại | lỗi theo hai chiều ngược nhau (F13 so với F29) |
+| | tâm/offset, affinity | loại | E8 (+0.003), F23, F31 |
+| **Kiến trúc** | U-Net EfficientNet-B4 | đang dùng | F20 |
+| | EfficientNetV2-S / B5 | dự phòng | F32; Dariush dùng V2-S; chỉ khi còn giờ sau rollout |
+| | ConvNeXt, SegFormer/MiT, Swin, MaxViT, FPN, DeepLabV3+ | loại | F42 (thiếu skip stride 2), E9b −0.020 |
+| | UNet++, MAnet, HRNet | loại | không có bằng chứng trên bài này, đắt gấp đôi decoder |
+| | detector (Mask R-CNN, YOLO, RT-DETR) | hoãn / gần như loại | N4-mac âm; head mask 28×28 kém với vật dài mảnh; YOLO là AGPL; phức tạp hoá (S6b) |
+| **Loss / train** | blob Dice + phạt thành phần giả + EMA (v2) | ⏳ hàng đợi Kaggle, kernel 2–3 | S11a, S10b; G2 trên 2 fold |
+| | Lovász, Tversky, boundary/Hausdorff, clDice | loại | JML1 +0.0003 (S11), S9e, F31 |
+| | train dài/ngắn hơn, đổi LR | loại | E10; checkpoint sau anneal ổn định (F35) |
+| | SWA, model soup | loại | EMA đã có; soup giữa các fold không kiểm chứng được |
+| **Inference** | TTA D4 ×8 @1024 | đang dùng | – |
+| | + TTA @1152 | đo xong trên Mac: +0.0035 [−0.0013, +0.0082] (213 ảnh) | chưa nhận; thử lại trên OOF của N1 |
+| | TTA thu nhỏ | loại | F37 |
+| | lưu map fp16 thay vì uint8 | dự phòng | chỉ nếu seed hysteresis của N1 ≥ 0.97 (bão hoà) |
+| **Ensemble** | 5 fold cùng công thức | ⏳ hàng đợi | H1; lợi ích không đo được trên OOF |
+| | trung bình N1 + v2 trên fold 0/1 | đo miễn phí sau G2 | đo thật lợi ích của ensemble 2 model trên cùng ảnh (đề xuất #4 của agent model) |
+| | seed thứ hai của N1 f0 | dự phòng | đo nhiễu seed (chưa có số nào) |
+| **Hậu xử lý** | mọi biến thể | cạn | F21, F27, F34 |
+
+### 11.3 Kết luận
+
+1. Lựa chọn hứa hẹn nhất còn lại là **độ phân giải gốc (N2)**. Trước đây prior của N2 gần 0; F36
+   và F37 cho một cơ chế cụ thể, đo được, và chỉ nằm ở model.
+2. Về phía input, tiền xử lý và augmentation, **không còn đòn bẩy nào** (F39–F41): ảnh đã chuẩn hoá
+   sẵn và model đã tự học các bộ lọc.
+3. Kỳ vọng trung thực vẫn khoảng +0.005 đến +0.02 OOF cho cả phần còn lại. Mức trên chỉ đạt được nếu
+   N2 thu hẹp phần lớn khoảng chênh ở ảnh sắc nét.
+
+## 12. Rà soát lại các bước (04/11): có gì sai?
+
+Người dùng hỏi vì sao vẫn chưa đạt. Câu trả lời ngắn: submission không có bug, nhưng có hai lỗi
+phương pháp và một khoảng cách model.
+
+| Mã | Nhận định | Số liệu | Hệ quả |
+|---|---|---|---|
+| F45 | **Khoảng thiếu nằm ở OOF, không ở submission.** Mọi đội trung thực có LB thấp hơn OOF 0.05–0.06 (§ 6.2); mình: OOF 0.428 (ens), LB 0.37, cùng mức chênh. Số dự đoán mỗi ảnh và diện tích nền trên test khớp val (F10) | ens OOF 0.428 so với 0.45–0.46 của các đội 0.40 | cần +0.02–0.03 OOF; không tìm lỗi ở bước nộp nữa |
+| F46 | **Map bão hoà: target mềm bị loss Dice phá.** Target là tỉ lệ annotator, nhưng 70% thành phần của N1 có đỉnh p = 1.0. Pixel dự đoán 0.5–0.9 chỉ có 37–45% annotator vẽ; pixel ≥ 0.9 có 78% | 60 ảnh fold 0 | giải thích F34 (AUC 0.72), H6 thất bại (bộ dự đoán IoU R² 0.26) và việc seed 0.99 luôn thắng: map không còn cho biết bao nhiêu người sẽ vẽ filament. Thẻ N7 (BCE thuần) đang chạy |
+| F47 | **Hậu xử lý ở 1024, phóng nhãn bằng nearest** làm biên răng cưa ở 2048 | +0.0024 [+0.0003, +0.0045] khi hậu xử lý ở 2048 | sửa cho final 2; ensemble vốn đã ở 2048 |
+| F48 | **Tiêu chí nhận quá chặt cho lợi ích nhỏ.** Ngưỡng Δ ≥ +0.010–0.012 trên một fold (CI ±0.012) chỉ nhận được thay đổi lớn. Các đội 0.40 cộng dồn nhiều bước +0.003–0.008 (S10b, S11a, S11c). Mình đã bỏ TTA1152 (+0.0035), UP2048 (+0.0024) | | từ giờ, thay đổi **rẻ** (không tốn GPU, không thêm độ phức tạp) được nhận nếu CI > 0 trên OOF 707 ảnh; ngưỡng Δ chỉ giữ cho thay đổi tốn GPU |
+| F49 | v2 thất bại vì **trọng số không được dò**: phạt thành phần giả 0.3 trên map còn mềm làm model dè dặt (FN +230/fold). Chỉ có smoke test 256 px 2 epoch trước khi tốn 5 h GPU | | lần sau: dò trọng số trên run ngắn @512 trước |
+| F50 | Chưa kiểm: input 1 kênh không chuẩn hoá ImageNet; bs 4 với BatchNorm; chỉ 30 epoch; chọn checkpoint trên chính fold val (lạc quan nhẹ) | | ưu tiên thấp, không có bằng chứng |
+| F51 | **Hiệu chỉnh map không đổi PQ.** BCE thuần cho map p ≈ tỉ lệ annotator (p 0.7–0.9 → 80% vẽ; N1 49%), nhưng PQ đơn lẻ bằng N1 (−0.0002 / −0.0018) và bộ lọc instance trên map mới vẫn ≈ 0 (+0.0004 / −0.0013). Làm thành viên ensemble thì +0.004 (gộp 2 fold, CI > 0) | fold 0+1, 284 ảnh | F46 đúng về hiện tượng nhưng sai về hệ quả: hysteresis với seed tune được đã bù cho map bão hoà. Giới hạn nằm ở chất lượng mask/tách instance, không ở độ tự tin |
+
+**Thứ tự ưu tiên mới**: N7 (BCE) fold 0+1 → nếu map hiệu chỉnh tốt hơn thì thử lại tầng quyết định
+F26 trên map mới (CPU) → TTA1152 + UP2048 trên OOF (CPU/MPS).
+
+## 13. Nghiên cứu đa agent 05/11: phân rã lỗi, spine, paper và code mở, hậu xử lý rẻ
+
+Bốn agent chạy song song trên map N1 + N2 OOF (707 ảnh, config final 1). Log và script:
+`docs/logs/research05/`, `scripts/research/`. Mọi số là OOF, không phải LB.
+
+| Mã | Kết luận | Bằng chứng | Hệ quả |
+|---|---|---|---|
+| F52 | **1 − PQ chia ra**: biên 36%, FN 38%, FP 26%. Trần nếu sửa hoàn hảo từng loại: dự đoán gần trúng (IoU 0.3–0.5, 1,047 FN) thành TP **+0.055**; gộp nhầm +0.028 (260 dự đoán) và tách nhầm +0.015; bỏ FP không chạm GT nào chỉ +0.010. 787 FP (34%) trùng filament của annotator khác; 38% FN là filament chỉ một người vẽ | `error_decomp.txt`, 1,154 bản gán nhãn | Lọc FP đã cạn. Chỗ còn lại là biên và tách/gộp instance, nhưng phần lớn là bất đồng annotator |
+| F53 | **Inter-annotator PQ 0.340**; model trên cùng bản gán nhãn đạt 0.430. Filament < 1k px: 54% FN, precision 0.59, bị vẽ to quá (tỉ lệ diện tích 1.18); filament > 10k px bị vẽ nhỏ (0.91). Dãn/co toàn cục 1 px ở 2048: −0.014 / −0.029 | `error_decomp.txt` | Chỉnh biên phải theo kích thước và dưới 1 px; đã thử (R4c, F56) đều ≈ 0 |
+| F54 | **Spine, bbox, area không có thông tin mới**: `area` = diện tích mask 100%, `bbox` = bbox mask ±0.5 px; spine nằm trong mask ở 99.5% bản vẽ và cách `skeletonize(mask)` dưới nửa bề rộng ở 99.7% pixel; mỗi filament là một polygon, nên spine không "nối mảnh đứt" hơn mask. Oracle gộp/cắt mảnh hoàn hảo chỉ **+0.023** [+0.019, +0.027]; 257 gộp nhầm nằm trong một thành phần liên thông nên oracle cũng không sửa | `spine_stats.txt`, `spine_vs_skel.txt`, `spine_group_oracle.txt` | Giữ quy tắc "chỉ dùng mask". Head spine dự kiến 0 đến +0.005, dưới ngưỡng phát hiện; không train |
+| F55 | **Gộp mảnh bằng GBM** (519 cặp thành phần cách ≤ 48 px, nhãn từ mask, 17 đặc trưng hình học và xác suất, 5 fold theo ảnh): AUC 0.767 so với luật bán kính đúng 0.62; cross-tune **+0.0030**, t = 0.8: +0.0036 [−0.0001, +0.0071] | `spine_pair_group.txt`, `pair_group_v1_rerun.txt`, `pair_group_v2.txt` | **Không qua gate** (CI > 0 và ≥ 4/5 fold): v1 t 0.8 +0.0036 [−0.0000, +0.0072], 3/5 fold; v2 (tiếp tuyến cục bộ, 64 px) AUC 0.792 nhưng cross-tune +0.0026 < v1 nên theo luật đăng ký không lấy, CI [−0.0008, +0.0064]. Giữ luật bán kính 12 |
+| F56 | **Hậu xử lý rẻ ≈ 0 hoặc âm** (fold 0, cross-tune, 2,000 bootstrap): gộp theo hướng −0.0009; ngưỡng theo kích thước +0.0001; grow theo kích thước lớn −0.0000; ngưỡng tương đối theo đỉnh −0.0004; làm mượt/lấp lỗ −0.0003; trộn extent −0.0001. **Chỉnh biên theo cường độ ảnh** (z-score so với nền cục bộ, thêm điểm tối / bỏ điểm sáng ở mép) **âm** mọi biến thể: −0.0005 đến −0.052; combo được chọn nhiều nhất là "không chỉnh" | `post_f0_screen.txt`, `post_f0_extmix.txt`, `intensity_refine_f0.txt` | Annotator không vẽ theo mép tối của ảnh. Không còn gì rẻ để tune ngoài F55 |
+| S22 | **Paper trong ngành không có cách tách instance nào hơn heuristic, và không paper nào báo PQ.** Code mở: MORDEN (MIT; DenseCRF + DBSCAN, chuyên gia đánh giá 84% cụm đúng), Diercke 2024 (GPL-3.0; chỉnh limb darkening đa thức + Zernike, luật `I ≤ mean − std` trong box), Zhu 2019 (MIT), EdgeAttNet (MIT, **thiếu code model**, weights train trên MAGFiLO v1.0 → cấm), human-com-h (MIT, weights MAGFiLO v1.0 → cấm). **Hao & Li 2026** đo 8 phương pháp × 3 seed trên MAGFiLO @1024: Skeleton Recall, clDice, loss cân theo component **không cho lợi ổn định**. Cách gộp mảnh cổ điển của Hao 2013/2015: khoảng cách đầu mút nhỏ **và** góc nghiêng giống nhau | `filament_papers.md`; repo clone chỉ đọc, không chạy | Bỏ hướng loss skeleton/component; không dùng weights MAGFiLO; ý tưởng góc nghiêng đã vào F55 v2 |
+| S23 | **Phương pháp vật mảnh ngoài ngành**: Omnipose (distance field + flow, license **không OSI**, chỉ được viết lại), mutex watershed (elf, MIT; affinity xa + gần), Skeleton Recall (Apache; DRIVE β0 57 → 39, Dice +0.1), per-instance Lovász (MIT), cbDice/Topograph (bỏ). Mỗi hướng cần head mới + ~9 h GPU cho hiệu ứng dự kiến +0.003–0.01, dưới ngưỡng phát hiện ±0.009 với 2 fold | `thin_methods.md` | Không làm trước hạn; ghi lại cho report như hướng tương lai |
+
+**Hệ quả cho kế hoạch** (PLAN § 5b): đòn bẩy còn lại đều ≤ +0.005 OOF. Dùng GPU còn lại cho thành
+viên ensemble cùng công thức (N8, seed 2), là hiệu ứng duy nhất đã đo được; mọi thứ khác đi vào report
+như phân tích giới hạn (inter-annotator 0.34).
+
+## 14. Brainstorm đa agent 06/11: tìm lời giải "vượt mọi đội" (`docs/logs/research07/`)
+
+Sáu góc nhìn độc lập (giải mã tối ưu theo PQ, mô hình hoá annotator, mô hình kiểu mới, dữ liệu ngoài,
+cấu trúc cuộc thi, đối chiếu đội trung thực) và một giám khảo phản biện. Kết luận: **không có mẹo nào
+vượt mọi đội**; trần do annotator đã đo được; đòn bẩy duy nhất đủ lớn là chép công thức map có bằng chứng.
+
+| # | Phát hiện | Số | Hệ quả |
+|---|---|---|---|
+| F57 | **Trần annotator đo được.** Oracle dùng nhãn thật của annotator *khác* để quyết định giữ/bỏ/biên rồi chấm trên annotator còn lại: giữ/bỏ +0.0000, biên −0.0074, cả hai −0.0039; oracle tự-chấm +0.084 (giữ/bỏ + biên). Khoảng ~0.16 PQ là phong cách riêng từng người, không đoán được từ ảnh. Trộn hai annotator để đoán người thứ ba ≤ 0.332, model 0.425 trên cùng entry | `metric_decoding.md` | đóng hướng giải mã / hậu xử lý; câu chính cho report |
+| F58 | **Biết annotator cũng gần như không giúp.** Tune biên/ngưỡng theo nhóm annotator: +0.0000; theo số annotator của ảnh: ≤ +0.0016; theo từng annotator (37, CV): +0.0053. Annotator của ảnh test không đoán được (ảnh train gần nhất theo thời gian trùng annotator 6.8%, thấp hơn mức ngẫu nhiên 10.9%) | `annotator_modeling.md` | bỏ head theo annotator / theo nhóm |
+| F59 | **Thang suy giảm 06/11 khớp OOF khi chấm trung thực.** Với điểm lọc cross-fit: bỏ 15/30/50% → OOF −0.008 / −0.035 / −0.093, LB −0.02 / −0.04 / −0.10, đều trong nhiễu + làm tròn. Câu "instance điểm thấp trên test đúng nhiều hơn OOF" (commit f2879ee) là do điểm lọc in-sample, **rút lại** | `annotator_modeling.md` § 2c | không có dấu hiệu lệch test; ngưỡng lọc giữ nguyên |
+| F60 | **Khoảng cách với đội trung thực nằm ở công thức map.** Dariush (notebook công khai, cùng luật): R34 0.4299 / LB 0.37 → EffNetV2-S in21k, crop 512 ở 2048, bs 16, lr 3e-4, ~10.5k bước, ckpt cuối: **0.4461 / LB 0.39**, 5/5 fold. Khác N2 của mình (crop 1024, bs 4–6, OneCycle 1e-3, chọn theo val) ở nhiều điểm chưa tách riêng | `competitor_gap.md` § 4A | **N9'** lên đầu hàng đợi Colab |
+| F61 | **Model khớp chuyên gia hơn chuyên gia khớp nhau**: +0.090 [+0.077, +0.103] trên 296 ảnh, ổn định theo số annotator (nên diễn đạt là model ước lượng đồng thuận, mỗi người là một mẫu) | `competition_structure.md` | tiêu đề report |
+| – | Loại có số: DINOv3 (không OSI), foundation encoder / thin-object instance / diffusion (không kiểm được trước 09/11), dữ liệu ngoài (trùng ngày test, host duyệt tay), ứng viên rộng + GBM (+0.002 [−0.002, +0.007], trượt F48), Mask R-CNN bỏ phiếu (N4 đã âm), tự chưng cất "annotator ảo" (chưa có số PQ) | `judge.md` | ghi vào report như hướng đã loại |
+
+Xác suất trung thực theo giám khảo (ước lượng chủ quan): N9' về đủ 5 fold trước 09/11 ~0.75; pool qua
+gate với Δ ≥ +0.008 ~0.45; LB ≥ 0.39 ~0.3; giải top-3 theo PQ thuần gần 0 (rất nhiều đội trung thực ở
+0.38–0.42), theo rubric giám khảo 3–8%, chủ yếu nhờ report, repo và notebook đầy đủ.
+

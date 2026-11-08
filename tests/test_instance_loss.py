@@ -191,3 +191,12 @@ def test_ema_checkpoint_loads_into_build_model():
     ema2.eval()
     with torch.no_grad():
         assert torch.allclose(ema2.module(x), ema.module(x), atol=1e-6)
+
+
+def test_dice_weight_scales_dice_term():
+    torch.manual_seed(0)
+    logits, target = torch.randn(2, 1, 16, 16), torch.rand(2, 1, 16, 16)
+    bce = torch.nn.functional.binary_cross_entropy_with_logits(logits, target)
+    full, half = dl.bce_dice_loss(logits, target), dl.bce_dice_loss(logits, target, 0.5)
+    assert torch.isclose(dl.bce_dice_loss(logits, target, 0.0), bce)
+    assert torch.isclose(half - bce, (full - bce) / 2)

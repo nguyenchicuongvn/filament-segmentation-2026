@@ -1,0 +1,6 @@
+evaluated hyst
+evaluated cc
+707 images, 2000 bootstrap resamples
+pipeline                          PQ    TP    FP    FN     diff             95% CI   P>0
+hyst                          0.4313  4910  2284  3289
+cc                            0.4065  5284  4022  2915  -0.0248 [-0.0290, -0.0204]  0.00

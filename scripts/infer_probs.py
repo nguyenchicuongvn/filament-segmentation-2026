@@ -47,10 +47,13 @@ def main() -> None:
                     help="'fold': the held-out images of the checkpoint's fold (its out-of-fold maps)")
     ap.add_argument("--tta", action="store_true")
     ap.add_argument("--out", type=Path, help="default: outputs/probs/<ckpt stem>_<which>")
+    ap.add_argument("--res", type=int, help="infer at this resolution instead of the training one "
+                                            "(scale TTA, PLAN 5b 06/11: a 1024 model run at 1152)")
     args = ap.parse_args()
 
     dev = device()
     models, res, folds = load_model(args.ckpt, dev)
+    res = args.res or res
     if args.which == "fold":
         assert len(folds) == 1 and -1 not in folds, f"--which fold needs checkpoints of one fold, got {folds}"
         paths = {t.image_id: t.path for t in fold_split(load_train(), folds.pop())[1]}

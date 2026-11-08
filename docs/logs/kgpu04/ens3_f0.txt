@@ -1,0 +1,4 @@
+142 images, 2000 bootstrap resamples
+pipeline                          PQ    TP    FP    FN     diff             95% CI   P>0
+n1n2                          0.4291   968   505   621
+n1n2v2                        0.4270   988   551   601  -0.0021 [-0.0075, +0.0035]  0.23

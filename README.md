@@ -4,7 +4,7 @@ Instance segmentation of solar filaments in GONG H-alpha images (MAGFiLO dataset
 Competition: https://www.kaggle.com/competitions/filament-segmentation-2026 (PQ metric, deadline 2026-11-15).
 Prize conditions: [PRIZE_RULES.md](PRIZE_RULES.md).
 
-**Current best:** public LB 0.36 — U-Net EfficientNet-B4 @1024 + instance FP filter (val PQ 0.408), 2026-10-25.
+**Current best:** public LB 0.37 — final 1: 5-fold U-Net EfficientNet-B4 @1024 + 5-fold @2048 (1024 crops), map average, hysteresis + oriented fragment grouping + instance FP filter (OOF PQ 0.4327 on 707 images), 2026-11-06. Final 2: the @1024 model alone with maps upsampled to 2048 before post-processing (OOF 0.4229, LB 0.37).
 
 ## Documentation
 
@@ -115,7 +115,7 @@ probability maps and uploads each finished run to a private Kaggle dataset
 `nguyenchicuong/filseg-<run>`. Training state is saved to Drive every epoch (`--resume`).
 
 ```bash
-.venv/bin/python scripts/package_colab.py          # then upload build/colab/filseg-colab.zip to MyDrive/filseg/
+.venv/bin/python scripts/package_colab.py          # then upload build/colab/filseg-colab.zip to MyDrive/filament-segmentation-2026/
 # ... run the notebook on a GPU runtime (Colab secret KAGGLE_API_TOKEN) ...
 kaggle datasets download nguyenchicuong/filseg-unet1024-r34 -p outputs/colab/unet1024_r34 --unzip
 .venv/bin/python scripts/tune_post.py --probs outputs/colab/unet1024_r34/probs_val --out configs/post_unet1024.json

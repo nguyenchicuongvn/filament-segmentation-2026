@@ -1,0 +1,11 @@
+62 images (fixed post config tuned on base maps)
+  base             PQ 0.4101  TP 507.0 FP 290.0 FN 349.0  d +0.0000 CI [+0.0000, +0.0000]
+  blur             PQ 0.3141  TP 372.0 FP 326.0 FN 484.0  d -0.0959 CI [-0.1195, -0.0722]
+  s1152            PQ 0.4105  TP 541.0 FP 366.0 FN 315.0  d +0.0004 CI [-0.0093, +0.0097]
+  s896             PQ 0.3941  TP 449.0 FP 218.0 FN 407.0  d -0.0159 CI [-0.0280, -0.0031]
+  base+s1152       PQ 0.4128  TP 508.0 FP 285.0 FN 348.0  d +0.0028 CI [-0.0025, +0.0082]
+  base+s896+s1152  PQ 0.4043  TP 461.0 FP 214.0 FN 395.0  d -0.0057 CI [-0.0164, +0.0045]
+  base+blur        PQ 0.3701  TP 406.0 FP 201.0 FN 450.0  d -0.0400 CI [-0.0610, -0.0187]
+  hp tercile 0 (n=34): base 0.4253 blur 0.3317 base+blur 0.3829 base+s1152 0.4251
+  hp tercile 1 (n=16): base 0.4500 blur 0.3248 base+blur 0.3955 base+s1152 0.4539
+  hp tercile 2 (n=12): base 0.3470 blur 0.2768 base+blur 0.3254 base+s1152 0.3531

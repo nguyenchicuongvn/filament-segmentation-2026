@@ -1,0 +1,16 @@
+{
+  "thresh": 0.4,
+  "min_area": 200,
+  "group_radius": 6,
+  "out_dilate": 0,
+  "mode": "hyst",
+  "seed_thresh": 0.99,
+  "group_thresh": 0.5,
+  "fill_holes": false,
+  "small_area": 0,
+  "small_thresh": 0.0,
+  "large_area": 0,
+  "large_thresh": 0.0,
+  "large_grow": 3,
+  "group_line": 16
+}

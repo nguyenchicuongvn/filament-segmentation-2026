@@ -1,0 +1,8 @@
+  outputs/colab/effb4_bce_s1024_f1/probs_val hyst_soft: combos chosen [{'thresh': 0.3, 'min_area': 50, 'group_radius': 6, 'out_dilate': 0, 'mode': 'hyst', 'seed_thresh': 0.6, 'group_thresh': 0.5, 'fill_holes': False, 'small_area': 0, 'small_thresh': 0.0, 'large_area': 0, 'large_thresh': 0.0, 'large_grow': 3}, {'thresh': 0.3, 'min_area': 50, 'group_radius': 6, 'out_dilate': 0, 'mode': 'hyst', 'seed_thresh': 0.7, 'group_thresh': 0.5, 'fill_holes': False, 'small_area': 0, 'small_thresh': 0.0, 'large_area': 0, 'large_thresh': 0.0, 'large_grow': 3}]
+evaluated bce
+  outputs/colab/effb4_bce_s1024_f1/probs_val hyst_soft filter:base: (combo, threshold) per split [(32, 0.05), (32, 0.075), (32, 0.3), (32, 0.175), (32, 0.15), (30, 0.05)]
+evaluated bcefilt
+142 images, 2000 bootstrap resamples
+pipeline                          PQ    TP    FP    FN     diff             95% CI   P>0
+bce                           0.4072  1042   523   767
+bcefilt                       0.4058  1021   489   788  -0.0013 [-0.0031, +0.0004]  0.07

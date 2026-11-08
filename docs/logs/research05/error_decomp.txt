@@ -1,0 +1,86 @@
+probs outputs/ens/n1n2_oof
+post {'thresh': 0.4, 'min_area': 200, 'group_radius': 12, 'out_dilate': 0, 'mode': 'hyst', 'seed_thresh': 0.99, 'group_thresh': 0.5, 'fill_holes': False, 'small_area': 0, 'small_thresh': 0.0, 'large_area': 0, 'large_thresh': 0.0, 'large_grow': 3}
+images 707  entries 1154
+
+== 1. Overall ==
+metric.py: {'pq': 0.4294, 'sq': 0.6762, 'tp': 4881, 'fp': 2292, 'fn': 3318, 'gt_split': 282, 'pred_merge': 289}
+PQ 0.4294  SQ 0.6762  RQ 0.6351  TP 4881  FP 2292  FN 3318  GT 8199
+FP/TP 0.470  FN/TP 0.680
+1-PQ = 0.5706: boundary (TP-sumIoU)/D 0.2056 (36%), FP 0.5FP/D 0.1491 (26%), FN 0.5FN/D 0.2158 (38%)
+Upper bounds (each alone, from the base):
+ (a) SQ=1                                   PQ 0.6351  (+0.2056)
+ (b) FN with best IoU (0.3,0.5] -> TP       PQ 0.4840  (+0.0546)  [1012 GTs, 1010 FP removed]
+ (c) all FP removed                         PQ 0.5047  (+0.0753)
+     (c.no_gt_any_annot   ) only:   357 FP     PQ 0.4397  (+0.0102)
+     (c.match_other_annot ) only:   787 FP     PQ 0.4526  (+0.0232)
+     (c.partial_this_gt   ) only:  1017 FP     PQ 0.4599  (+0.0304)
+     (c.partial_other_gt  ) only:   131 FP     PQ 0.4331  (+0.0037)
+ (d1) split fixed                           PQ 0.4439  (+0.0145)  [134 GTs, 282 FP fragments removed]
+ (d2) merge fixed                           PQ 0.4573  (+0.0279)  [260 merging preds, net +408 TP, -170 FP]
+ (d) split+merge fixed                      PQ 0.4718  (+0.0424)
+ counts: gt_split(touched by >1 pred) 282, pred_merge(touches >1 GT) 289
+
+By number of annotators k of the image (model PQ on those entries):
+ k=1: entries  411  PQ 0.4288  SQ 0.6793  TP 1815 FP 730 FN 1391
+ k=2: entries  290  PQ 0.4412  SQ 0.6756  TP 1236 FP 562 FN 751
+ k=3: entries  453  PQ 0.4225  SQ 0.6737  TP 1830 FP 1000 FN 1176
+
+== 2. FN breakdown ==
+ best IoU = 0 (fully missed)   1764  (53.2%)  PQ if fixed at IoU 0.5 (no FP change) +0.0587
+ (0, 0.3]                       507  (15.3%)  PQ if fixed at IoU 0.5 (no FP change) +0.0182
+ (0.3, 0.5]                    1047  (31.6%)  PQ if fixed at IoU 0.5 (no FP change) +0.0364
+ by GT area (px at 2048): bin  GT  FN  FN-rate  share-of-FN  TP-SQ
+  [     0,    1000)   3388  1802  0.532  0.543  0.665
+  [  1000,    3000)   3232  1024  0.317  0.309  0.675
+  [  3000,   10000)   1384   412  0.298  0.124  0.694
+  [ 10000,   30000)    190    77  0.405  0.023  0.708
+  [ 30000,1000000000)      5     3  0.600  0.001  0.646
+ by annotator support (k>=2 images; support = other annotators with an IoU>0.5 matching filament):
+  k=2 support=0/1: GT   869  FN   551  FN-rate 0.634  share-of-FN 0.166
+  k=2 support=1/1: GT  1118  FN   200  FN-rate 0.179  share-of-FN 0.060
+  k=3 support=0/2: GT   986  FN   712  FN-rate 0.722  share-of-FN 0.215
+  k=3 support=1/2: GT   868  FN   338  FN-rate 0.389  share-of-FN 0.102
+  k=3 support=2/2: GT  1152  FN   126  FN-rate 0.109  share-of-FN 0.038
+  k=1 (single annotator): GT  3206  FN  1391  FN-rate 0.434  share-of-FN 0.419
+ FN drawn by only this annotator (support 0, k>=2): 1263 (38.1% of FN); of those with <10% pixels covered by any other annotator: 560 (16.9% of FN)
+   their best IoU: =0 663, (0,.3] 232, (.3,.5] 368
+ FN agreed by >=1 other annotator: 664 (20.0% of FN); best IoU =0 246, (0,.3] 105, (.3,.5] 313
+ PQ if solo-annotator FN were not counted: 0.4679 (+0.0384)
+
+== 3. FP breakdown ==
+ no_gt_any_annot      357 (15.6%)  median area     801  median peak 1.000
+ match_other_annot    787 (34.3%)  median area    1257  median peak 1.000
+ partial_this_gt     1017 (44.4%)  median area    1400  median peak 1.000
+ partial_other_gt     131 (5.7%)  median area     683  median peak 1.000
+   partial_this_gt: share of pred inside this entry's GT: <0.25 0.01, 0.25-0.5 0.12, >=0.5 0.87
+ FP kind by k:  k=1: no_gt_an 209,match_ot 0,partial_ 521,partial_ 0  k=2: no_gt_an 70,match_ot 228,partial_ 231,partial_ 33  k=3: no_gt_an 78,match_ot 559,partial_ 265,partial_ 98
+ by pred area (px at 2048): bin  all-preds-in-bin TP-preds  FP  FP-rate  no_gt  match_other  partial_this  partial_other
+  [     0,    1000)  TP  1444  FP   986  prec 0.594   235   315   342    94
+  [  1000,    3000)  TP  2294  FP   996  prec 0.697    95   362   506    33
+  [  3000,   10000)  TP  1035  FP   296  prec 0.778    26   105   161     4
+  [ 10000,   30000)  TP   108  FP    14  prec 0.885     1     5     8     0
+  [ 30000,1000000000)  TP     0  FP     0  prec 0.000     0     0     0     0
+ by peak prob: bin  FP  share  no_gt  match_other  partial_this  partial_other
+  [0.990,0.995]     18  0.008    11     3     4     0
+  [0.995,0.999]    325  0.142    81    63   127    54
+  [0.999,1.000]   1949  0.850   265   721   886    77
+  (peak values are uint8/255 maps: 0.996 = 254, 1.0 = 255)
+
+== 4. Boundary (TP pairs) ==
+ area ratio pred/GT percentiles {10: np.float64(0.759), 25: np.float64(0.896), 50: np.float64(1.074), 75: np.float64(1.264), 90: np.float64(1.472)}; share pred larger 0.611; mean log2 ratio +0.089
+  GT area [     0,    1000): n  1586  median ratio 1.179  share larger 0.726  mean IoU 0.665
+  GT area [  1000,    3000): n  2208  median ratio 1.056  share larger 0.582  mean IoU 0.675
+  GT area [  3000,   10000): n   972  median ratio 1.009  share larger 0.519  mean IoU 0.694
+  GT area [ 10000,   30000): n   113  median ratio 0.914  share larger 0.354  mean IoU 0.708
+  GT area [ 30000,1000000000): n     2  median ratio 0.691  share larger 0.000  mean IoU 0.646
+ TP IoU percentiles {10: np.float64(0.555), 25: np.float64(0.613), 50: np.float64(0.681), 75: np.float64(0.741), 90: np.float64(0.787)}
+ global per-instance morphology at 2048 (full PQ recomputed, all entries):
+  base   PQ 0.4294  SQ 0.6762  TP 4881 FP 2292 FN 3318
+  erode 2  PQ 0.2973 (-0.1321)  SQ 0.6302  TP 3626 FP 3547 FN 4573
+  erode 1  PQ 0.4157 (-0.0137)  SQ 0.6721  TP 4754 FP 2419 FN 3445
+  dilate 1  PQ 0.4008 (-0.0286)  SQ 0.6570  TP 4689 FP 2484 FN 3510
+  dilate 2  PQ 0.3254 (-0.1040)  SQ 0.6281  TP 3982 FP 3191 FN 4217
+
+== 5. Inter-annotator PQ (each annotator as prediction vs each other annotator as GT, same image) ==
+ ordered pairs 1196  PQ 0.3399  SQ 0.6337  RQ 0.5364  TP 4292 FP 3709 FN 3709
+ model on the same multi-annotator entries: PQ 0.4298  SQ 0.6744  RQ 0.6374

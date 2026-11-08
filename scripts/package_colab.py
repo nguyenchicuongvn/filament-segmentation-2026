@@ -1,6 +1,6 @@
 """Bundle the code the Colab notebook needs into build/colab/filseg-colab.zip.
 
-Upload the zip to MyDrive/filseg/ whenever the code changes.
+Upload the zip to MyDrive/filament-segmentation-2026/ whenever the code changes.
 """
 from __future__ import annotations
 

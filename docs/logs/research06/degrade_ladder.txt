@@ -1,0 +1,8 @@
+707 images, 3948 kept instances, filter fpfilter_ens_n1n2.pkl
+  drop 0.00  PQ 0.4478  TP 4868.0 FP 1639.0 FN 3331.0  d +0.0000 [+0.0000, +0.0000]
+  drop 0.15  PQ 0.4527  TP 4607.0 FP 1010.0 FN 3592.0  d +0.0049 [+0.0019, +0.0079]
+  drop 0.30  PQ 0.4287  TP 4041.0 FP 639.0 FN 4158.0  d -0.0191 [-0.0240, -0.0143]
+  drop 0.50  PQ 0.3625  TP 3027.0 FP 324.0 FN 5172.0  d -0.0853 [-0.0931, -0.0776]
+  test drop 0.15: 790 filaments -> outputs/submission_ens_n1n2_drop15.csv
+  test drop 0.30: 651 filaments -> outputs/submission_ens_n1n2_drop30.csv
+  test drop 0.50: 465 filaments -> outputs/submission_ens_n1n2_drop50.csv

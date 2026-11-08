@@ -1,0 +1,20 @@
+lap_var
+  tercile 0: imgs 71 PQ 0.447 SQ 0.678 FP/img-entry 1.97 FN/entry 2.25 TP/entry 4.09 | grp01/04 0.421 other 0.477 share01/04 0.57 nann 1.97
+  tercile 1: imgs 71 PQ 0.412 SQ 0.669 FP/img-entry 2.46 FN/entry 2.79 TP/entry 4.19 | grp01/04 0.379 other 0.443 share01/04 0.52 nann 1.93
+  tercile 2: imgs 71 PQ 0.377 SQ 0.656 FP/img-entry 2.66 FN/entry 3.58 TP/entry 4.20 | grp01/04 0.347 other 0.412 share01/04 0.56 nann 1.91
+hp_std
+  tercile 0: imgs 71 PQ 0.439 SQ 0.675 FP/img-entry 1.97 FN/entry 2.28 TP/entry 3.96 | grp01/04 0.418 other 0.473 share01/04 0.61 nann 1.93
+  tercile 1: imgs 71 PQ 0.425 SQ 0.673 FP/img-entry 2.28 FN/entry 2.76 TP/entry 4.31 | grp01/04 0.374 other 0.458 share01/04 0.47 nann 1.97
+  tercile 2: imgs 71 PQ 0.372 SQ 0.655 FP/img-entry 2.83 FN/entry 3.57 TP/entry 4.19 | grp01/04 0.351 other 0.399 share01/04 0.58 nann 1.91
+low-high lap_var PQ diff 0.070 CI [0.035, 0.111]
+multi-ann GT support rate by sharpness tercile: {0: 0.651, 1: 0.64, 2: 0.6}
+GT count per entry by tercile: {0: 6.34, 1: 6.97, 2: 7.78}
+station x tercile counts:
+ col_0   0   1   2
+st               
+B      11  11  13
+C       7  13  20
+L      10  13   9
+M      20  21   6
+T       9   3  17
+U      14  10   6

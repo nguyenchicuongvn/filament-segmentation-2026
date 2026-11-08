@@ -1,0 +1,6 @@
+images 707; config {'thresh': 0.4, 'min_area': 200, 'group_radius': 12, 'out_dilate': 0, 'mode': 'hyst', 'seed_thresh': 0.99, 'group_thresh': 0.5, 'fill_holes': False, 'small_area': 0, 'small_thresh': 0.0, 'large_area': 0, 'large_thresh': 0.0, 'large_grow': 3}
+none         PQ 0.4269  d_vs_radius -0.0026 [-0.0061, +0.0010]  TP 5017 FP 2669 FN 3182 gt_split 478 pred_merge 165
+radius       PQ 0.4294  d_vs_radius +0.0000 [+0.0000, +0.0000]  TP 4881 FP 2292 FN 3318 gt_split 282 pred_merge 289
+oracle       PQ 0.4523  d_vs_radius +0.0228 [+0.0190, +0.0266]  TP 5049 FP 1826 FN 3150 gt_split 23 pred_merge 257
+oracle_join  PQ 0.4414  d_vs_radius +0.0120 [+0.0094, +0.0149]  TP 4886 FP 1860 FN 3313 gt_split 14 pred_merge 349
+oracle_cut   PQ 0.4395  d_vs_radius +0.0101 [+0.0074, +0.0132]  TP 5036 FP 2266 FN 3163 gt_split 291 pred_merge 195

@@ -215,13 +215,17 @@ def instance_labels(soft: np.ndarray, min_area: int) -> np.ndarray:
     return lut[lab]
 
 
-def bce_dice_loss(logits: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
-    """BCE + soft Dice, Dice computed per sample and channel."""
+def bce_dice_loss(logits: torch.Tensor, target: torch.Tensor, dice_weight: float = 1.0) -> torch.Tensor:
+    """BCE + dice_weight * soft Dice, Dice computed per sample and channel. With soft targets the Dice
+    term pushes probabilities to 0/1 (maps stop meaning "fraction of annotators"); BCE alone is
+    calibrated, so dice_weight < 1 trades overlap for calibration."""
     bce = F.binary_cross_entropy_with_logits(logits, target)
+    if not dice_weight:
+        return bce
     p = torch.sigmoid(logits)
     inter = (p * target).sum((2, 3))
     dice = 1 - (2 * inter + 1) / (p.sum((2, 3)) + target.sum((2, 3)) + 1)
-    return bce + dice.mean()
+    return bce + dice_weight * dice.mean()
 
 
 def blob_dice_loss(logits: torch.Tensor, target: torch.Tensor, labels: torch.Tensor,
@@ -324,6 +328,9 @@ class PostParams:
     thresh: float = 0.5
     min_area: int = 40         # pixels at prediction resolution
     group_radius: int = 0      # merge fragments (or seeds) closer than ~2*radius
+    group_line: int = 0        # cc/hyst: also dilate each fragment by a line of this half-length
+                               # along its major axis, so fragments of one elongated filament merge
+                               # along it but not sideways (research05: L 16, r 6 at 2048 px)
     out_dilate: int = 0
     mode: str = "cc"           # cc | hyst | watershed | group (see module docstring)
     seed_thresh: float = 0.7   # watershed: seed pixels
@@ -358,6 +365,30 @@ def _relabel(inst: np.ndarray, min_area: int) -> np.ndarray:
     return lut[inst]
 
 
+def _group_oriented(fg: np.ndarray, lab: np.ndarray, keep: np.ndarray, stats: np.ndarray,
+                    length: int, radius: int) -> np.ndarray:
+    """Group kept components after dilating each by disk(radius) union a line of half-length
+    `length` along its major axis (orientation from the second moments)."""
+    h_, w_ = fg.shape
+    grouped = np.zeros_like(fg)
+    pad = length + radius + 1
+    for k in np.nonzero(keep)[0]:
+        x, y, w, h = stats[k, :4]
+        x0, y0 = max(x - pad, 0), max(y - pad, 0)
+        x1, y1 = min(x + w + pad, w_), min(y + h + pad, h_)
+        m = (lab[y0:y1, x0:x1] == k).astype(np.uint8)
+        mo = cv2.moments(m, binaryImage=True)
+        th = 0.5 * np.arctan2(2 * mo["mu11"], mo["mu20"] - mo["mu02"])
+        ker = np.zeros((2 * length + 1, 2 * length + 1), np.uint8)
+        dx, dy = length * np.cos(th), length * np.sin(th)
+        cv2.line(ker, (round(length - dx), round(length - dy)), (round(length + dx), round(length + dy)), 1, 3)
+        if radius > 0:
+            ker[length - radius:length + radius + 1, length - radius:length + radius + 1] |= _disk(radius)
+        grouped[y0:y1, x0:x1] |= cv2.dilate(m, ker)
+    _, glab = cv2.connectedComponents(grouped, connectivity=8)
+    return np.where(fg > 0, glab, 0).astype(np.int32)
+
+
 def instances_lowres(prob: np.ndarray, p: PostParams, group: np.ndarray | None = None) -> np.ndarray:
     """Instance labels at the probability map's resolution."""
     fg = (prob > p.thresh).astype(np.uint8)
@@ -390,6 +421,8 @@ def instances_lowres(prob: np.ndarray, p: PostParams, group: np.ndarray | None =
         if rest.any():
             _, rlab = cv2.connectedComponents(rest, connectivity=8)
             inst = np.where(rlab > 0, rlab + inst.max(), inst).astype(np.int32)
+    elif p.group_line > 0:
+        inst = _group_oriented(fg, lab, keep, stats, p.group_line, p.group_radius)
     else:
         grouped = cv2.dilate(fg, _disk(p.group_radius)) if p.group_radius > 0 else fg
         _, glab = cv2.connectedComponents(grouped, connectivity=8)

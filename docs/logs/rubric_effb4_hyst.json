@@ -1,0 +1,81 @@
+{
+ "probs": "outputs/colab/unet1024_effb4/probs_val",
+ "post": {
+  "thresh": 0.5,
+  "min_area": 50,
+  "group_radius": 4,
+  "out_dilate": 0,
+  "mode": "hyst",
+  "seed_thresh": 0.99,
+  "group_thresh": 0.5,
+  "fill_holes": false,
+  "small_area": 0,
+  "small_thresh": 0.0,
+  "large_area": 0,
+  "large_thresh": 0.0,
+  "large_grow": 3
+ },
+ "images": 213,
+ "pq": 0.41026712523775744,
+ "sq": 0.6678188287685267,
+ "rq": 0.6143389607542205,
+ "tp": 1401,
+ "fp": 794,
+ "fn": 965,
+ "entries": 337,
+ "dice_mean": 0.6676806447590847,
+ "dice_nan_entries": 0,
+ "dice_percentiles": {
+  "10": 0.5042,
+  "25": 0.6199,
+  "50": 0.7077,
+  "75": 0.7685,
+  "90": 0.8141
+ },
+ "dice_hist": [
+  11,
+  0,
+  2,
+  4,
+  14,
+  41,
+  93,
+  126,
+  46,
+  0
+ ],
+ "gt_best_iou_hist": [
+  480,
+  44,
+  86,
+  139,
+  216,
+  346,
+  516,
+  460,
+  79,
+  0
+ ],
+ "tp_iou_mean": 0.6678188287685267,
+ "tp_iou_percentiles": {
+  "10": 0.5488,
+  "25": 0.6004,
+  "50": 0.6707,
+  "75": 0.7324,
+  "90": 0.7794
+ },
+ "one_n_rate": 0.04902789518174133,
+ "n_one_rate": 0.03691886964448496,
+ "one_n_counts": {
+  "0": 470,
+  "1": 1780,
+  "2": 99,
+  "3": 17
+ },
+ "n_one_counts": {
+  "0": 248,
+  "1": 1865,
+  "2": 75,
+  "3": 6
+ }
+}

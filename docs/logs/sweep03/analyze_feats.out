@@ -1,0 +1,73 @@
+overall PQ 0.4103  TP 1401 FP 794 FN 965
+
+PQ per station (bootstrap SD over images):
+  B: n_img  35 entries  56  PQ 0.423 ± 0.015  share grp01/04 0.50
+  C: n_img  40 entries  60  PQ 0.374 ± 0.022  share grp01/04 0.53
+  L: n_img  32 entries  56  PQ 0.389 ± 0.020  share grp01/04 0.68
+  M: n_img  47 entries  74  PQ 0.427 ± 0.019  share grp01/04 0.57
+  T: n_img  29 entries  44  PQ 0.419 ± 0.027  share grp01/04 0.43
+  U: n_img  30 entries  47  PQ 0.434 ± 0.026  share grp01/04 0.57
+  grp01/04: B 0.413  C 0.339  L 0.376  M 0.407  T 0.358  U 0.363
+  other grps: B 0.432  C 0.410  L 0.418  M 0.455  T 0.452  U 0.490
+
+image stats per station (holdout):
+    raw_med  limb_ratio  flat_std  lap_var  hp_std  sat_mean
+st                                                          
+B     133.0      0.6306    0.0481   0.0085  0.0235    0.0140
+C     132.0      0.6172    0.0552   0.0101  0.0264    0.0175
+L     132.0      0.6060    0.0536   0.0074  0.0225    0.0154
+M     132.0      0.6168    0.0496   0.0071  0.0209    0.0150
+T     129.0      0.5858    0.0567   0.0147  0.0329    0.0141
+U     133.0      0.6172    0.0493   0.0072  0.0204    0.0130
+  spearman(per-image PQ, raw_med) = +0.007
+  spearman(per-image PQ, limb_ratio) = +0.007
+  spearman(per-image PQ, flat_std) = -0.101
+  spearman(per-image PQ, lap_var) = -0.184
+  spearman(per-image PQ, hp_std) = -0.161
+  spearman(per-image PQ, disk_r) = +0.034
+  sharpness low  PQ 0.447
+  mid            PQ 0.412
+  high           PQ 0.377
+
+preds 1379, good (mIoU > 0.205) 0.698, anyTP 0.714
+single-feature AUC (good vs bad), oriented >0.5:
+  pmean      0.729 (+)
+  pmax       0.512 (+)
+  p90        0.522 (+)
+  area       0.633 (+)
+  elong      0.593 (+)
+  r          0.518 (-)
+  flat       0.579 (-)
+  flatmin    0.588 (-)
+  contrast   0.601 (-)
+  bh         0.532 (+)
+  bhmax      0.550 (+)
+  dog        0.565 (+)
+  sat        0.558 (+)
+  satmax     0.590 (+)
+  sat_ratio  0.631 (+)
+CV AUC map only       0.6973 ± 0.0051
+CV AUC filters only   0.6606 ± 0.0052
+CV AUC map + filters  0.6996 ± 0.0057
+confident preds (pmax>=0.995): 1374, good 0.698
+  flat       AUC among confident 0.581
+  flatmin    AUC among confident 0.589
+  contrast   AUC among confident 0.601
+  bh         AUC among confident 0.532
+  bhmax      AUC among confident 0.550
+  dog        AUC among confident 0.566
+  sat        AUC among confident 0.558
+  satmax     AUC among confident 0.590
+  sat_ratio  AUC among confident 0.632
+
+GT image contrast (flat-field in/out ratio; lower = darker) and Sato, median:
+  multi=False supported=False det=False n= 396 contrast 0.910 bh 0.1583 sat 0.0418 area 872
+  multi=False supported=False det=True  n= 542 contrast 0.877 bh 0.1806 sat 0.0495 area 1232
+  multi=True  supported=False det=False n= 370 contrast 0.915 bh 0.1581 sat 0.0405 area 1038
+  multi=True  supported=False det=True  n= 160 contrast 0.893 bh 0.1670 sat 0.0444 area 1092
+  multi=True  supported=True  det=False n= 199 contrast 0.897 bh 0.1779 sat 0.0466 area 997
+  multi=True  supported=True  det=True  n= 699 contrast 0.878 bh 0.1792 sat 0.0492 area 1595
+  area [0,800) n=759 det rate 0.46  AUC(det | darker contrast) 0.715  AUC(det | sato) 0.649
+  area [800,3200) n=1157 det rate 0.65  AUC(det | darker contrast) 0.719  AUC(det | sato) 0.656
+  area [3200,1000000000.0) n=450 det rate 0.67  AUC(det | darker contrast) 0.826  AUC(det | sato) 0.728
+  multi-ann GTs: AUC(supported | darker) 0.702; median contrast supported 0.881 vs lone 0.909
