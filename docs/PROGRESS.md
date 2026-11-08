@@ -45,6 +45,8 @@ việc đổi trạng thái.
 
 | Ngày (UTC) | File | Mô tả | val PQ | Public LB |
 |---|---|---|---|---|
+| 2026-11-08 ~23:30 | `submission_ens_n1n2n9p_orient.csv` | loại 3 (số cho report, ghi trước khi biết gate 707): pool N1 ×5 + N2 ×5 + N9' ×5 (1:1:1), hysteresis + gộp theo hướng (r 6, L16), lọc FP fit trên pool OOF. Gate từng fold: pool hơn N1 + N2 ở f0 +0.0068, f1 −0.0008, f2 +0.0072, f3 +0.0007, f4 +0.0049 | Δ OOF dự báo +0.004 so với final 1 → LB 0.37–0.38. Thực tế: lọc FP fit trên pool OOF 0.4354 → **0.4372** (in-sample, t 0.5 seed 0.99) | **0.38** |
+| 2026-11-08 ~23:30 | `submission_n9p_orient.csv` | loại 3 (LB thành viên cho report): N9' (EffNetV2-S, crop 512 @2048) 5 fold trung bình, hysteresis + gộp theo hướng, lọc FP riêng | OOF dự báo ~0.42 (≈ N1) → LB 0.36–0.37. Thực tế: không lọc 0.4192 (t 0.4 seed 0.99), lọc FP → **0.4322** (+0.013, in-sample) | **0.38** |
 | 2026-11-08 07:09 | `submission_ens_n1n2_cc_orient.csv` | loại 3 (ablation cho report): final 1 bỏ hysteresis (mode cc, cùng t 0.4, area 200, gộp theo hướng), không lọc FP; so với dòng t 0.4 không lọc (0.37) | OOF −0.0248 [−0.0290, −0.0204] so với hysteresis không lọc (0.4313 → 0.4065) → LB 0.34–0.36 | 0.36 |
 | 2026-11-08 08:34 | kernel `filseg-final-infer`: `submission_final1.csv` | loại 1 (tái lập): final 1 chạy lại từ đầu trên Kaggle bằng `notebooks/final_inference.ipynb` (10 checkpoint, TTA 8, ensemble, hậu xử lý, lọc FP). Đạt nếu CSV trùng từng byte với `submission_ens_n1n2_orient.csv`; nếu không trùng thì map lệch tối đa 1 mức uint8 trên < 0.1% pixel và LB 0.37 | như final 1 (0.4327) → LB 0.37 | 0.37 |
 | 2026-11-08 08:34 | kernel `filseg-final-infer`: `submission_final2.csv` | loại 1 (tái lập): final 2 từ cùng kernel; cùng tiêu chí, so với `submission_n1up.csv` | như final 2 (0.4229) → LB 0.37 | 0.37 |
@@ -108,6 +110,8 @@ Val luôn cao hơn LB khoảng 0.03–0.07, nhưng thứ tự giữa các model 
   giảm trên T4; thiếu zip trên Drive thì notebook lấy code từ dataset `filseg-code`. N9' fold 0 bắt đầu
   08:26 UTC. Nhánh `exp/kaggle-gpu` đã merge vào `main` (người dùng đồng ý).
 - Watcher Colab cũ (8 run đã về hết) đã dừng.
+- **N9' fold 0 qua gate** (đăng ký trước 06/11): đơn 0.4200 so với N1 0.4158 (ngưỡng 0.4163); N1 + N2 + N9' hơn N1 + N2 +0.0068 [+0.0028, +0.0111] (ngưỡng +0.005). Upload 1.3 GB từ Colab lỗi 400 lúc tạo dataset; upload riêng map val (568 MB) qua bản version thì được. Dataset fold 1–4 tạo sẵn từ máy local để Colab chỉ thêm version. Fold 1–4 chạy tiếp (~6 h).
+- **N9' fold 1 không giúp**: đơn 0.3963 so với N1 0.4090 (−0.0126 [−0.0248, −0.0011]; nhiều FP: 861 so với 517); N1 + N2 + N9' so với N1 + N2 −0.0008 [−0.0063, +0.0049]. Gộp fold 0–1 chênh pool ~+0.003, gate gộp 707 ảnh (CI > 0) giờ khó qua. Map val fold 0 bản Colab tải lại trùng từng byte. Fold 2–4 vẫn chạy (xong ~16:30 UTC).
 
 ### 2026-11-07
 
