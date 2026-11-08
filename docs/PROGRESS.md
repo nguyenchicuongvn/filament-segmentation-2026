@@ -45,6 +45,9 @@ việc đổi trạng thái.
 
 | Ngày (UTC) | File | Mô tả | val PQ | Public LB |
 |---|---|---|---|---|
+| 2026-11-08 (kế hoạch) | `submission_ens_n1n2_cc_orient.csv` | loại 3 (ablation cho report): final 1 bỏ hysteresis (mode cc, cùng t 0.4, area 200, gộp theo hướng), không lọc FP; so với dòng t 0.4 không lọc (0.37) | OOF −0.0248 [−0.0290, −0.0204] so với hysteresis không lọc (0.4313 → 0.4065) → LB 0.34–0.36 | |
+| 2026-11-08 (kế hoạch) | kernel `filseg-final-infer`: `submission_final1.csv` | loại 1 (tái lập): final 1 chạy lại từ đầu trên Kaggle bằng `notebooks/final_inference.ipynb` (10 checkpoint, TTA 8, ensemble, hậu xử lý, lọc FP). Đạt nếu CSV trùng từng byte với `submission_ens_n1n2_orient.csv`; nếu không trùng thì map lệch tối đa 1 mức uint8 trên < 0.1% pixel và LB 0.37 | như final 1 (0.4327) → LB 0.37 | |
+| 2026-11-08 (kế hoạch) | kernel `filseg-final-infer`: `submission_final2.csv` | loại 1 (tái lập): final 2 từ cùng kernel; cùng tiêu chí, so với `submission_n1up.csv` | như final 2 (0.4229) → LB 0.37 | |
 | 2026-11-05 09:10 | `submission_ens_n1n2bce.csv` | **15 model** N1 + N2 + BCE (1:1:1) + hysteresis (t 0.4, seed 0.9, area 200, r 12) + lọc FP. Giả thuyết: 15 so với 10 model trên test | 0.4325 (OOF, in-sample); cross-tune +0.0018 so với N1 + N2, CI chạm 0 → không vào final | 0.37 |
 | 2026-11-05 09:00 | `submission_ens_n1n2_r0.csv` | ablation: N1 + N2, hysteresis t 0.4, **không gộp mảnh** (r 0), không lọc FP. Giả thuyết: gộp r 12 đáng +0.0026 OOF, LB không thấy | – | 0.37 |
 | 2026-11-07 00:02 | `submission_effb4_s1024_f1.csv` | loại 3 (số cho report): N1 fold 1 đơn, hysteresis + lọc FP cấu hình fold 0 | OOF fold 1 ~0.41–0.43 → LB 0.35–0.37 (fold 0 đã 0.36) | 0.36 |
