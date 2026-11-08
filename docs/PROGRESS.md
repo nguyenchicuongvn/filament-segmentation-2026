@@ -11,7 +11,7 @@ Mỗi phiên làm việc thêm một mục ở **đầu** phần "Nhật ký" (m
 | Submission tốt nhất | **Public LB 0.37**: 5 fold EffNet-B4 @1024 target mềm (N1) + hysteresis + lọc FP (OOF 0.425, 707 ảnh), 04/11 |
 | Hạng | 483 / 1,260 với 0.36 (LB 2026-10-29 08:16 UTC) |
 | LB tham chiếu | #1 0.70 nhưng bị nhiễm (rò rỉ nhãn, payload 0.55 × 82 đội); tầng trung thực cao nhất 0.42 (1 đội), 0.41 (11), 0.40 (46); xem [RESEARCH S16](RESEARCH.md#3-leaderboard-và-khoảng-cách-val--lb) |
-| Submissions đã dùng | 43 (tối đa 5/ngày, reset 00:00 UTC) |
+| Submissions đã dùng | 46 (tối đa 5/ngày, reset 00:00 UTC) |
 | Deadline | Kaggle: **2026-11-15 06:00 UTC** (13:00 VN). Report + code (Google form): Nov 15 11:59 pm CDT |
 | Repo | https://github.com/nguyenchicuongvn/filament-segmentation-2026 (**private** đến khi cuộc thi đóng) |
 | GPU | Kaggle GPU (T4 ×2, `scripts/kaggle_gpu.py`), ~20 h tuần này; đã dùng ~8 h cho 4 kernel, thêm ~6 h cho kernel 5–6 đang chạy. Colab chưa dùng |
@@ -45,9 +45,9 @@ việc đổi trạng thái.
 
 | Ngày (UTC) | File | Mô tả | val PQ | Public LB |
 |---|---|---|---|---|
-| 2026-11-08 (kế hoạch) | `submission_ens_n1n2_cc_orient.csv` | loại 3 (ablation cho report): final 1 bỏ hysteresis (mode cc, cùng t 0.4, area 200, gộp theo hướng), không lọc FP; so với dòng t 0.4 không lọc (0.37) | OOF −0.0248 [−0.0290, −0.0204] so với hysteresis không lọc (0.4313 → 0.4065) → LB 0.34–0.36 | |
-| 2026-11-08 (kế hoạch) | kernel `filseg-final-infer`: `submission_final1.csv` | loại 1 (tái lập): final 1 chạy lại từ đầu trên Kaggle bằng `notebooks/final_inference.ipynb` (10 checkpoint, TTA 8, ensemble, hậu xử lý, lọc FP). Đạt nếu CSV trùng từng byte với `submission_ens_n1n2_orient.csv`; nếu không trùng thì map lệch tối đa 1 mức uint8 trên < 0.1% pixel và LB 0.37 | như final 1 (0.4327) → LB 0.37 | |
-| 2026-11-08 (kế hoạch) | kernel `filseg-final-infer`: `submission_final2.csv` | loại 1 (tái lập): final 2 từ cùng kernel; cùng tiêu chí, so với `submission_n1up.csv` | như final 2 (0.4229) → LB 0.37 | |
+| 2026-11-08 07:09 | `submission_ens_n1n2_cc_orient.csv` | loại 3 (ablation cho report): final 1 bỏ hysteresis (mode cc, cùng t 0.4, area 200, gộp theo hướng), không lọc FP; so với dòng t 0.4 không lọc (0.37) | OOF −0.0248 [−0.0290, −0.0204] so với hysteresis không lọc (0.4313 → 0.4065) → LB 0.34–0.36 | 0.36 |
+| 2026-11-08 08:34 | kernel `filseg-final-infer`: `submission_final1.csv` | loại 1 (tái lập): final 1 chạy lại từ đầu trên Kaggle bằng `notebooks/final_inference.ipynb` (10 checkpoint, TTA 8, ensemble, hậu xử lý, lọc FP). Đạt nếu CSV trùng từng byte với `submission_ens_n1n2_orient.csv`; nếu không trùng thì map lệch tối đa 1 mức uint8 trên < 0.1% pixel và LB 0.37 | như final 1 (0.4327) → LB 0.37 | 0.37 |
+| 2026-11-08 08:34 | kernel `filseg-final-infer`: `submission_final2.csv` | loại 1 (tái lập): final 2 từ cùng kernel; cùng tiêu chí, so với `submission_n1up.csv` | như final 2 (0.4229) → LB 0.37 | 0.37 |
 | 2026-11-05 09:10 | `submission_ens_n1n2bce.csv` | **15 model** N1 + N2 + BCE (1:1:1) + hysteresis (t 0.4, seed 0.9, area 200, r 12) + lọc FP. Giả thuyết: 15 so với 10 model trên test | 0.4325 (OOF, in-sample); cross-tune +0.0018 so với N1 + N2, CI chạm 0 → không vào final | 0.37 |
 | 2026-11-05 09:00 | `submission_ens_n1n2_r0.csv` | ablation: N1 + N2, hysteresis t 0.4, **không gộp mảnh** (r 0), không lọc FP. Giả thuyết: gộp r 12 đáng +0.0026 OOF, LB không thấy | – | 0.37 |
 | 2026-11-07 00:02 | `submission_effb4_s1024_f1.csv` | loại 3 (số cho report): N1 fold 1 đơn, hysteresis + lọc FP cấu hình fold 0 | OOF fold 1 ~0.41–0.43 → LB 0.35–0.37 (fold 0 đã 0.36) | 0.36 |
@@ -92,6 +92,22 @@ Val luôn cao hơn LB khoảng 0.03–0.07, nhưng thứ tự giữa các model 
 được để chọn model (xem [DATA_AND_METRIC.md](DATA_AND_METRIC.md#khoảng-cách-val--lb)).
 
 ## Nhật ký
+
+### 2026-11-08
+
+- **Notebook end-to-end** `notebooks/final_inference.ipynb` (dựng bằng `kaggle/make_infer_kernel.py`):
+  10 checkpoint → map TTA 8 → ensemble → hậu xử lý + lọc FP → cả hai final, chỉ dùng ảnh H-alpha test.
+  Chạy trên kernel Kaggle `filseg-final-infer` (2 × T4, torch 2.11, smp 0.5.0, weights qua dataset riêng
+  `filseg-final-weights`): map xong trong 75.5 phút. **Cả 1800 map (10 model × 180 ảnh) và 4 map ensemble
+  trùng từng byte** với map đã dùng để nộp (map tạo trên Colab), **hai CSV trùng từng byte** với
+  `submission_ens_n1n2_orient.csv` và `submission_n1up.csv` → tiêu chí tái lập đạt ở mức mạnh nhất.
+  Log và hash: `docs/logs/final/`. Nộp hai CSV của kernel (loại 1).
+- **Ablation mode cc** (loại 3): bỏ hysteresis, OOF −0.0248 [−0.0290, −0.0204] (0.4313 → 0.4065, FP 2284 → 4022);
+  LB **0.36** so với 0.37, khớp dự đoán 0.34–0.36. Log `docs/logs/research06/ablation_cc_oof.txt`.
+- **Colab**: Drive đổi sang `MyDrive/kaggle/filament-segmentation-2026/`; hàng đợi chỉ N9' (5 fold), bs tự
+  giảm trên T4; thiếu zip trên Drive thì notebook lấy code từ dataset `filseg-code`. N9' fold 0 bắt đầu
+  08:26 UTC. Nhánh `exp/kaggle-gpu` đã merge vào `main` (người dùng đồng ý).
+- Watcher Colab cũ (8 run đã về hết) đã dừng.
 
 ### 2026-11-07
 
