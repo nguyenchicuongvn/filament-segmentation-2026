@@ -160,6 +160,16 @@ Trạng thái: ⏳ đang chạy/chờ · 📝 chuẩn bị · ✅ xong · ❌ b�
 | Chi phí | ~1.5–2 h L4 mỗi fold (~1.6 lần N1), ~9 h cho 5 fold; T4 `--bs 8` |
 | Tiêu chí (đăng ký trước 06/11) | **Fold 0 (dừng sớm):** chạy tiếp fold 1–4 chỉ khi `hyst_soft` fold 0 đơn lẻ ≥ 0.4163 (N1 f0 0.4158 + 0.0005) **hoặc** N1 + N2 + N9' trên fold 0 hơn N1 + N2 ≥ +0.005. **Vào final:** gate gộp § 5b (a)(b) và (c) một phía |
 
+### N11 / N12 — Thêm thành viên theo công thức N9' (📝 Colab, đăng ký 09/11 trước khi có số)
+
+| | |
+|---|---|
+| Lý do | N9' đơn (5 model) + lọc FP: OOF 0.4322 in-sample, **LB 0.38**, bằng pool 15 model N1 + N2 + N9' (0.4372, LB 0.38) và hơn final 1 (LB 0.37). Công thức crop 512 ở 2048, 184 epoch là thứ duy nhất đưa LB lên khỏi 0.37 |
+| Thiết kế | **N11** `effv2s_c512_s2_f0..f4` = N9' với `--seed 2`. **N12** `r34_c512_f0..f4` = cùng công thức, encoder `resnet34` (nửa còn lại của ensemble Dariush: R34 + V2-S 0.4502 so với V2-S 0.4461). Hàng đợi Colab: N11 → N12 |
+| Chi phí | N11 ~9 h L4, N12 ~5–6 h; về muộn nhất 11/11 tối |
+| Tiêu chí | Gate gộp § 5b (a)(b)(c), so với pool đã chọn tốt nhất lúc đó (N1 + N2 + N9' nếu qua gate 707). Họ chưa đủ 5 fold trước **12/11 06:00 UTC** thì không vào final |
+| Lịch | Đóng băng dời từ 09/11 sang **12/11** (người dùng 09/11: "tiếp tục improve"); weights vào repo, notebook tái lập và report dồn vào 12–14/11 |
+
 ### N9 / N10 — Thành viên khác encoder (EfficientNetV2-S) và độ phân giải thứ ba (1536) (📝 Colab, 05/11 tối)
 
 | | |
