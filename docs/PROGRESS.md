@@ -109,6 +109,7 @@ Val luôn cao hơn LB khoảng 0.03–0.07, nhưng thứ tự giữa các model 
   08:26 UTC. Nhánh `exp/kaggle-gpu` đã merge vào `main` (người dùng đồng ý).
 - Watcher Colab cũ (8 run đã về hết) đã dừng.
 - **N9' fold 0 qua gate** (đăng ký trước 06/11): đơn 0.4200 so với N1 0.4158 (ngưỡng 0.4163); N1 + N2 + N9' hơn N1 + N2 +0.0068 [+0.0028, +0.0111] (ngưỡng +0.005). Upload 1.3 GB từ Colab lỗi 400 lúc tạo dataset; upload riêng map val (568 MB) qua bản version thì được. Dataset fold 1–4 tạo sẵn từ máy local để Colab chỉ thêm version. Fold 1–4 chạy tiếp (~6 h).
+- **N9' fold 1 không giúp**: đơn 0.3963 so với N1 0.4090 (−0.0126 [−0.0248, −0.0011]; nhiều FP: 861 so với 517); N1 + N2 + N9' so với N1 + N2 −0.0008 [−0.0063, +0.0049]. Gộp fold 0–1 chênh pool ~+0.003, gate gộp 707 ảnh (CI > 0) giờ khó qua. Map val fold 0 bản Colab tải lại trùng từng byte. Fold 2–4 vẫn chạy (xong ~16:30 UTC).
 
 ### 2026-11-07
 
