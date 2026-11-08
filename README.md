@@ -115,7 +115,7 @@ probability maps and uploads each finished run to a private Kaggle dataset
 `nguyenchicuong/filseg-<run>`. Training state is saved to Drive every epoch (`--resume`).
 
 ```bash
-.venv/bin/python scripts/package_colab.py          # then upload build/colab/filseg-colab.zip to MyDrive/filseg/
+.venv/bin/python scripts/package_colab.py          # then upload build/colab/filseg-colab.zip to MyDrive/filament-segmentation-2026/
 # ... run the notebook on a GPU runtime (Colab secret KAGGLE_API_TOKEN) ...
 kaggle datasets download nguyenchicuong/filseg-unet1024-r34 -p outputs/colab/unet1024_r34 --unzip
 .venv/bin/python scripts/tune_post.py --probs outputs/colab/unet1024_r34/probs_val --out configs/post_unet1024.json

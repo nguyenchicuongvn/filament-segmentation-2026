@@ -191,7 +191,7 @@ E7–E10 trong **một session** (~8 h A100 / ~16 h L4). Mỗi run xong được
 kết (loss, lr, thời gian, ETA của run và giờ dự kiến xong theo UTC), và cứ 5 epoch có val
 PQ/SQ/Dice/TP/FP/FN. Bảng hàng đợi (trạng thái, số epoch, best PQ, thời gian đã dùng, thời gian
 còn lại, giờ xong cả hàng đợi) in ra lúc bắt đầu, sau mỗi 5 epoch và sau mỗi run. Log và
-`history.csv` của từng run nằm trên Drive (`MyDrive/filseg/runs/`); mục cuối notebook vẽ biểu đồ
+`history.csv` của từng run nằm trên Drive (`MyDrive/filament-segmentation-2026/runs/`; các run trước 08/11 ở `MyDrive/filseg/runs/`); mục cuối notebook vẽ biểu đồ
 loss / val PQ / val Dice.
 
 **Tự động submit**: `scripts/watch_colab.py` chạy nền trên máy local, cứ 10 phút kiểm tra Kaggle;
