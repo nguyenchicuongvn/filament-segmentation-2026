@@ -1,0 +1,43 @@
+torch 2.11.0+cu130 smp 0.5.0 gpus 2
+180 images in 221.7s -> /kaggle/working/maps/effb4_s1024_f0
+180 images in 221.7s -> /kaggle/working/maps/effb4_s1024_f0
+180 images in 218.6s -> /kaggle/working/maps/effb4_s1024_f1
+180 images in 218.6s -> /kaggle/working/maps/effb4_s1024_f1
+180 images in 219.0s -> /kaggle/working/maps/effb4_s1024_f2
+180 images in 219.0s -> /kaggle/working/maps/effb4_s1024_f2
+180 images in 898.8s -> /kaggle/working/maps/effb4_c2048_f0
+180 images in 218.3s -> /kaggle/working/maps/effb4_s1024_f3
+180 images in 898.8s -> /kaggle/working/maps/effb4_c2048_f0
+180 images in 218.3s -> /kaggle/working/maps/effb4_s1024_f3
+180 images in 219.3s -> /kaggle/working/maps/effb4_s1024_f4
+180 images in 219.3s -> /kaggle/working/maps/effb4_s1024_f4
+180 images in 902.2s -> /kaggle/working/maps/effb4_c2048_f1
+180 images in 902.2s -> /kaggle/working/maps/effb4_c2048_f1
+180 images in 897.9s -> /kaggle/working/maps/effb4_c2048_f2
+180 images in 897.9s -> /kaggle/working/maps/effb4_c2048_f2
+180 images in 897.4s -> /kaggle/working/maps/effb4_c2048_f3
+180 images in 897.4s -> /kaggle/working/maps/effb4_c2048_f3
+180 images in 899.7s -> /kaggle/working/maps/effb4_c2048_f4
+180 images in 899.7s -> /kaggle/working/maps/effb4_c2048_f4
+maps done in 75.5 min
+>> /usr/bin/python3 scripts/ensemble_probs.py --inputs /kaggle/working/maps/effb4_s1024_f0 /kaggle/working/maps/effb4_s1024_f1 /kaggle/working/maps/effb4_s1024_f2 /kaggle/working/maps/effb4_s1024_f3 /kaggle/working/maps/effb4_s1024_f4 --out /kaggle/working/maps/n1
+180 maps -> /kaggle/working/maps/n1
+180 maps -> /kaggle/working/maps/n1
+>> /usr/bin/python3 scripts/ensemble_probs.py --inputs /kaggle/working/maps/effb4_c2048_f0 /kaggle/working/maps/effb4_c2048_f1 /kaggle/working/maps/effb4_c2048_f2 /kaggle/working/maps/effb4_c2048_f3 /kaggle/working/maps/effb4_c2048_f4 --out /kaggle/working/maps/n2
+180 maps -> /kaggle/working/maps/n2
+180 maps -> /kaggle/working/maps/n2
+>> /usr/bin/python3 scripts/ensemble_probs.py --inputs /kaggle/working/maps/n1 /kaggle/working/maps/n2 --out /kaggle/working/maps/n1n2
+180 maps -> /kaggle/working/maps/n1n2
+180 maps -> /kaggle/working/maps/n1n2
+>> /usr/bin/python3 scripts/ensemble_probs.py --inputs /kaggle/working/maps/n1 /kaggle/working/maps/n2 --weights 1 0 --out /kaggle/working/maps/n1up
+180 maps -> /kaggle/working/maps/n1up
+180 maps -> /kaggle/working/maps/n1up
+>> /usr/bin/python3 scripts/make_submission.py --probs /kaggle/working/maps/n1n2 --filter configs/fpfilter_ens_n1n2_orient.pkl --out /kaggle/working/submission_final1.csv
+176 images, 964 filaments -> /kaggle/working/submission_final1.csv
+176 images, 964 filaments -> /kaggle/working/submission_final1.csv
+>> /usr/bin/python3 scripts/make_submission.py --probs /kaggle/working/maps/n1up --post configs/post_n1up_hyst.json --out /kaggle/working/submission_final2.csv
+177 images, 1051 filaments -> /kaggle/working/submission_final2.csv
+177 images, 1051 filaments -> /kaggle/working/submission_final2.csv
+>> /usr/bin/python3 scripts/map_hashes.py --dirs effb4_s1024_f0=/kaggle/working/maps/effb4_s1024_f0 effb4_s1024_f1=/kaggle/working/maps/effb4_s1024_f1 effb4_s1024_f2=/kaggle/working/maps/effb4_s1024_f2 effb4_s1024_f3=/kaggle/working/maps/effb4_s1024_f3 effb4_s1024_f4=/kaggle/working/maps/effb4_s1024_f4 effb4_c2048_f0=/kaggle/working/maps/effb4_c2048_f0 effb4_c2048_f1=/kaggle/working/maps/effb4_c2048_f1 effb4_c2048_f2=/kaggle/working/maps/effb4_c2048_f2 effb4_c2048_f3=/kaggle/working/maps/effb4_c2048_f3 effb4_c2048_f4=/kaggle/working/maps/effb4_c2048_f4 n1=/kaggle/working/maps/n1 n2=/kaggle/working/maps/n2 n1n2=/kaggle/working/maps/n1n2 n1up=/kaggle/working/maps/n1up --out /kaggle/working/map_hashes.json
+submission_final1.csv cd55c7c4a7d64ae681dfecce10d3433277543962e6f80c4c2ff2a08a8b28eed2
+submission_final2.csv 49715611b3cd0be2a905b69ef3bc07ce8300850f493afc7eecf6167a71610a8d

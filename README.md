@@ -123,6 +123,13 @@ kaggle datasets download nguyenchicuong/filseg-unet1024-r34 -p outputs/colab/une
 
 `kaggle/make_kernel.py` does the same on a Kaggle GPU kernel (code embedded, no dataset upload).
 
+### Final inference (end to end)
+
+`notebooks/final_inference.ipynb` rebuilds both final submissions from the 10 checkpoints and the test
+H-alpha images only (8x-TTA maps, fold and N1 + N2 averages, hysteresis + oriented grouping + FP filter).
+`kaggle/make_infer_kernel.py` builds the same notebook as a Kaggle kernel; on 2026-11-08 its maps and both
+CSVs matched the submitted ones byte for byte (`docs/logs/final/`, `scripts/map_hashes.py --compare`).
+
 ## License
 
 Code: [MIT](LICENSE). The MAGFiLO data is not included and is subject to the competition's non-commercial data terms.
