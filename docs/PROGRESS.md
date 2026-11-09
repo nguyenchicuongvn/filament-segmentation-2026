@@ -101,6 +101,8 @@ Val luôn cao hơn LB khoảng 0.03–0.07, nhưng thứ tự giữa các model 
 - Nộp 23:40 UTC 08/11 (2 lượt cuối ngày): pool N1 + N2 + N9' **0.38**, N9' đơn **0.38**. Lọc FP trên N9' đơn được +0.013 OOF.
 - Đăng ký trước khi chạy: trọng số N9' 1:1:2 chỉ dùng nếu CI 95% > 0 so với 1:1:1 (707 OOF, cross-tune); ngưỡng hysteresis 0.55–0.6 chỉ dùng nếu OOF in-sample tăng ≥ 0.001 so với t 0.5. Kết quả: 1:1:2 −0.0007 [−0.0025, +0.0010]; t 0.55 −0.0003, 0.6 −0.0017 → **không qua cả hai**, final 1 giữ nguyên.
 - N11 fold 0 (N9' seed 2): đơn 0.4119 (N9' 0.4200); N9' + N11 +0.0046 so với N9'; nhưng pool 4 family chỉ +0.0002 [−0.0031, +0.0033] so với final 1 → biên lợi từ seed thứ hai nhỏ khi đã có N1 + N2. Fold 1 đang so; gate 707 khi đủ 5 fold.
+- N11 fold 1: đơn 0.4046 (N9' 0.3963); pool 4 family +0.0022 [−0.0022, +0.0064]; seed-avg N1 + N2 + (N9'+N11)/2 +0.0071 [+0.0022, +0.0120].
+- Đăng ký trước fold 2–4 và gate 707 (09/11 07:25 UTC): phương án chính vẫn theo thẻ PLAN, N11 là family thứ tư trọng số bằng nhau, gate § 5b. Seed-avg (N9' + N11 thành một family 10 model) đã nhìn số ở 2 fold nên chỉ là phương án phụ: dùng thay phương án chính chỉ khi trên 707 ảnh nó qua (a) so với N1 + N2 + N9' **và** hơn phương án chính với CI 95% > 0. Còn không thì báo là kết quả khám phá.
 - Người dùng: "tiếp tục improve". Hàng đợi Colab mới N11 (`effv2s_c512_s2_f*`) → N12 (`r34_c512_f*`), chạy từ 00:02 UTC. Từ nay làm thẳng trên `main` trong thư mục project (không dùng worktree).
 
 ### 2026-11-08
