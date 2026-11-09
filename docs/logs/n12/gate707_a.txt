@@ -1,0 +1,8 @@
+  outputs/ens/n1n2n9p_oof hyst_soft: combos chosen [{'thresh': 0.4, 'min_area': 200, 'group_radius': 12, 'group_line': 0, 'out_dilate': 0, 'mode': 'hyst', 'seed_thresh': 0.99, 'group_thresh': 0.5, 'fill_holes': False, 'small_area': 0, 'small_thresh': 0.0, 'large_area': 0, 'large_thresh': 0.0, 'large_grow': 3}, {'thresh': 0.5, 'min_area': 200, 'group_radius': 12, 'group_line': 0, 'out_dilate': 0, 'mode': 'hyst', 'seed_thresh': 0.99, 'group_thresh': 0.5, 'fill_holes': False, 'small_area': 0, 'small_thresh': 0.0, 'large_area': 0, 'large_thresh': 0.0, 'large_grow': 3}]
+evaluated n1n2n9p
+  outputs/ens/n1n2n9pn12_oof hyst_soft: combos chosen [{'thresh': 0.4, 'min_area': 200, 'group_radius': 12, 'group_line': 0, 'out_dilate': 0, 'mode': 'hyst', 'seed_thresh': 0.95, 'group_thresh': 0.5, 'fill_holes': False, 'small_area': 0, 'small_thresh': 0.0, 'large_area': 0, 'large_thresh': 0.0, 'large_grow': 3}, {'thresh': 0.4, 'min_area': 200, 'group_radius': 12, 'group_line': 0, 'out_dilate': 0, 'mode': 'hyst', 'seed_thresh': 0.99, 'group_thresh': 0.5, 'fill_holes': False, 'small_area': 0, 'small_thresh': 0.0, 'large_area': 0, 'large_thresh': 0.0, 'large_grow': 3}, {'thresh': 0.5, 'min_area': 200, 'group_radius': 12, 'group_line': 0, 'out_dilate': 0, 'mode': 'hyst', 'seed_thresh': 0.99, 'group_thresh': 0.5, 'fill_holes': False, 'small_area': 0, 'small_thresh': 0.0, 'large_area': 0, 'large_thresh': 0.0, 'large_grow': 3}]
+evaluated n1n2n9pn12
+707 images, 2000 bootstrap resamples
+pipeline                          PQ    TP    FP    FN     diff             95% CI   P>0
+n1n2n9p                       0.4339  4909  2249  3290
+n1n2n9pn12                    0.4336  4924  2291  3275  -0.0004 [-0.0021, +0.0013]  0.33

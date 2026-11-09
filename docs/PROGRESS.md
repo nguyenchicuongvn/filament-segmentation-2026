@@ -15,7 +15,7 @@ Mỗi phiên làm việc thêm một mục ở **đầu** phần "Nhật ký" (m
 | Deadline | Kaggle: **2026-11-15 06:00 UTC** (13:00 VN). Report + code (Google form): Nov 15 11:59 pm CDT |
 | Repo | https://github.com/nguyenchicuongvn/filament-segmentation-2026 (**private** đến khi cuộc thi đóng) |
 | GPU | Kaggle GPU (T4 ×2, `scripts/kaggle_gpu.py`), ~20 h tuần này; đã dùng ~8 h cho 4 kernel, thêm ~6 h cho kernel 5–6 đang chạy. Colab chưa dùng |
-| Đang chờ | Colab: N11 (N9' seed 2) rồi N12 (R34 cùng công thức), 10 run từ 00:02 UTC 09/11; gate gộp § 5b so với N1 + N2 + N9'. Đóng băng dời sang 12/11 |
+| Đang chờ | Không có run nào đang chạy. N11 và N12 xong 09/11, cả hai không qua gate 707 → final 1 giữ N1 + N2 + N9'. Còn lại trước đóng băng 12/11: chọn final 2, tái lập (weights N9' vào `filseg-final-weights` và repo), report |
 
 ## Theo dõi kế hoạch
 
@@ -104,6 +104,7 @@ Val luôn cao hơn LB khoảng 0.03–0.07, nhưng thứ tự giữa các model 
 - N11 fold 1: đơn 0.4046 (N9' 0.3963); pool 4 family +0.0022 [−0.0022, +0.0064]; seed-avg N1 + N2 + (N9'+N11)/2 +0.0071 [+0.0022, +0.0120].
 - Đăng ký trước fold 2–4 và gate 707 (09/11 07:25 UTC): phương án chính vẫn theo thẻ PLAN, N11 là family thứ tư trọng số bằng nhau, gate § 5b. Seed-avg (N9' + N11 thành một family 10 model) đã nhìn số ở 2 fold nên chỉ là phương án phụ: dùng thay phương án chính chỉ khi trên 707 ảnh nó qua (a) so với N1 + N2 + N9' **và** hơn phương án chính với CI 95% > 0. Còn không thì báo là kết quả khám phá.
 - **Gate N11 707 ảnh: không qua.** 4 family −0.0026 [−0.0047, −0.0005], seed-avg −0.0024 [−0.0042, −0.0006] so với N1 + N2 + N9'. Seed thứ hai của cùng công thức không giúp pool; N11 bỏ. N12 (R34) 5 fold đã về, đang so từng fold.
+- **Gate N12 (R34, công thức N9'): không qua.** (c) qua 5/5 fold; trung bình pool từng fold +0.0016 nhưng (a) trên 707 ảnh −0.0004 [−0.0021, +0.0013], P 0.33. Bài học: thêm family thứ tư vào N1 + N2 + N9' không còn giúp; trung bình từng fold (mỗi fold tune riêng) lạc quan hơn gate 707 (một bộ hậu xử lý chung). **Final 1 giữ N1 + N2 + N9'.** Ổ đĩa đầy giữa lúc dựng ensemble cho (b); đã xoá ensemble dẫn xuất của N11, w112 và (b) (tạo lại được).
 - Người dùng: "tiếp tục improve". Hàng đợi Colab mới N11 (`effv2s_c512_s2_f*`) → N12 (`r34_c512_f*`), chạy từ 00:02 UTC. Từ nay làm thẳng trên `main` trong thư mục project (không dùng worktree).
 
 ### 2026-11-08

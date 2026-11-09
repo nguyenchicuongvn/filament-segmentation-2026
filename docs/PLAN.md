@@ -160,7 +160,7 @@ Trạng thái: ⏳ đang chạy/chờ · 📝 chuẩn bị · ✅ xong · ❌ b�
 | Chi phí | ~1.5–2 h L4 mỗi fold (~1.6 lần N1), ~9 h cho 5 fold; T4 `--bs 8` |
 | Tiêu chí (đăng ký trước 06/11) | **Fold 0 (dừng sớm):** chạy tiếp fold 1–4 chỉ khi `hyst_soft` fold 0 đơn lẻ ≥ 0.4163 (N1 f0 0.4158 + 0.0005) **hoặc** N1 + N2 + N9' trên fold 0 hơn N1 + N2 ≥ +0.005. **Vào final:** gate gộp § 5b (a)(b) và (c) một phía |
 
-### N11 / N12 — Thêm thành viên theo công thức N9' (📝 Colab, đăng ký 09/11 trước khi có số)
+### N11 / N12 — Thêm thành viên theo công thức N9' (❌ cả hai không qua gate 707, 09/11: N11 −0.0026, N12 −0.0004)
 
 | | |
 |---|---|
