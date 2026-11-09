@@ -15,7 +15,7 @@ Mỗi phiên làm việc thêm một mục ở **đầu** phần "Nhật ký" (m
 | Deadline | Kaggle: **2026-11-15 06:00 UTC** (13:00 VN). Report + code (Google form): Nov 15 11:59 pm CDT |
 | Repo | https://github.com/nguyenchicuongvn/filament-segmentation-2026 (**private** đến khi cuộc thi đóng) |
 | GPU | Kaggle GPU (T4 ×2, `scripts/kaggle_gpu.py`), ~20 h tuần này; đã dùng ~8 h cho 4 kernel, thêm ~6 h cho kernel 5–6 đang chạy. Colab chưa dùng |
-| Đang chờ | Không có run nào đang chạy. N11 và N12 xong 09/11, cả hai không qua gate 707 → final 1 giữ N1 + N2 + N9'. Còn lại trước đóng băng 12/11: chọn final 2, tái lập (weights N9' vào `filseg-final-weights` và repo), report |
+| Đang chờ | Không có run nào đang chạy. N11 và N12 xong 09/11, cả hai không qua gate 707 → final 1 giữ N1 + N2 + N9'. Tái lập xong (kernel v2: final 1 LB 0.38, final 2 trùng byte) và weights fp32 đã vào `weights/`. Còn lại trước đóng băng 12/11: report |
 
 ## Theo dõi kế hoạch
 
@@ -98,6 +98,10 @@ Val luôn cao hơn LB khoảng 0.03–0.07, nhưng thứ tự giữa các model 
 được để chọn model (xem [DATA_AND_METRIC.md](DATA_AND_METRIC.md#khoảng-cách-val--lb)).
 
 ## Nhật ký
+
+### 2026-11-10
+
+- **Weights vào repo** (người dùng chọn fp32, giữ trùng byte): 15 checkpoint + `SHA256SUMS` + `weights/README.md` trong `weights/`, đẩy lên GitHub theo 3 commit (mỗi family ~400 MB). GitHub chỉ cảnh báo file > 50 MB. Clone sạch `--depth 1` khớp 15/15 hash.
 
 ### 2026-11-09
 

@@ -487,7 +487,7 @@ Câu trả lời có thể đổi cách tách instance và cách lưu weights.
 - [x] `requirements.txt` pin version
 - [x] README: cài đặt, môi trường, thời gian chạy
 - [ ] Notebook chạy toàn bộ pipeline, **load weights có sẵn trong repo** (N6-F3)
-- [ ] Weights trong repo (fp16, mỗi file < 100 MB) (N6-F2)
+- [x] Weights trong repo (N6-F2): **fp32**, 15 file trong `weights/` + `SHA256SUMS` (1.26 GB, mỗi file ≤ 85 MiB < 100 MiB), không dùng Git LFS; người dùng chọn fp32 để giữ trùng byte (10/11). Clone sạch từ GitHub khớp 15/15 hash
 - [ ] Technical report 4 trang theo template Overleaf của host (N6-F4)
 - [ ] Repo public ngay khi cuộc thi đóng, giữ public đến khi công bố (N6-F5)
 - [ ] Nộp Google form trước Nov 15 11:59 pm CDT
