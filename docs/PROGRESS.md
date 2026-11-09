@@ -99,6 +99,7 @@ Val luôn cao hơn LB khoảng 0.03–0.07, nhưng thứ tự giữa các model 
 
 - **Gate gộp 707 ảnh** (đăng ký trước 05/11): (a) N1 + N2 + BCE + N9' hơn N1 + N2 +0.0065 [+0.0037, +0.0092]; (b) BCE biên +0.0009, P 0.77 < 0.8 → bỏ; kiểm lại N1 + N2 + N9' +0.0056 [+0.0034, +0.0077], P 1.00; (c) 5/5 fold. **Final 1 = N1 + N2 + N9'** (`configs/fpfilter_ens_n1n2n9p_orient.pkl`), LB 0.38. Final 2 tạm giữ bước trước đó (N1 + N2, LB 0.37), xét lại khi N11/N12 về. Việc tái lập: thêm 5 checkpoint N9' vào `filseg-final-weights` và `kaggle/make_infer_kernel.py`.
 - Nộp 23:40 UTC 08/11 (2 lượt cuối ngày): pool N1 + N2 + N9' **0.38**, N9' đơn **0.38**. Lọc FP trên N9' đơn được +0.013 OOF.
+- Đăng ký trước khi chạy: trọng số N9' 1:1:2 chỉ dùng nếu CI 95% > 0 so với 1:1:1 (707 OOF, cross-tune); ngưỡng hysteresis 0.55–0.6 chỉ dùng nếu OOF in-sample tăng ≥ 0.001 so với t 0.5.
 - Người dùng: "tiếp tục improve". Hàng đợi Colab mới N11 (`effv2s_c512_s2_f*`) → N12 (`r34_c512_f*`), chạy từ 00:02 UTC. Từ nay làm thẳng trên `main` trong thư mục project (không dùng worktree).
 
 ### 2026-11-08
