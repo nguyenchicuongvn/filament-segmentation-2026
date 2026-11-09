@@ -11,7 +11,7 @@ Mỗi phiên làm việc thêm một mục ở **đầu** phần "Nhật ký" (m
 | Submission tốt nhất | **Public LB 0.38**: final 1 mới = N1 ×5 + N2 ×5 + N9' ×5 (EffNetV2-S crop 512 @2048) + hysteresis + gộp theo hướng + lọc FP (OOF 0.4372 in-sample, 707 ảnh), qua gate gộp 09/11. N9' 5 fold đơn cũng 0.38 |
 | Hạng | 483 / 1,260 với 0.36 (LB 2026-10-29 08:16 UTC) |
 | LB tham chiếu | #1 0.70 nhưng bị nhiễm (rò rỉ nhãn, payload 0.55 × 82 đội); tầng trung thực cao nhất 0.42 (1 đội), 0.41 (11), 0.40 (46); xem [RESEARCH S16](RESEARCH.md#3-leaderboard-và-khoảng-cách-val--lb) |
-| Submissions đã dùng | 46 (tối đa 5/ngày, reset 00:00 UTC) |
+| Submissions đã dùng | 47 (tối đa 5/ngày, reset 00:00 UTC) |
 | Deadline | Kaggle: **2026-11-15 06:00 UTC** (13:00 VN). Report + code (Google form): Nov 15 11:59 pm CDT |
 | Repo | https://github.com/nguyenchicuongvn/filament-segmentation-2026 (**private** đến khi cuộc thi đóng) |
 | GPU | Kaggle GPU (T4 ×2, `scripts/kaggle_gpu.py`), ~20 h tuần này; đã dùng ~8 h cho 4 kernel, thêm ~6 h cho kernel 5–6 đang chạy. Colab chưa dùng |
@@ -45,8 +45,8 @@ việc đổi trạng thái.
 
 | Ngày (UTC) | File | Mô tả | val PQ | Public LB |
 |---|---|---|---|---|
-| 2026-11-09 ~18:30 | `submission_n9p_orient_nofilt.csv` | loại 3 (ablation lọc FP cho report): N9' 5 fold đơn như dòng 08/11 (LB 0.38) nhưng **bỏ lọc FP**; lọc FP trên N9' cho +0.013 OOF, mức duy nhất trong các bộ lọc đủ lớn để LB có thể thấy | OOF 0.4192 (không lọc) so với 0.4322 (lọc, in-sample) → Δ dự báo −0.013 → LB 0.36–0.37 | (chờ) |
-| 2026-11-09 (chờ) | `submission_r34_c512_orient.csv` | loại 3 (LB thành viên khác kiến trúc cho report): N12 ResNet34 5 fold đơn, hậu xử lý tune trên 707 OOF, không lọc FP. Gate pool 707 không qua (−0.0004) | OOF dự báo ~0.40 (từng fold 0.395–0.419) → LB 0.35–0.36 | (chờ) |
+| 2026-11-09 ~18:30 | `submission_n9p_orient_nofilt.csv` | loại 3 (ablation lọc FP cho report): N9' 5 fold đơn như dòng 08/11 (LB 0.38) nhưng **bỏ lọc FP**; lọc FP trên N9' cho +0.013 OOF, mức duy nhất trong các bộ lọc đủ lớn để LB có thể thấy | OOF 0.4192 (không lọc) so với 0.4322 (lọc, in-sample) → Δ dự báo −0.013 → LB 0.36–0.37. Thực tế **bằng bản lọc**: +0.013 OOF của bộ lọc (fit in-sample) không thấy trên LB | **0.38** |
+| 2026-11-09 ~19:10 | `submission_r34_c512_orient.csv` | loại 3 (LB thành viên khác kiến trúc cho report): N12 ResNet34 5 fold đơn, hậu xử lý tune trên 707 OOF, không lọc FP. Gate pool 707 không qua (−0.0004) | OOF dự báo ~0.40 (từng fold 0.395–0.419) → LB 0.35–0.36. Thực tế OOF **0.3955** (t 0.5 seed 0.99, FP 5092 so với N9' ~3700) | (chờ) |
 | 2026-11-09 (chờ) | kernel `filseg-final-infer` v2: `submission_final1.csv` | loại 1 (tái lập): final 1 mới N1 + N2 + N9' (15 checkpoint) chạy lại từ đầu trên Kaggle. Đạt nếu trùng từng byte với `submission_ens_n1n2n9p_orient.csv`; không thì map lệch ≤ 1 mức uint8 trên < 0.1% pixel và LB 0.38 | như final 1 (0.4372) → LB 0.38 | (chờ) |
 | 2026-11-09 (chờ) | kernel `filseg-final-infer` v2: `submission_final2.csv` | loại 1 (tái lập): final 2 = N1 + N2 + lọc FP (final 1 cũ). Đạt nếu trùng từng byte với `submission_ens_n1n2_orient.csv` | như final 1 cũ (0.4327) → LB 0.37 | (chờ) |
 | 2026-11-08 ~23:30 | `submission_ens_n1n2n9p_orient.csv` | loại 3 (số cho report, ghi trước khi biết gate 707): pool N1 ×5 + N2 ×5 + N9' ×5 (1:1:1), hysteresis + gộp theo hướng (r 6, L16), lọc FP fit trên pool OOF. Gate từng fold: pool hơn N1 + N2 ở f0 +0.0068, f1 −0.0008, f2 +0.0072, f3 +0.0007, f4 +0.0049 | Δ OOF dự báo +0.004 so với final 1 → LB 0.37–0.38. Thực tế: lọc FP fit trên pool OOF 0.4354 → **0.4372** (in-sample, t 0.5 seed 0.99) | **0.38** |
