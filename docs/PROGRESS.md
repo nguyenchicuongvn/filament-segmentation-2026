@@ -11,7 +11,7 @@ Mỗi phiên làm việc thêm một mục ở **đầu** phần "Nhật ký" (m
 | Submission tốt nhất | **Public LB 0.38**: final 1 mới = N1 ×5 + N2 ×5 + N9' ×5 (EffNetV2-S crop 512 @2048) + hysteresis + gộp theo hướng + lọc FP (OOF 0.4372 in-sample, 707 ảnh), qua gate gộp 09/11. N9' 5 fold đơn cũng 0.38 |
 | Hạng | 483 / 1,260 với 0.36 (LB 2026-10-29 08:16 UTC) |
 | LB tham chiếu | #1 0.70 nhưng bị nhiễm (rò rỉ nhãn, payload 0.55 × 82 đội); tầng trung thực cao nhất 0.42 (1 đội), 0.41 (11), 0.40 (46); xem [RESEARCH S16](RESEARCH.md#3-leaderboard-và-khoảng-cách-val--lb) |
-| Submissions đã dùng | 49 (tối đa 5/ngày, reset 00:00 UTC) |
+| Submissions đã dùng | 51 (tối đa 5/ngày, reset 00:00 UTC) |
 | Deadline | Kaggle: **2026-11-15 06:00 UTC** (13:00 VN). Report + code (Google form): Nov 15 11:59 pm CDT |
 | Repo | https://github.com/nguyenchicuongvn/filament-segmentation-2026 (**private** đến khi cuộc thi đóng) |
 | GPU | Kaggle GPU (T4 ×2, `scripts/kaggle_gpu.py`), ~20 h tuần này; đã dùng ~8 h cho 4 kernel, thêm ~6 h cho kernel 5–6 đang chạy. Colab chưa dùng |
@@ -45,8 +45,8 @@ việc đổi trạng thái.
 
 | Ngày (UTC) | File | Mô tả | val PQ | Public LB |
 |---|---|---|---|---|
-| 2026-11-09 23:50 | `submission_ens_n1n2n9p_orient_nofilt.csv` | loại 3 (ablation lọc FP trên final 1 cho bảng report; người dùng yêu cầu dùng 2 lượt còn lại trước 00:00 UTC): final 1 bỏ lọc FP | OOF 0.4354 so với 0.4372 (Δ −0.0018, dưới độ phân giải LB) → dự báo LB 0.38 như final 1 | (chờ) |
-| 2026-11-09 23:50 | `submission_ens_n1n2_orient_nofilt.csv` | loại 3 (ablation lọc FP trên final 2): N1 + N2 bỏ lọc FP | OOF 0.4313 so với 0.4327 (Δ −0.0014) → dự báo LB 0.37 như final 2 | (chờ) |
+| 2026-11-09 23:50 | `submission_ens_n1n2n9p_orient_nofilt.csv` | loại 3 (ablation lọc FP trên final 1 cho bảng report; người dùng yêu cầu dùng 2 lượt còn lại trước 00:00 UTC): final 1 bỏ lọc FP | OOF 0.4354 so với 0.4372 (Δ −0.0018, dưới độ phân giải LB) → dự báo LB 0.38 như final 1. Đúng dự báo | **0.38** |
+| 2026-11-09 23:50 | `submission_ens_n1n2_orient_nofilt.csv` | loại 3 (ablation lọc FP trên final 2): N1 + N2 bỏ lọc FP | OOF 0.4313 so với 0.4327 (Δ −0.0014) → dự báo LB 0.37 như final 2. Đúng dự báo | **0.37** |
 | 2026-11-09 ~18:30 | `submission_n9p_orient_nofilt.csv` | loại 3 (ablation lọc FP cho report): N9' 5 fold đơn như dòng 08/11 (LB 0.38) nhưng **bỏ lọc FP**; lọc FP trên N9' cho +0.013 OOF, mức duy nhất trong các bộ lọc đủ lớn để LB có thể thấy | OOF 0.4192 (không lọc) so với 0.4322 (lọc, in-sample) → Δ dự báo −0.013 → LB 0.36–0.37. Thực tế **bằng bản lọc**: +0.013 OOF của bộ lọc (fit in-sample) không thấy trên LB | **0.38** |
 | 2026-11-09 ~19:10 | `submission_r34_c512_orient.csv` | loại 3 (LB thành viên khác kiến trúc cho report): N12 ResNet34 5 fold đơn, hậu xử lý tune trên 707 OOF, không lọc FP. Gate pool 707 không qua (−0.0004) | OOF dự báo ~0.40 (từng fold 0.395–0.419) → LB 0.35–0.36. Thực tế OOF **0.3955** (t 0.5 seed 0.99, FP 5092 so với N9' ~3700). Đúng dự báo | **0.36** |
 | 2026-11-09 ~20:00 | kernel `filseg-final-infer` v2: `submission_final1.csv` | loại 1 (tái lập): final 1 mới N1 + N2 + N9' (15 checkpoint) chạy lại từ đầu trên Kaggle. Đạt nếu trùng từng byte với `submission_ens_n1n2n9p_orient.csv`; không thì map lệch ≤ 1 mức uint8 trên < 0.1% pixel và LB 0.38 | như final 1 (0.4372) → LB 0.38. Thực tế: map N1, N2 và N1 + N2 trùng 180/180; map N9' khác (map nộp 08/11 tạo trên Colab L4, kernel trên Kaggle T4 torch 2.11.0+cu130), 23/987 RLE khác. Không trùng byte nhưng LB bằng → **đạt** phần LB; phần lệch pixel không đo được (kernel xoá map). Từ nay final 1 = CSV do kernel tạo | **0.38** |
@@ -116,7 +116,7 @@ Val luôn cao hơn LB khoảng 0.03–0.07, nhưng thứ tự giữa các model 
 - **Gate N11 707 ảnh: không qua.** 4 family −0.0026 [−0.0047, −0.0005], seed-avg −0.0024 [−0.0042, −0.0006] so với N1 + N2 + N9'. Seed thứ hai của cùng công thức không giúp pool; N11 bỏ. N12 (R34) 5 fold đã về, đang so từng fold.
 - **Gate N12 (R34, công thức N9'): không qua.** (c) qua 5/5 fold; trung bình pool từng fold +0.0016 nhưng (a) trên 707 ảnh −0.0004 [−0.0021, +0.0013], P 0.33. Bài học: thêm family thứ tư vào N1 + N2 + N9' không còn giúp; trung bình từng fold (mỗi fold tune riêng) lạc quan hơn gate 707 (một bộ hậu xử lý chung). **Final 1 giữ N1 + N2 + N9'.** Ổ đĩa đầy giữa lúc dựng ensemble cho (b); đã xoá ensemble dẫn xuất của N11, w112 và (b) (tạo lại được).
 - **Tái lập v2** (người dùng: "làm tái lập ngay"): `filseg-final-weights` thêm 5 checkpoint N9' (15 file, `SHA256SUMS`; hash N1/N2 không đổi). `kaggle/make_infer_kernel.py` dựng final 1 = N1 + N2 + N9' và final 2 = N1 + N2 (final 1 cũ). Kernel T4 ×2: map 90.4 phút. Final 2 trùng từng byte; final 1 lệch vì map N9' gốc làm trên Colab, kernel CSV đạt LB **0.38** → chọn CSV kernel làm final 1 (tái lập được từ notebook).
-- Nộp 09/11: N9' không lọc FP **0.38** (bằng bản lọc), N12 đơn **0.36**, final 1 từ kernel **0.38**. Lượt 4–5 để trống.
+- Nộp 09/11: N9' không lọc FP **0.38** (bằng bản lọc), N12 đơn **0.36**, final 1 từ kernel **0.38**. Lượt 4–5 (23:47 UTC, người dùng yêu cầu dùng hết): final 1 không lọc FP **0.38**, final 2 không lọc FP **0.37**, nên bộ lọc FP không đổi LB ở cả hai final.
 - Người dùng: "tiếp tục improve". Hàng đợi Colab mới N11 (`effv2s_c512_s2_f*`) → N12 (`r34_c512_f*`), chạy từ 00:02 UTC. Từ nay làm thẳng trên `main` trong thư mục project (không dùng worktree).
 
 ### 2026-11-08
