@@ -1,7 +1,7 @@
 """Write notebooks/final_inference.ipynb and a Kaggle kernel that runs it end to end.
 
-The notebook rebuilds both final submissions from the 10 checkpoints and the test H-alpha images only:
-8x-TTA maps per checkpoint (scripts/infer_probs.py), the fold averages and the N1 + N2 average
+The notebook rebuilds both final submissions from the 15 checkpoints and the test H-alpha images only:
+8x-TTA maps per checkpoint (scripts/infer_probs.py), the fold averages and the family averages
 (scripts/ensemble_probs.py), then post-processing + FP filter (scripts/make_submission.py) with the
 configs in configs/. It also writes SHA256 hashes of every map and CSV so a run can be checked
 against the maps the submissions were made from (scripts/map_hashes.py --compare).
@@ -23,19 +23,25 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SLUG = "filseg-final-infer"
 SCRIPTS = ["infer_probs.py", "ensemble_probs.py", "make_submission.py", "map_hashes.py"]
-CONFIGS = ["fpfilter_ens_n1n2_orient.pkl", "post_n1up_hyst.json", "post_ens_n1n2_hyst_orient.json"]
+CONFIGS = ["fpfilter_ens_n1n2n9p_orient.pkl", "post_ens_n1n2n9p_hyst_orient.json",
+           "fpfilter_ens_n1n2_orient.pkl", "post_ens_n1n2_hyst_orient.json"]
 
 CELLS = [
     ("markdown", """# Filament segmentation: final inference
 
-Rebuilds the two final submissions from the 10 U-Net checkpoints (EfficientNet-B4, 5 folds each of
-N1 = whole image @1024 and N2 = 1024 crops @2048) using only the test H-alpha images.
+Rebuilds the two final submissions from 15 U-Net checkpoints (5 folds each of three families) using only
+the test H-alpha images:
 
-* **final 1**: N1 x5 + N2 x5 maps averaged 1:1 at 2048, hysteresis (t 0.4, seed 0.99, area 200),
-  oriented fragment grouping (r 6, line 16), FP filter (`configs/fpfilter_ens_n1n2_orient.pkl`).
-* **final 2**: N1 x5 maps upsampled to 2048, hysteresis (t 0.4, seed 0.99, area 200, r 12), no filter.
+* N1: EfficientNet-B4, whole image @1024
+* N2: EfficientNet-B4, 1024 crops @2048
+* N9': EfficientNetV2-S, 512 crops @2048
 
-Every map is 8x TTA (4 rotations x flip), saved as uint8. On a 2-GPU machine N1 and N2 run in parallel."""),
+* **final 1**: N1, N2 and N9' family maps averaged 1:1:1 at 2048, hysteresis (t 0.5, seed 0.99, area 200),
+  oriented fragment grouping (r 6, line 16), FP filter (`configs/fpfilter_ens_n1n2n9p_orient.pkl`).
+* **final 2**: N1 + N2 averaged 1:1, hysteresis (t 0.4, seed 0.99, area 200), oriented grouping, FP filter
+  (`configs/fpfilter_ens_n1n2_orient.pkl`).
+
+Every map is 8x TTA (4 rotations x flip), saved as uint8. On a 2-GPU machine N1 + N9' and N2 run in parallel."""),
     ("code", """# parameters
 import os, sys
 from pathlib import Path
@@ -44,7 +50,8 @@ REPO = Path('/kaggle/working/repo') if ON_KAGGLE else Path.cwd()
 WEIGHTS = Path(os.environ.get('FILSEG_WEIGHTS', REPO / 'weights'))
 OUT = Path('/kaggle/working') if ON_KAGGLE else REPO / 'outputs' / 'final'
 N1 = [f'effb4_s1024_f{k}' for k in range(5)]
-N2 = [f'effb4_c2048_f{k}' for k in range(5)]"""),
+N2 = [f'effb4_c2048_f{k}' for k in range(5)]
+N9 = [f'effv2s_c512_f{k}' for k in range(5)]"""),
     ("code", """import glob, subprocess
 os.chdir(REPO)
 if ON_KAGGLE:
@@ -60,9 +67,9 @@ if ON_KAGGLE:
     subprocess.run([sys.executable, '-m', 'pip', 'install', '-q', 'segmentation-models-pytorch==0.5.0'], check=True)
 import torch, segmentation_models_pytorch as smp
 print('torch', torch.__version__, 'smp', smp.__version__, 'gpus', torch.cuda.device_count())
-missing = [n for n in N1 + N2 if not (WEIGHTS / f'{n}.pt').exists()]
+missing = [n for n in N1 + N2 + N9 if not (WEIGHTS / f'{n}.pt').exists()]
 assert not missing, f'missing checkpoints in {WEIGHTS}: {missing}'"""),
-    ("code", """# 8x-TTA test maps per checkpoint; N1 on GPU 0, N2 on GPU 1 when there are two
+    ("code", """# 8x-TTA test maps per checkpoint; N1 + N9' on GPU 0, N2 on GPU 1 when there are two
 import time
 t0 = time.time()
 ngpu = max(torch.cuda.device_count(), 1)
@@ -71,7 +78,7 @@ def chain(names, gpu):
             f'--out {OUT}/maps/{n}' for n in names]
     env = dict(os.environ, CUDA_VISIBLE_DEVICES=str(gpu % ngpu))
     return subprocess.Popen(' && '.join(cmds), shell=True, env=env)
-procs = [chain(N1, 0), chain(N2, 1)] if ngpu > 1 else [chain(N1 + N2, 0)]
+procs = [chain(N1 + N9, 0), chain(N2, 1)] if ngpu > 1 else [chain(N1 + N2 + N9, 0)]
 assert all(p.wait() == 0 for p in procs), 'inference failed'
 print(f'maps done in {(time.time() - t0) / 60:.1f} min')"""),
     ("code", """def run(cmd):
@@ -80,15 +87,16 @@ print(f'maps done in {(time.time() - t0) / 60:.1f} min')"""),
 m = OUT / 'maps'
 run(f'{sys.executable} scripts/ensemble_probs.py --inputs ' + ' '.join(str(m / n) for n in N1) + f' --out {m}/n1')
 run(f'{sys.executable} scripts/ensemble_probs.py --inputs ' + ' '.join(str(m / n) for n in N2) + f' --out {m}/n2')
+run(f'{sys.executable} scripts/ensemble_probs.py --inputs ' + ' '.join(str(m / n) for n in N9) + f' --out {m}/n9p')
+run(f'{sys.executable} scripts/ensemble_probs.py --inputs {m}/n1 {m}/n2 {m}/n9p --out {m}/n1n2n9p')
 run(f'{sys.executable} scripts/ensemble_probs.py --inputs {m}/n1 {m}/n2 --out {m}/n1n2')
-run(f'{sys.executable} scripts/ensemble_probs.py --inputs {m}/n1 {m}/n2 --weights 1 0 --out {m}/n1up')
-run(f'{sys.executable} scripts/make_submission.py --probs {m}/n1n2 --filter configs/fpfilter_ens_n1n2_orient.pkl '
+run(f'{sys.executable} scripts/make_submission.py --probs {m}/n1n2n9p --filter configs/fpfilter_ens_n1n2n9p_orient.pkl '
     f'--out {OUT}/submission_final1.csv')
-run(f'{sys.executable} scripts/make_submission.py --probs {m}/n1up --post configs/post_n1up_hyst.json '
+run(f'{sys.executable} scripts/make_submission.py --probs {m}/n1n2 --filter configs/fpfilter_ens_n1n2_orient.pkl '
     f'--out {OUT}/submission_final2.csv')"""),
     ("code", """# hashes for the reproducibility check, then drop the maps (several GB)
 import hashlib, shutil
-dirs = ' '.join(f'{n}={m / n}' for n in N1 + N2 + ['n1', 'n2', 'n1n2', 'n1up'])
+dirs = ' '.join(f'{n}={m / n}' for n in N1 + N2 + N9 + ['n1', 'n2', 'n9p', 'n1n2n9p', 'n1n2'])
 run(f'{sys.executable} scripts/map_hashes.py --dirs {dirs} --out {OUT}/map_hashes.json')
 for f in ('submission_final1.csv', 'submission_final2.csv'):
     print(f, hashlib.sha256((OUT / f).read_bytes()).hexdigest())
