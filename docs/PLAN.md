@@ -150,7 +150,7 @@ Trạng thái: ⏳ đang chạy/chờ · 📝 chuẩn bị · ✅ xong · ❌ b�
 | Tiêu chí (đăng ký trước) | Trên 707 ảnh OOF, cross-tune `hyst_soft`: ensemble có N8 hơn ensemble không có N8 (cùng các thành viên khác đã qua gate) với **CI 95% > 0**. Đạt thì N8 vào final 1; không đạt thì final 1 giữ nguyên. Kiểm tra hợp lý từng fold: PQ fold của s2 nằm trong ±0.01 so với N1 cùng fold |
 | Sau đó | Nộp ensemble có N8 (08/11, lịch § 5b). Nếu chỉ về được 2–3 fold trước 08/11 thì gate trên các fold đó, nhưng chỉ nhận nếu CI > 0 trên tập ảnh đó |
 
-### N9' — Chép công thức Dariush: EfficientNetV2-S, crop 512 ở 2048, bs 16 (🔄 Colab; fold 0 **qua gate** 08/11: đơn 0.4200, pool +0.0068; fold 1–4 đang chạy)
+### N9' — Chép công thức Dariush: EfficientNetV2-S, crop 512 ở 2048, bs 16 (✅ qua gate gộp 707 ảnh 09/11: N1 + N2 + N9' +0.0056 [+0.0034, +0.0077]; BCE bị bỏ ở (b). **Final 1 = N1 + N2 + N9'**, OOF 0.4372, LB 0.38)
 
 | | |
 |---|---|

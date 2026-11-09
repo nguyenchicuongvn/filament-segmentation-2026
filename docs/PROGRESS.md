@@ -4,18 +4,18 @@ Mỗi phiên làm việc thêm một mục ở **đầu** phần "Nhật ký" (m
 "Trạng thái". Chi tiết từng thí nghiệm nằm ở [EXPERIMENTS.md](EXPERIMENTS.md), kế hoạch ở
 [PLAN.md](PLAN.md).
 
-## Trạng thái (cập nhật 2026-11-04)
+## Trạng thái (cập nhật 2026-11-09)
 
 | | |
 |---|---|
-| Submission tốt nhất | **Public LB 0.37**: 5 fold EffNet-B4 @1024 target mềm (N1) + hysteresis + lọc FP (OOF 0.425, 707 ảnh), 04/11 |
+| Submission tốt nhất | **Public LB 0.38**: final 1 mới = N1 ×5 + N2 ×5 + N9' ×5 (EffNetV2-S crop 512 @2048) + hysteresis + gộp theo hướng + lọc FP (OOF 0.4372 in-sample, 707 ảnh), qua gate gộp 09/11. N9' 5 fold đơn cũng 0.38 |
 | Hạng | 483 / 1,260 với 0.36 (LB 2026-10-29 08:16 UTC) |
 | LB tham chiếu | #1 0.70 nhưng bị nhiễm (rò rỉ nhãn, payload 0.55 × 82 đội); tầng trung thực cao nhất 0.42 (1 đội), 0.41 (11), 0.40 (46); xem [RESEARCH S16](RESEARCH.md#3-leaderboard-và-khoảng-cách-val--lb) |
 | Submissions đã dùng | 46 (tối đa 5/ngày, reset 00:00 UTC) |
 | Deadline | Kaggle: **2026-11-15 06:00 UTC** (13:00 VN). Report + code (Google form): Nov 15 11:59 pm CDT |
 | Repo | https://github.com/nguyenchicuongvn/filament-segmentation-2026 (**private** đến khi cuộc thi đóng) |
 | GPU | Kaggle GPU (T4 ×2, `scripts/kaggle_gpu.py`), ~20 h tuần này; đã dùng ~8 h cho 4 kernel, thêm ~6 h cho kernel 5–6 đang chạy. Colab chưa dùng |
-| Đang chờ | Nộp final 1 ứng viên (ensemble 10 model N1 + N2); đo thời gian inference trên Kaggle cho notebook final |
+| Đang chờ | Colab: N11 (N9' seed 2) rồi N12 (R34 cùng công thức), 10 run từ 00:02 UTC 09/11; gate gộp § 5b so với N1 + N2 + N9'. Đóng băng dời sang 12/11 |
 
 ## Theo dõi kế hoạch
 
@@ -94,6 +94,12 @@ Val luôn cao hơn LB khoảng 0.03–0.07, nhưng thứ tự giữa các model 
 được để chọn model (xem [DATA_AND_METRIC.md](DATA_AND_METRIC.md#khoảng-cách-val--lb)).
 
 ## Nhật ký
+
+### 2026-11-09
+
+- **Gate gộp 707 ảnh** (đăng ký trước 05/11): (a) N1 + N2 + BCE + N9' hơn N1 + N2 +0.0065 [+0.0037, +0.0092]; (b) BCE biên +0.0009, P 0.77 < 0.8 → bỏ; kiểm lại N1 + N2 + N9' +0.0056 [+0.0034, +0.0077], P 1.00; (c) 5/5 fold. **Final 1 = N1 + N2 + N9'** (`configs/fpfilter_ens_n1n2n9p_orient.pkl`), LB 0.38. Final 2 tạm giữ bước trước đó (N1 + N2, LB 0.37), xét lại khi N11/N12 về. Việc tái lập: thêm 5 checkpoint N9' vào `filseg-final-weights` và `kaggle/make_infer_kernel.py`.
+- Nộp 23:40 UTC 08/11 (2 lượt cuối ngày): pool N1 + N2 + N9' **0.38**, N9' đơn **0.38**. Lọc FP trên N9' đơn được +0.013 OOF.
+- Người dùng: "tiếp tục improve". Hàng đợi Colab mới N11 (`effv2s_c512_s2_f*`) → N12 (`r34_c512_f*`), chạy từ 00:02 UTC. Từ nay làm thẳng trên `main` trong thư mục project (không dùng worktree).
 
 ### 2026-11-08
 
