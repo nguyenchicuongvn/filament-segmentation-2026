@@ -45,6 +45,7 @@ việc đổi trạng thái.
 
 | Ngày (UTC) | File | Mô tả | val PQ | Public LB |
 |---|---|---|---|---|
+| 2026-11-10 ~04:20 | `submission_ens_n1n2n9p_cc_orient.csv` | loại 3 (ablation hysteresis trên final 1 cho bảng report): N1 + N2 + N9', mode cc thay hysteresis, cùng t 0.5 / area 200 / gộp theo hướng, không lọc FP | OOF 0.4119 so với 0.4354 (hysteresis, cùng tham số, không lọc): Δ −0.0235 → dự báo LB 0.36 (ablation tương tự trên N1 + N2: 0.36 so với 0.37) | (chờ) |
 | 2026-11-09 23:50 | `submission_ens_n1n2n9p_orient_nofilt.csv` | loại 3 (ablation lọc FP trên final 1 cho bảng report; người dùng yêu cầu dùng 2 lượt còn lại trước 00:00 UTC): final 1 bỏ lọc FP | OOF 0.4354 so với 0.4372 (Δ −0.0018, dưới độ phân giải LB) → dự báo LB 0.38 như final 1. Đúng dự báo | **0.38** |
 | 2026-11-09 23:50 | `submission_ens_n1n2_orient_nofilt.csv` | loại 3 (ablation lọc FP trên final 2): N1 + N2 bỏ lọc FP | OOF 0.4313 so với 0.4327 (Δ −0.0014) → dự báo LB 0.37 như final 2. Đúng dự báo | **0.37** |
 | 2026-11-09 ~18:30 | `submission_n9p_orient_nofilt.csv` | loại 3 (ablation lọc FP cho report): N9' 5 fold đơn như dòng 08/11 (LB 0.38) nhưng **bỏ lọc FP**; lọc FP trên N9' cho +0.013 OOF, mức duy nhất trong các bộ lọc đủ lớn để LB có thể thấy | OOF 0.4192 (không lọc) so với 0.4322 (lọc, in-sample) → Δ dự báo −0.013 → LB 0.36–0.37. Thực tế **bằng bản lọc**: +0.013 OOF của bộ lọc (fit in-sample) không thấy trên LB | **0.38** |
