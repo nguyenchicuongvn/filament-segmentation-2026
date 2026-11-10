@@ -45,8 +45,8 @@ việc đổi trạng thái.
 
 | Ngày (UTC) | File | Mô tả | val PQ | Public LB |
 |---|---|---|---|---|
-| 2026-11-10 ~19:40 | `submission_ens_n1n2n9p_disk12_nofilt.csv` | loại 3 (ablation gộp instance trên final 1 cho bảng report): như final 1 không lọc (LB 0.38) nhưng gộp hình đĩa r 12 (L 0) thay gộp theo hướng r 6 L 16; cùng t 0.5 / seed 0.99 / area 200 | OOF 0.4344 so với 0.4354, Δ −0.0010 [−0.0026, +0.0005] (`docs/logs/final/grouping_ablation_n1n2n9p.txt`) → dự báo LB 0.38 (dưới độ phân giải) | chờ |
-| 2026-11-10 ~19:40 | `submission_ens_n1n2n9p_nogroup_nofilt.csv` | loại 3 (ablation gộp instance): như trên nhưng **không gộp** (r 0) | OOF 0.4293, Δ −0.0061 [−0.0105, −0.0018], FP +438 → dự báo LB 0.37–0.38 | chờ |
+| 2026-11-10 19:14 | `submission_ens_n1n2n9p_disk12_nofilt.csv` | loại 3 (ablation gộp instance trên final 1 cho bảng report): như final 1 không lọc (LB 0.38) nhưng gộp hình đĩa r 12 (L 0) thay gộp theo hướng r 6 L 16; cùng t 0.5 / seed 0.99 / area 200 | OOF 0.4344 so với 0.4354, Δ −0.0010 [−0.0026, +0.0005] (`docs/logs/final/grouping_ablation_n1n2n9p.txt`) → dự báo LB 0.38 (dưới độ phân giải). Đúng dự báo | **0.38** |
+| 2026-11-10 19:14 | `submission_ens_n1n2n9p_nogroup_nofilt.csv` | loại 3 (ablation gộp instance): như trên nhưng **không gộp** (r 0) | OOF 0.4293, Δ −0.0061 [−0.0105, −0.0018], FP +438 → dự báo LB 0.37–0.38. Thực tế 0.37: bỏ gộp là bước thứ hai LB thấy được (sau hysteresis) | **0.37** |
 | 2026-11-10 ~04:20 | `submission_ens_n1n2n9p_cc_orient.csv` | loại 3 (ablation hysteresis trên final 1 cho bảng report): N1 + N2 + N9', mode cc thay hysteresis, cùng t 0.5 / area 200 / gộp theo hướng, không lọc FP | OOF 0.4119 so với 0.4354 (hysteresis, cùng tham số, không lọc): Δ −0.0235 → dự báo LB 0.36 (ablation tương tự trên N1 + N2: 0.36 so với 0.37). Đúng dự báo: hysteresis là bước hậu xử lý duy nhất LB thấy được | **0.36** |
 | 2026-11-09 23:50 | `submission_ens_n1n2n9p_orient_nofilt.csv` | loại 3 (ablation lọc FP trên final 1 cho bảng report; người dùng yêu cầu dùng 2 lượt còn lại trước 00:00 UTC): final 1 bỏ lọc FP | OOF 0.4354 so với 0.4372 (Δ −0.0018, dưới độ phân giải LB) → dự báo LB 0.38 như final 1. Đúng dự báo | **0.38** |
 | 2026-11-09 23:50 | `submission_ens_n1n2_orient_nofilt.csv` | loại 3 (ablation lọc FP trên final 2): N1 + N2 bỏ lọc FP | OOF 0.4313 so với 0.4327 (Δ −0.0014) → dự báo LB 0.37 như final 2. Đúng dự báo | **0.37** |
@@ -108,6 +108,7 @@ Val luôn cao hơn LB khoảng 0.03–0.07, nhưng thứ tự giữa các model 
 
 - **Report bản nháp** (`report/`, template Overleaf của host, acmart sigconf): `scripts/report_figures.py` tái tạo đúng quyết định lọc FP out-of-fold (khớp cv_pq 0.4372; áp bộ lọc fit trên toàn OOF cho 0.4496 in-sample nên không dùng). Final 1 OOF **0.4372 [0.427, 0.447]**, từng fold 0.425–0.454; Dice 0.663, IoU TP 0.680, 1:n 3.1%, n:1 3.9%. Ba hình: pipeline, ví dụ OOF, phân bố rubric. Máy không có LaTeX: compile trên Overleaf.
 - Nộp 10/11: final 1 bỏ hysteresis (mode cc) **0.36** (OOF 0.4119 so với 0.4354).
+- Nộp 10/11 (loại 3, ablation gộp instance trên final 1 không lọc, tham số cố định trên 707 OOF): gộp đĩa r 12 **0.38** (OOF 0.4344, Δ −0.0010); không gộp **0.37** (OOF 0.4293, Δ −0.0061 [−0.0105, −0.0018]). Cả hai đúng dự báo. Gộp là bước hậu xử lý thứ hai LB thấy được, sau hysteresis. Bảng report đã cập nhật (dòng đĩa r 12 chuyển sang final 1, thêm dòng không gộp). Còn 2 lượt 10/11.
 
 - **Weights vào repo** (người dùng chọn fp32, giữ trùng byte): 15 checkpoint + `SHA256SUMS` + `weights/README.md` trong `weights/`, đẩy lên GitHub theo 3 commit (mỗi family ~400 MB). GitHub chỉ cảnh báo file > 50 MB. Clone sạch `--depth 1` khớp 15/15 hash.
 
