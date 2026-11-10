@@ -13,14 +13,21 @@ annotator entry at full resolution (2048 px), the way the PQ metric scores entri
   n:1: for every prediction, how many of the entry's filaments it overlaps. The rates are the
   shares with 2 or more.
 
+With --filter (a scripts/fp_filter.py pickle) the filter's own post config is used and instances
+scoring below its threshold are dropped, as in make_submission.py. A filter fitted on the same maps
+gives in-sample numbers.
+
 Usage:
   python scripts/rubric_metrics.py --probs outputs/colab/unet1024_effb4/probs_val \
       --post configs/post_unet1024_effb4_hyst.json --out docs/logs/rubric_effb4_hyst
+  python scripts/rubric_metrics.py --probs outputs/ens/n1n2n9p_oof \
+      --filter configs/fpfilter_ens_n1n2n9p_orient.pkl --out docs/logs/final/rubric_final1
 """
 from __future__ import annotations
 
 import argparse
 import json
+import pickle
 import sys
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
@@ -31,12 +38,14 @@ from pycocotools import mask as mask_util
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from filseg.data import by_image, encode_masks, load_train, with_maps  # noqa: E402
+from filseg.data import by_image, encode_masks, load_gray, load_train, with_maps  # noqa: E402
 from filseg.dl import PostParams, instances_lowres, load_maps, upsample_labels  # noqa: E402
+from filseg.instfilter import AGREE_FEATURES, instance_features, score  # noqa: E402
 from filseg.metric import IOU_THRESHOLD, PQAccumulator  # noqa: E402
 
 PROBS: Path
 POST: PostParams
+FILT: dict | None = None
 
 
 def torchmetrics_dice(pred: np.ndarray, gt: np.ndarray) -> float:
@@ -66,17 +75,24 @@ def entry_stats(gt_rles: list[dict], pred_rles: list[dict], pred_union: np.ndarr
 
 
 def image_job(args) -> list[tuple[str, list, list, dict]]:
-    stem, entries = args
+    stem, entries, path = args
     prob, group = load_maps(PROBS, stem)
-    labels = upsample_labels(instances_lowres(prob, POST, group))
+    inst = instances_lowres(prob, POST, group)
+    if FILT and inst.max() > 0:
+        keep = np.concatenate([[False], score(FILT, instance_features(inst, prob, load_gray(path), group))
+                               >= FILT["threshold"]])
+        lut = np.zeros(len(keep), np.int32)
+        lut[keep] = np.arange(1, int(keep.sum()) + 1)
+        inst = lut[inst]
+    labels = upsample_labels(inst)
     pred = encode_masks(labels)
     union = (labels > 0).astype(np.uint8)
     return [(key, gts, pred, entry_stats(gts, pred, union)) for key, gts in entries]
 
 
-def init(probs: Path, post: PostParams) -> None:
-    global PROBS, POST
-    PROBS, POST = probs, post
+def init(probs: Path, post: PostParams, filt: dict | None = None) -> None:
+    global PROBS, POST, FILT
+    PROBS, POST, FILT = probs, post, filt
 
 
 def summarise(rows: list[dict]) -> dict:
@@ -105,18 +121,26 @@ def summarise(rows: list[dict]) -> dict:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--probs", type=Path, required=True)
-    ap.add_argument("--post", type=Path, required=True)
+    ap.add_argument("--post", type=Path, help="post-processing config (or use --filter)")
+    ap.add_argument("--filter", type=Path, help="FP filter pickle from scripts/fp_filter.py (uses its own post)")
     ap.add_argument("--out", type=Path, required=True, help="writes <out>.json and <out>.png")
     ap.add_argument("--jobs", type=int, default=4)
     args = ap.parse_args()
-    post = PostParams(**json.loads(args.post.read_text()))
-    groups = [(s, [(t.key, t.gt_rles) for t in es]) for s, es in by_image(with_maps(load_train(), args.probs)).items()]
-    with ProcessPoolExecutor(args.jobs, initializer=init, initargs=(args.probs, post)) as ex:
+    filt = pickle.loads(args.filter.read_bytes()) if args.filter else None
+    if filt and any(n in AGREE_FEATURES for n in filt["features"]):
+        raise SystemExit("filters with agreement features are not supported here")
+    if not filt and not args.post:
+        raise SystemExit("pass --post or --filter")
+    post = PostParams(**(filt["post"] if filt else json.loads(args.post.read_text())))
+    groups = [(s, [(t.key, t.gt_rles) for t in es], es[0].path)
+              for s, es in by_image(with_maps(load_train(), args.probs)).items()]
+    with ProcessPoolExecutor(args.jobs, initializer=init, initargs=(args.probs, post, filt)) as ex:
         results = [r for rs in ex.map(image_job, groups) for r in rs]
     acc = PQAccumulator()
     for _, gts, pred, _ in results:
         acc.add(gts, pred)
     summary = {"probs": str(args.probs), "post": post.to_dict(), "images": len(groups),
+               "filter": str(args.filter) if args.filter else None,
                "pq": acc.pq, "sq": acc.sq, "rq": acc.pq / acc.sq if acc.sq else 0.0,
                "tp": acc.tp, "fp": acc.fp, "fn": acc.fn, **summarise([r[3] for r in results])}
     args.out.parent.mkdir(parents=True, exist_ok=True)
