@@ -1,0 +1,10 @@
+evaluated base
+evaluated disk12
+evaluated disk6
+evaluated nogroup
+707 images, 2000 bootstrap resamples
+pipeline                          PQ    TP    FP    FN     diff             95% CI   P>0
+base                          0.4354  4935  2251  3264
+disk12                        0.4344  4918  2253  3281  -0.0010 [-0.0026, +0.0005]  0.10
+disk6                         0.4352  4991  2388  3208  -0.0002 [-0.0028, +0.0023]  0.44
+nogroup                       0.4293  5035  2689  3164  -0.0061 [-0.0105, -0.0018]  0.00
