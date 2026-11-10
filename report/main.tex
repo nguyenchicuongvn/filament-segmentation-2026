@@ -117,7 +117,7 @@ Each checkpoint predicts with 8-fold test-time augmentation (four rotations $\ti
 We report OOF PQ on all 707 training images (1{,}154 entries), with the metric of the host's self-evaluation notebook re-implemented and unit-tested, and the public leaderboard score of the same pipeline trained on all folds. Uncertainties are bootstrap 95\% intervals over images. The OOF PQ of the final pipeline is \pqoof{} \pqci{} (4{,}839 TP, 2{,}006 FP, 3{,}360 FN pooled over entries); the filter decisions in this number are out of fold (the filter is refitted with each image's fold held out), only its threshold was chosen on these scores. The five per-fold values range from 0.425 to 0.454, consistent with the bootstrap SD of 0.005 for 707 images and about 0.011 for one fold.
 
 \subsection{Results and ablations}
-Table~\ref{tab:results} builds the final pipeline one step at a time. Each row's $\Delta$ is the paired difference to the row it modifies, with cross-tuned post-processing. The largest single gains came from the soft multi-annotator target with five folds (N1), from averaging families that see the image at different scales (N1+N2: FP $-222$ at almost unchanged TP), and from hysteresis (removing it costs $-0.025$). The leaderboard has a resolution of about 0.01 on 90 images (bootstrap SD 0.014), so differences below 0.01 are not visible there; the ordering of OOF and leaderboard agrees wherever the leaderboard can resolve it.
+Table~\ref{tab:results} builds the final pipeline one step at a time. Each row's $\Delta$ is the paired difference to the row it modifies, with cross-tuned post-processing. The largest single gains came from the soft multi-annotator target with five folds (N1), from averaging families that see the image at different scales (N1+N2: FP $-222$ at almost unchanged TP), and from hysteresis (removing it costs $-0.024$ OOF and 0.02 on the leaderboard). The leaderboard has a resolution of about 0.01 on 90 images (bootstrap SD 0.014), so differences below 0.01 are not visible there; the ordering of OOF and leaderboard agrees wherever the leaderboard can resolve it.
 
 \begin{table}[t]
   \caption{Building the final pipeline: OOF PQ on 707 images (cross-tuned post-processing unless noted), paired bootstrap 95\% CI, and public leaderboard.}
@@ -135,7 +135,8 @@ Table~\ref{tab:results} builds the final pipeline one step at a time. Each row's
     \quad + FP filter (final 1) & \textbf{0.4372} & $+0.002$, CV filter & \textbf{0.38} \\
     \midrule
     \multicolumn{4}{@{}l}{\emph{Ablations and single families}} \\
-    final 1 without hysteresis$^\dagger$ & 0.4065 & $-0.025$ [$-0.029$, $-0.020$] & 0.36 \\
+    final 1 without hysteresis$^*$ & 0.4119 & $-0.024$ vs.\ 0.4354 & 0.36 \\
+    N1+N2 without hysteresis$^\dagger$ & 0.4065 & $-0.025$ [$-0.029$, $-0.020$] & 0.36 \\
     disk grouping (r 12) instead of oriented$^\dagger$ & 0.4284 & $-0.002$ [$-0.004$, $-0.001$] & -- \\
     N9$'$ single family & 0.4192$^*$ & -- & 0.38 \\
     ResNet34, N9$'$ recipe & 0.3955$^*$ & -- & 0.36 \\
@@ -143,7 +144,7 @@ Table~\ref{tab:results} builds the final pipeline one step at a time. Each row's
   \end{tabular}
 
   \smallskip
-  \footnotesize $^\dagger$on N1+N2. $^*$post-processing tuned on all OOF, no filter.
+  \footnotesize $^\dagger$on N1+N2, cross-tuned, no filter. $^*$post-processing tuned on all OOF, no filter.
 \end{table}
 
 \subsection{Host rubric metrics and cost}

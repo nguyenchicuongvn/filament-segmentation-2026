@@ -11,7 +11,7 @@ Mỗi phiên làm việc thêm một mục ở **đầu** phần "Nhật ký" (m
 | Submission tốt nhất | **Public LB 0.38**: final 1 mới = N1 ×5 + N2 ×5 + N9' ×5 (EffNetV2-S crop 512 @2048) + hysteresis + gộp theo hướng + lọc FP (OOF 0.4372 in-sample, 707 ảnh), qua gate gộp 09/11. N9' 5 fold đơn cũng 0.38 |
 | Hạng | 483 / 1,260 với 0.36 (LB 2026-10-29 08:16 UTC) |
 | LB tham chiếu | #1 0.70 nhưng bị nhiễm (rò rỉ nhãn, payload 0.55 × 82 đội); tầng trung thực cao nhất 0.42 (1 đội), 0.41 (11), 0.40 (46); xem [RESEARCH S16](RESEARCH.md#3-leaderboard-và-khoảng-cách-val--lb) |
-| Submissions đã dùng | 51 (tối đa 5/ngày, reset 00:00 UTC) |
+| Submissions đã dùng | 52 (tối đa 5/ngày, reset 00:00 UTC) |
 | Deadline | Kaggle: **2026-11-15 06:00 UTC** (13:00 VN). Report + code (Google form): Nov 15 11:59 pm CDT |
 | Repo | https://github.com/nguyenchicuongvn/filament-segmentation-2026 (**private** đến khi cuộc thi đóng) |
 | GPU | Kaggle GPU (T4 ×2, `scripts/kaggle_gpu.py`), ~20 h tuần này; đã dùng ~8 h cho 4 kernel, thêm ~6 h cho kernel 5–6 đang chạy. Colab chưa dùng |
@@ -45,7 +45,7 @@ việc đổi trạng thái.
 
 | Ngày (UTC) | File | Mô tả | val PQ | Public LB |
 |---|---|---|---|---|
-| 2026-11-10 ~04:20 | `submission_ens_n1n2n9p_cc_orient.csv` | loại 3 (ablation hysteresis trên final 1 cho bảng report): N1 + N2 + N9', mode cc thay hysteresis, cùng t 0.5 / area 200 / gộp theo hướng, không lọc FP | OOF 0.4119 so với 0.4354 (hysteresis, cùng tham số, không lọc): Δ −0.0235 → dự báo LB 0.36 (ablation tương tự trên N1 + N2: 0.36 so với 0.37) | (chờ) |
+| 2026-11-10 ~04:20 | `submission_ens_n1n2n9p_cc_orient.csv` | loại 3 (ablation hysteresis trên final 1 cho bảng report): N1 + N2 + N9', mode cc thay hysteresis, cùng t 0.5 / area 200 / gộp theo hướng, không lọc FP | OOF 0.4119 so với 0.4354 (hysteresis, cùng tham số, không lọc): Δ −0.0235 → dự báo LB 0.36 (ablation tương tự trên N1 + N2: 0.36 so với 0.37). Đúng dự báo: hysteresis là bước hậu xử lý duy nhất LB thấy được | **0.36** |
 | 2026-11-09 23:50 | `submission_ens_n1n2n9p_orient_nofilt.csv` | loại 3 (ablation lọc FP trên final 1 cho bảng report; người dùng yêu cầu dùng 2 lượt còn lại trước 00:00 UTC): final 1 bỏ lọc FP | OOF 0.4354 so với 0.4372 (Δ −0.0018, dưới độ phân giải LB) → dự báo LB 0.38 như final 1. Đúng dự báo | **0.38** |
 | 2026-11-09 23:50 | `submission_ens_n1n2_orient_nofilt.csv` | loại 3 (ablation lọc FP trên final 2): N1 + N2 bỏ lọc FP | OOF 0.4313 so với 0.4327 (Δ −0.0014) → dự báo LB 0.37 như final 2. Đúng dự báo | **0.37** |
 | 2026-11-09 ~18:30 | `submission_n9p_orient_nofilt.csv` | loại 3 (ablation lọc FP cho report): N9' 5 fold đơn như dòng 08/11 (LB 0.38) nhưng **bỏ lọc FP**; lọc FP trên N9' cho +0.013 OOF, mức duy nhất trong các bộ lọc đủ lớn để LB có thể thấy | OOF 0.4192 (không lọc) so với 0.4322 (lọc, in-sample) → Δ dự báo −0.013 → LB 0.36–0.37. Thực tế **bằng bản lọc**: +0.013 OOF của bộ lọc (fit in-sample) không thấy trên LB | **0.38** |
@@ -103,6 +103,9 @@ Val luôn cao hơn LB khoảng 0.03–0.07, nhưng thứ tự giữa các model 
 ## Nhật ký
 
 ### 2026-11-10
+
+- **Report bản nháp** (`report/`, template Overleaf của host, acmart sigconf): `scripts/report_figures.py` tái tạo đúng quyết định lọc FP out-of-fold (khớp cv_pq 0.4372; áp bộ lọc fit trên toàn OOF cho 0.4496 in-sample nên không dùng). Final 1 OOF **0.4372 [0.427, 0.447]**, từng fold 0.425–0.454; Dice 0.663, IoU TP 0.680, 1:n 3.1%, n:1 3.9%. Ba hình: pipeline, ví dụ OOF, phân bố rubric. Máy không có LaTeX: compile trên Overleaf.
+- Nộp 10/11: final 1 bỏ hysteresis (mode cc) **0.36** (OOF 0.4119 so với 0.4354).
 
 - **Weights vào repo** (người dùng chọn fp32, giữ trùng byte): 15 checkpoint + `SHA256SUMS` + `weights/README.md` trong `weights/`, đẩy lên GitHub theo 3 commit (mỗi family ~400 MB). GitHub chỉ cảnh báo file > 50 MB. Clone sạch `--depth 1` khớp 15/15 hash.
 
