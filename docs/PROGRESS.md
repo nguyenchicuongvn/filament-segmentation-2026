@@ -45,11 +45,11 @@ việc đổi trạng thái.
 
 | Ngày (UTC) | File | Mô tả | val PQ | Public LB |
 |---|---|---|---|---|
-| 2026-11-11 ~04:10 | `submission_ens_n1n9p_orient_nofilt.csv` | loại 3 (ablation bỏ một họ khỏi final 1, không lọc FP, tham số final 1 cố định): N1 + N9' (bỏ N2) | OOF 0.4371 so với 0.4354, Δ +0.0017 [−0.0009, +0.0042] (`docs/logs/final/ablation_11_11.txt`); không đủ để đổi final (luật gate, CI chạm 0) → dự báo LB 0.38 | chờ |
-| 2026-11-11 ~04:10 | `submission_ens_n2n9p_orient_nofilt.csv` | loại 3: N2 + N9' (bỏ N1) | OOF 0.4262, Δ −0.0091 [−0.0125, −0.0056], FP +727 → dự báo LB 0.37–0.38 | chờ |
-| 2026-11-11 ~04:10 | `submission_ens_f0x3_orient_nofilt.csv` | loại 3 (lợi của ensemble 5 fold trên test): mỗi họ chỉ model fold 0 (3 model thay 15), tham số final 1, không lọc | OOF chỉ đo được trên fold 0: 0.4420 (bằng pool vì cùng model); lợi 5 fold không đo được trên OOF → dự báo LB 0.37–0.38 | chờ |
-| 2026-11-11 ~04:10 | `submission_n9p_f0_orient_nofilt.csv` | loại 3 (một model so với ensemble): N9' fold 0 đơn, `configs/post_n9p_hyst_orient.json`, không lọc | fold 0: 0.4267 so với 3 model fold 0 0.4420 (Δ −0.0153 [−0.0265, −0.0050], `docs/logs/final/ablation_11_11_fold0.txt`); N9' 5 fold LB 0.38 → dự báo LB 0.36–0.37 | chờ |
-| 2026-11-11 ~04:10 | `submission_ens_n1n2n9p_plain.csv` | loại 3 (tổng đóng góp hậu xử lý): map final 1, ngưỡng thường 0.5 + area 200, không hysteresis, không gộp, không lọc | OOF 0.3985, Δ −0.0369 [−0.0429, −0.0309], FP +2651 → dự báo LB 0.34–0.35 | chờ |
+| 2026-11-11 ~04:15 | `submission_ens_n1n9p_orient_nofilt.csv` | loại 3 (ablation bỏ một họ khỏi final 1, không lọc FP, tham số final 1 cố định): N1 + N9' (bỏ N2) | OOF 0.4371 so với 0.4354, Δ +0.0017 [−0.0009, +0.0042] (`docs/logs/final/ablation_11_11.txt`); không đủ để đổi final (luật gate, CI chạm 0) → dự báo LB 0.38. Đúng dự báo | **0.38** |
+| 2026-11-11 ~04:15 | `submission_ens_n2n9p_orient_nofilt.csv` | loại 3: N2 + N9' (bỏ N1) | OOF 0.4262, Δ −0.0091 [−0.0125, −0.0056], FP +727 → dự báo LB 0.37–0.38. Đúng dự báo (Δ −0.009 không thấy trên LB) | **0.38** |
+| 2026-11-11 ~04:15 | `submission_ens_f0x3_orient_nofilt.csv` | loại 3 (lợi của ensemble 5 fold trên test): mỗi họ chỉ model fold 0 (3 model thay 15), tham số final 1, không lọc | OOF chỉ đo được trên fold 0: 0.4420 (bằng pool vì cùng model); lợi 5 fold không đo được trên OOF → dự báo LB 0.37–0.38. Đúng dự báo: 3 model bằng 15 model trên LB | **0.38** |
+| 2026-11-11 ~04:15 | `submission_n9p_f0_orient_nofilt.csv` | loại 3 (một model so với ensemble): N9' fold 0 đơn, `configs/post_n9p_hyst_orient.json`, không lọc | fold 0: 0.4267 so với 3 model fold 0 0.4420 (Δ −0.0153 [−0.0265, −0.0050], `docs/logs/final/ablation_11_11_fold0.txt`); N9' 5 fold LB 0.38 → dự báo LB 0.36–0.37. Đúng dự báo: một model kém ensemble 0.01 LB | **0.37** |
+| 2026-11-11 ~04:15 | `submission_ens_n1n2n9p_plain.csv` | loại 3 (tổng đóng góp hậu xử lý): map final 1, ngưỡng thường 0.5 + area 200, không hysteresis, không gộp, không lọc | OOF 0.3985, Δ −0.0369 [−0.0429, −0.0309], FP +2651 → dự báo LB 0.34–0.35. Đúng dự báo | **0.35** |
 | 2026-11-10 19:14 | `submission_ens_n1n2n9p_disk12_nofilt.csv` | loại 3 (ablation gộp instance trên final 1 cho bảng report): như final 1 không lọc (LB 0.38) nhưng gộp hình đĩa r 12 (L 0) thay gộp theo hướng r 6 L 16; cùng t 0.5 / seed 0.99 / area 200 | OOF 0.4344 so với 0.4354, Δ −0.0010 [−0.0026, +0.0005] (`docs/logs/final/grouping_ablation_n1n2n9p.txt`) → dự báo LB 0.38 (dưới độ phân giải). Đúng dự báo | **0.38** |
 | 2026-11-10 19:14 | `submission_ens_n1n2n9p_nogroup_nofilt.csv` | loại 3 (ablation gộp instance): như trên nhưng **không gộp** (r 0) | OOF 0.4293, Δ −0.0061 [−0.0105, −0.0018], FP +438 → dự báo LB 0.37–0.38. Thực tế 0.37: bỏ gộp là bước thứ hai LB thấy được (sau hysteresis) | **0.37** |
 | 2026-11-10 ~04:20 | `submission_ens_n1n2n9p_cc_orient.csv` | loại 3 (ablation hysteresis trên final 1 cho bảng report): N1 + N2 + N9', mode cc thay hysteresis, cùng t 0.5 / area 200 / gộp theo hướng, không lọc FP | OOF 0.4119 so với 0.4354 (hysteresis, cùng tham số, không lọc): Δ −0.0235 → dự báo LB 0.36 (ablation tương tự trên N1 + N2: 0.36 so với 0.37). Đúng dự báo: hysteresis là bước hậu xử lý duy nhất LB thấy được | **0.36** |
@@ -108,6 +108,10 @@ Val luôn cao hơn LB khoảng 0.03–0.07, nhưng thứ tự giữa các model 
 được để chọn model (xem [DATA_AND_METRIC.md](DATA_AND_METRIC.md#khoảng-cách-val--lb)).
 
 ## Nhật ký
+
+### 2026-11-11
+
+- Nộp 5 lượt loại 3 cho bảng ablation (map final 1 không lọc, tham số final 1 cố định, OOF 707 ảnh; log `docs/logs/final/ablation_11_11*.txt`): N1 + N9' (bỏ N2) OOF 0.4371 (+0.0017 [−0.0009, +0.0042]) LB **0.38**; N2 + N9' (bỏ N1) 0.4262 (−0.0091) LB **0.38**; 3 model fold 0 (một model mỗi họ) LB **0.38**; N9' fold 0 đơn (fold 0 0.4267 so với 0.4420 của 3 model) LB **0.37**; ngưỡng thường không hysteresis/gộp 0.3985 (−0.0369) LB **0.35**. Cả 5 đúng dự báo. Không đổi final: N1 + N9' hơn final 1 +0.0017 nhưng CI chạm 0 và đo với tham số tune cho pool 3 họ (luật § 5b). Bảng report cập nhật.
 
 ### 2026-11-10
 
