@@ -1,0 +1,4 @@
+base: best th 0.375 PQ 0.4372 counts [4839 2006 3360] | nested PQ 0.4369
+agree: best th 0.325 PQ 0.4385 counts [4854 1986 3345] | nested PQ 0.4377
+best-th: agree - base +0.0013 [-0.0004, +0.0029] P>0 0.94
+nested: agree - base +0.0008 [-0.0010, +0.0026] P>0 0.83

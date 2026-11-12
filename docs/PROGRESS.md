@@ -45,6 +45,8 @@ việc đổi trạng thái.
 
 | Ngày (UTC) | File | Mô tả | val PQ | Public LB |
 |---|---|---|---|---|
+| 2026-11-12 ~10:10 | `submission_ens_n1n9p_orient.csv` | **ứng viên final 2 mới**: N1 + N9' (1:1), hậu xử lý như final 1, lọc FP riêng (`configs/fpfilter_ens_n1n9p_orient.pkl`, ngưỡng 0.275). Cross-tune `hyst_final` 707 ảnh: N1 + N9' hơn N1 + N2 (final 2 cũ) **+0.0061 [+0.0029, +0.0094]**, ngang final 1 (+0.0018 [−0.0008, +0.0043]) | OOF 0.4382 (quyết định lọc CV) so với final 1 0.4372 → dự báo LB 0.38 (như bản không lọc 11/11) | chờ |
+| 2026-11-12 (sau kernel) | kernel `filseg-final-infer` v3: `submission_final2.csv` | loại 1 (tái lập final 2 mới N1 + N9' + lọc FP từ 10 checkpoint trên Kaggle). Map N9' trên T4 khác Colab L4 nên không đòi trùng byte; đạt nếu LB bằng bản local. Từ nay final 2 = CSV do kernel tạo | như trên → LB 0.38 | chờ |
 | 2026-11-11 ~04:15 | `submission_ens_n1n9p_orient_nofilt.csv` | loại 3 (ablation bỏ một họ khỏi final 1, không lọc FP, tham số final 1 cố định): N1 + N9' (bỏ N2) | OOF 0.4371 so với 0.4354, Δ +0.0017 [−0.0009, +0.0042] (`docs/logs/final/ablation_11_11.txt`); không đủ để đổi final (luật gate, CI chạm 0) → dự báo LB 0.38. Đúng dự báo | **0.38** |
 | 2026-11-11 ~04:15 | `submission_ens_n2n9p_orient_nofilt.csv` | loại 3: N2 + N9' (bỏ N1) | OOF 0.4262, Δ −0.0091 [−0.0125, −0.0056], FP +727 → dự báo LB 0.37–0.38. Đúng dự báo (Δ −0.009 không thấy trên LB) | **0.38** |
 | 2026-11-11 ~04:15 | `submission_ens_f0x3_orient_nofilt.csv` | loại 3 (lợi của ensemble 5 fold trên test): mỗi họ chỉ model fold 0 (3 model thay 15), tham số final 1, không lọc | OOF chỉ đo được trên fold 0: 0.4420 (bằng pool vì cùng model); lợi 5 fold không đo được trên OOF → dự báo LB 0.37–0.38. Đúng dự báo: 3 model bằng 15 model trên LB | **0.38** |
@@ -108,6 +110,12 @@ Val luôn cao hơn LB khoảng 0.03–0.07, nhưng thứ tự giữa các model 
 được để chọn model (xem [DATA_AND_METRIC.md](DATA_AND_METRIC.md#khoảng-cách-val--lb)).
 
 ## Nhật ký
+
+### 2026-11-12
+
+- Máy bị tải nặng bởi job project khác (load ~170, RAM trống 0.3 GB): lần cross-tune `hyst_soft` đầu bị treo 5 h (worker chết), chạy lại với 4–6 worker. Grid `hyst_soft` (70 combo × 707 ảnh × 3 pool) quá chậm trong điều kiện này nên thêm grid nhỏ `hyst_final` (t 0.4/0.5 × seed 0.95/0.99, area 200, gộp theo hướng r 6 L 16), khai báo trước khi xem số, giống nhau cho mọi nhánh.
+- **Final 2 đổi sang N1 + N9'** (quy tắc PLAN § N6: bài 2 = phương án tốt thứ nhì theo OOF cross-tune). Cross-tune `hyst_final`: final 1 0.4350, N1 + N9' 0.4367 (+0.0018 [−0.0008, +0.0043], không đủ để thay final 1), N1 + N2 0.4306; N1 + N9' so với N1 + N2 **+0.0061 [+0.0029, +0.0094]**. Lọc FP riêng cho N1 + N9': CV 0.4371 → 0.4382 (ngưỡng 0.275). Kernel/notebook sửa: final 2 = N1 + N9' + lọc.
+- Rà ý tưởng không cần train (agent đọc toàn bộ hồ sơ): 7 ý, kỳ vọng mỗi ý ≤ +0.003. Thử ý số 1: thêm feature đồng thuận giữa 3 họ (mean từng họ, std, min, phiếu ≥ 2/3, IoU với thành phần từng họ) vào lọc FP của final 1: **+0.0013 [−0.0004, +0.0029]** (ngưỡng tốt nhất), nested +0.0008 [−0.0010, +0.0026] → CI chạm 0, **không nhận**. Code: `family_agreement_features` (`src/filseg/instfilter.py`), `scripts/research/family_agree_filter.py`, log `docs/logs/final/family_agree_filter_n1n2n9p.txt`.
 
 ### 2026-11-11
 

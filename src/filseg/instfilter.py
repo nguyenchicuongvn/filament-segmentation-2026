@@ -157,3 +157,39 @@ def agreement_features(inst: np.ndarray, base_prob: np.ndarray, other_probs: lis
     return np.column_stack([
         others, means.std(1), others.min(1), vote3, best_iou.mean(1),
     ]).astype(np.float32)
+
+
+# cross-family agreement for a pooled map: k family maps whose mean is the pool
+FAMILY_AGREE_FEATURES = ["fam_mean_n1", "fam_mean_n2", "fam_mean_n9p", "fam_std", "fam_min",
+                         "fam_vote2", "fam_iou_mean", "fam_iou_min"]
+
+
+def family_agreement_features(inst: np.ndarray, family_probs: list[np.ndarray],
+                              thresh: float = 0.5) -> np.ndarray:
+    """(n_instances, 3 + 5) for labels 1..n of `inst` from the k family maps (same resolution):
+    per-family instance mean, std and min of those means, fraction of instance pixels where at
+    least 2 families have p > thresh, and mean / min over families of the best IoU between the
+    instance and a component (8-connected, area >= 50) of that family's p > thresh map."""
+    n = int(inst.max())
+    k = len(family_probs)
+    if n == 0:
+        return np.zeros((0, k + 5), np.float32)
+    flat = inst.ravel()
+    area = np.bincount(flat, minlength=n + 1).astype(np.float64)[1:]
+    means = np.stack([np.bincount(flat, weights=p.ravel().astype(np.float64), minlength=n + 1)[1:] / area
+                      for p in family_probs], 1)
+    votes = sum((p > thresh).astype(np.int32) for p in family_probs)
+    vote2 = np.bincount(flat, weights=(votes.ravel() >= 2).astype(np.float64), minlength=n + 1)[1:] / area
+    best_iou = np.zeros((n, k))
+    for j, p in enumerate(family_probs):
+        lab, carea = _components(p, thresh)
+        lab = lab.ravel()
+        both = (flat > 0) & (lab > 0)
+        if not both.any():
+            continue
+        L = len(carea)
+        pairs, inter = np.unique(flat[both].astype(np.int64) * L + lab[both], return_counts=True)
+        ki, ci = pairs // L, pairs % L
+        np.maximum.at(best_iou[:, j], ki - 1, inter / (area[ki - 1] + carea[ci] - inter))
+    return np.column_stack([means, means.std(1), means.min(1), vote2,
+                            best_iou.mean(1), best_iou.min(1)]).astype(np.float32)

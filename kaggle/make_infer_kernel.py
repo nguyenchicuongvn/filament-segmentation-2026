@@ -24,7 +24,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SLUG = "filseg-final-infer"
 SCRIPTS = ["infer_probs.py", "ensemble_probs.py", "make_submission.py", "map_hashes.py"]
 CONFIGS = ["fpfilter_ens_n1n2n9p_orient.pkl", "post_ens_n1n2n9p_hyst_orient.json",
-           "fpfilter_ens_n1n2_orient.pkl", "post_ens_n1n2_hyst_orient.json"]
+           "fpfilter_ens_n1n9p_orient.pkl"]
 
 CELLS = [
     ("markdown", """# Filament segmentation: final inference
@@ -38,8 +38,8 @@ the test H-alpha images:
 
 * **final 1**: N1, N2 and N9' family maps averaged 1:1:1 at 2048, hysteresis (t 0.5, seed 0.99, area 200),
   oriented fragment grouping (r 6, line 16), FP filter (`configs/fpfilter_ens_n1n2n9p_orient.pkl`).
-* **final 2**: N1 + N2 averaged 1:1, hysteresis (t 0.4, seed 0.99, area 200), oriented grouping, FP filter
-  (`configs/fpfilter_ens_n1n2_orient.pkl`).
+* **final 2**: N1 + N9' averaged 1:1 at 2048, same post-processing as final 1, FP filter
+  (`configs/fpfilter_ens_n1n9p_orient.pkl`).
 
 Every map is 8x TTA (4 rotations x flip), saved as uint8. On a 2-GPU machine N1 + N9' and N2 run in parallel."""),
     ("code", """# parameters
@@ -89,14 +89,14 @@ run(f'{sys.executable} scripts/ensemble_probs.py --inputs ' + ' '.join(str(m / n
 run(f'{sys.executable} scripts/ensemble_probs.py --inputs ' + ' '.join(str(m / n) for n in N2) + f' --out {m}/n2')
 run(f'{sys.executable} scripts/ensemble_probs.py --inputs ' + ' '.join(str(m / n) for n in N9) + f' --out {m}/n9p')
 run(f'{sys.executable} scripts/ensemble_probs.py --inputs {m}/n1 {m}/n2 {m}/n9p --out {m}/n1n2n9p')
-run(f'{sys.executable} scripts/ensemble_probs.py --inputs {m}/n1 {m}/n2 --out {m}/n1n2')
+run(f'{sys.executable} scripts/ensemble_probs.py --inputs {m}/n1 {m}/n9p --out {m}/n1n9p')
 run(f'{sys.executable} scripts/make_submission.py --probs {m}/n1n2n9p --filter configs/fpfilter_ens_n1n2n9p_orient.pkl '
     f'--out {OUT}/submission_final1.csv')
-run(f'{sys.executable} scripts/make_submission.py --probs {m}/n1n2 --filter configs/fpfilter_ens_n1n2_orient.pkl '
+run(f'{sys.executable} scripts/make_submission.py --probs {m}/n1n9p --filter configs/fpfilter_ens_n1n9p_orient.pkl '
     f'--out {OUT}/submission_final2.csv')"""),
     ("code", """# hashes for the reproducibility check, then drop the maps (several GB)
 import hashlib, shutil
-dirs = ' '.join(f'{n}={m / n}' for n in N1 + N2 + N9 + ['n1', 'n2', 'n9p', 'n1n2n9p', 'n1n2'])
+dirs = ' '.join(f'{n}={m / n}' for n in N1 + N2 + N9 + ['n1', 'n2', 'n9p', 'n1n2n9p', 'n1n9p'])
 run(f'{sys.executable} scripts/map_hashes.py --dirs {dirs} --out {OUT}/map_hashes.json')
 for f in ('submission_final1.csv', 'submission_final2.csv'):
     print(f, hashlib.sha256((OUT / f).read_bytes()).hexdigest())

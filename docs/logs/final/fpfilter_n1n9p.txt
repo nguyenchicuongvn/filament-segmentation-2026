@@ -1,0 +1,58 @@
+707 images, 4532 instances, target clf mean 0.759
+no filter: pq 0.4371 {'tp': 5026, 'fp': 2361, 'fn': 3173}
+th 0.050: pq 0.4371 {'tp': 5026, 'fp': 2361, 'fn': 3173}
+th 0.075: pq 0.4371 {'tp': 5026, 'fp': 2361, 'fn': 3173}
+th 0.100: pq 0.4371 {'tp': 5025, 'fp': 2357, 'fn': 3174}
+th 0.125: pq 0.4372 {'tp': 5024, 'fp': 2350, 'fn': 3175}
+th 0.150: pq 0.4373 {'tp': 5021, 'fp': 2344, 'fn': 3178}
+th 0.175: pq 0.4375 {'tp': 5018, 'fp': 2330, 'fn': 3181}
+th 0.200: pq 0.4376 {'tp': 5014, 'fp': 2317, 'fn': 3185}
+th 0.225: pq 0.4377 {'tp': 5011, 'fp': 2310, 'fn': 3188}
+th 0.250: pq 0.4379 {'tp': 5004, 'fp': 2289, 'fn': 3195}
+th 0.275: pq 0.4382 {'tp': 4993, 'fp': 2253, 'fn': 3206}
+th 0.300: pq 0.4382 {'tp': 4974, 'fp': 2216, 'fn': 3225}
+th 0.325: pq 0.4376 {'tp': 4955, 'fp': 2196, 'fn': 3244}
+th 0.350: pq 0.4376 {'tp': 4932, 'fp': 2153, 'fn': 3267}
+th 0.375: pq 0.4373 {'tp': 4910, 'fp': 2126, 'fn': 3289}
+th 0.400: pq 0.4366 {'tp': 4871, 'fp': 2074, 'fn': 3328}
+th 0.425: pq 0.4358 {'tp': 4838, 'fp': 2038, 'fn': 3361}
+th 0.450: pq 0.4348 {'tp': 4795, 'fp': 1985, 'fn': 3404}
+th 0.475: pq 0.4339 {'tp': 4754, 'fp': 1933, 'fn': 3445}
+th 0.500: pq 0.4326 {'tp': 4700, 'fp': 1874, 'fn': 3499}
+th 0.525: pq 0.4307 {'tp': 4640, 'fp': 1818, 'fn': 3559}
+th 0.550: pq 0.4293 {'tp': 4576, 'fp': 1743, 'fn': 3623}
+th 0.575: pq 0.4276 {'tp': 4518, 'fp': 1683, 'fn': 3681}
+th 0.600: pq 0.4268 {'tp': 4463, 'fp': 1598, 'fn': 3736}
+th 0.625: pq 0.4249 {'tp': 4394, 'fp': 1517, 'fn': 3805}
+th 0.650: pq 0.4219 {'tp': 4304, 'fp': 1429, 'fn': 3895}
+th 0.675: pq 0.4181 {'tp': 4207, 'fp': 1344, 'fn': 3992}
+th 0.700: pq 0.4139 {'tp': 4096, 'fp': 1250, 'fn': 4103}
+th 0.725: pq 0.4068 {'tp': 3949, 'fp': 1157, 'fn': 4250}
+best: pq 0.4382 at th 0.275 {'tp': 4993, 'fp': 2253, 'fn': 3206} (no filter 0.4371)
+/Users/dybala/Working/Learning/kaggle/filament-segmentation-2026/.venv/lib/python3.12/site-packages/sklearn/utils/parallel.py:144: UserWarning: `sklearn.utils.parallel.delayed` should be used with `sklearn.utils.parallel.Parallel` to make it possible to propagate the scikit-learn configuration of the current thread to the joblib workers.
+  warnings.warn(
+/Users/dybala/Working/Learning/kaggle/filament-segmentation-2026/.venv/lib/python3.12/site-packages/sklearn/utils/parallel.py:144: UserWarning: `sklearn.utils.parallel.delayed` should be used with `sklearn.utils.parallel.Parallel` to make it possible to propagate the scikit-learn configuration of the current thread to the joblib workers.
+  warnings.warn(
+/Users/dybala/Working/Learning/kaggle/filament-segmentation-2026/.venv/lib/python3.12/site-packages/sklearn/utils/parallel.py:144: UserWarning: `sklearn.utils.parallel.delayed` should be used with `sklearn.utils.parallel.Parallel` to make it possible to propagate the scikit-learn configuration of the current thread to the joblib workers.
+  warnings.warn(
+/Users/dybala/Working/Learning/kaggle/filament-segmentation-2026/.venv/lib/python3.12/site-packages/sklearn/utils/parallel.py:144: UserWarning: `sklearn.utils.parallel.delayed` should be used with `sklearn.utils.parallel.Parallel` to make it possible to propagate the scikit-learn configuration of the current thread to the joblib workers.
+  warnings.warn(
+/Users/dybala/Working/Learning/kaggle/filament-segmentation-2026/.venv/lib/python3.12/site-packages/sklearn/utils/parallel.py:144: UserWarning: `sklearn.utils.parallel.delayed` should be used with `sklearn.utils.parallel.Parallel` to make it possible to propagate the scikit-learn configuration of the current thread to the joblib workers.
+  warnings.warn(
+/Users/dybala/Working/Learning/kaggle/filament-segmentation-2026/.venv/lib/python3.12/site-packages/sklearn/utils/parallel.py:144: UserWarning: `sklearn.utils.parallel.delayed` should be used with `sklearn.utils.parallel.Parallel` to make it possible to propagate the scikit-learn configuration of the current thread to the joblib workers.
+  warnings.warn(
+/Users/dybala/Working/Learning/kaggle/filament-segmentation-2026/.venv/lib/python3.12/site-packages/sklearn/utils/parallel.py:144: UserWarning: `sklearn.utils.parallel.delayed` should be used with `sklearn.utils.parallel.Parallel` to make it possible to propagate the scikit-learn configuration of the current thread to the joblib workers.
+  warnings.warn(
+/Users/dybala/Working/Learning/kaggle/filament-segmentation-2026/.venv/lib/python3.12/site-packages/sklearn/utils/parallel.py:144: UserWarning: `sklearn.utils.parallel.delayed` should be used with `sklearn.utils.parallel.Parallel` to make it possible to propagate the scikit-learn configuration of the current thread to the joblib workers.
+  warnings.warn(
+/Users/dybala/Working/Learning/kaggle/filament-segmentation-2026/.venv/lib/python3.12/site-packages/sklearn/utils/parallel.py:144: UserWarning: `sklearn.utils.parallel.delayed` should be used with `sklearn.utils.parallel.Parallel` to make it possible to propagate the scikit-learn configuration of the current thread to the joblib workers.
+  warnings.warn(
+/Users/dybala/Working/Learning/kaggle/filament-segmentation-2026/.venv/lib/python3.12/site-packages/sklearn/utils/parallel.py:144: UserWarning: `sklearn.utils.parallel.delayed` should be used with `sklearn.utils.parallel.Parallel` to make it possible to propagate the scikit-learn configuration of the current thread to the joblib workers.
+  warnings.warn(
+/Users/dybala/Working/Learning/kaggle/filament-segmentation-2026/.venv/lib/python3.12/site-packages/sklearn/utils/parallel.py:144: UserWarning: `sklearn.utils.parallel.delayed` should be used with `sklearn.utils.parallel.Parallel` to make it possible to propagate the scikit-learn configuration of the current thread to the joblib workers.
+  warnings.warn(
+/Users/dybala/Working/Learning/kaggle/filament-segmentation-2026/.venv/lib/python3.12/site-packages/sklearn/utils/parallel.py:144: UserWarning: `sklearn.utils.parallel.delayed` should be used with `sklearn.utils.parallel.Parallel` to make it possible to propagate the scikit-learn configuration of the current thread to the joblib workers.
+  warnings.warn(
+/Users/dybala/Working/Learning/kaggle/filament-segmentation-2026/.venv/lib/python3.12/site-packages/sklearn/utils/parallel.py:144: UserWarning: `sklearn.utils.parallel.delayed` should be used with `sklearn.utils.parallel.Parallel` to make it possible to propagate the scikit-learn configuration of the current thread to the joblib workers.
+  warnings.warn(
+-> configs/fpfilter_ens_n1n9p_orient.pkl
