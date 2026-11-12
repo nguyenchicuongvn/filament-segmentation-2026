@@ -1,0 +1,4 @@
+no filter: pq 0.4290 {'tp': 5282, 'fp': 3146, 'fn': 2917}
+th 0.275: pq 0.4364 {'tp': 5168, 'fp': 2648, 'fn': 3031}
+best: pq 0.4382 at th 0.350 {'tp': 5086, 'fp': 2422, 'fn': 3113} (no filter 0.4290)
+-> configs/fpfilter_ens_n1n9p_recall_s80a50.pkl
