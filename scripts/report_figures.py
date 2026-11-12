@@ -1,6 +1,7 @@
-"""Numbers and figures for the technical report (report/), from the out-of-fold maps of final 1.
+"""Numbers and figures for the technical report (report/), from the out-of-fold maps of the main pipeline
+(N1 + N9'; the three-family numbers of 09/11 are kept as docs/logs/final/*_n1n2n9p.*).
 
-  python scripts/report_figures.py stats     # docs/logs/final/report_stats.json and rubric_final1.json
+  python scripts/report_figures.py stats     # docs/logs/final/report_stats.json and rubric_final.json
   python scripts/report_figures.py figures   # report/figures/*.pdf
 
 The FP filter in configs/ was fitted on all 707 out-of-fold images, so applying it to the same images
@@ -33,11 +34,11 @@ from filseg.data import N_FOLDS, by_image, encode_masks, fold_split, load_gray, 
 from filseg.dl import PostParams, instances_lowres, load_maps, upsample_labels  # noqa: E402
 from filseg.metric import IOU_THRESHOLD  # noqa: E402
 
-PROBS = ROOT / "outputs/ens/n1n2n9p_oof"
-FILTER = ROOT / "configs/fpfilter_ens_n1n2n9p_orient.pkl"
+PROBS = ROOT / "outputs/ens/abl/n1n9p_oof"   # main pipeline since 12/11: N1 + N9' (10 models)
+FILTER = ROOT / "configs/fpfilter_ens_n1n9p_orient.pkl"
 STATS = ROOT / "docs/logs/final/report_stats.json"
 KEEP = ROOT / "docs/logs/final/report_keep.json"
-RUBRIC = ROOT / "docs/logs/final/rubric_final1.json"
+RUBRIC = ROOT / "docs/logs/final/rubric_final.json"
 FIG = ROOT / "report/figures"
 
 
@@ -174,8 +175,8 @@ def fig_pipeline(plt) -> None:
 
     boxes = [
         ("H-$\\alpha$ image\n2048$^2$\ngray / 255", "#eeeeee"),
-        ("15 U-Nets\nN1 B4 @1024\nN2 B4 crops\nN9$'$ V2-S crops", "#dbe8f5"),
-        ("8$\\times$ TTA\nfold mean\nfamilies 1:1:1", "#dbe8f5"),
+        ("10 U-Nets\nN1 B4 @1024\nN9$'$ V2-S crops\n5 folds each", "#dbe8f5"),
+        ("8$\\times$ TTA\nfold mean\nfamilies 1:1", "#dbe8f5"),
         ("hysteresis\n$p > 0.5$\npeak $> 0.99$\narea $\\geq$ 200", "#f5e6d3"),
         ("oriented\ngrouping\nr 6, $\\pm$16 px", "#f5e6d3"),
         ("FP filter\nboosted trees\n17 features", "#f5e6d3"),
@@ -263,7 +264,7 @@ def fig_examples(plt, st: dict) -> None:
             sp.set_visible(False)
         for j, (e, lab) in enumerate(zip(es, gts)):
             _overlay(row[1 + j], gray, lab, box, f"annotator {chr(65 + j)} ({len(e.gt_rles)} filaments)", False)
-        _overlay(row[3], gray, pred, box, f"final 1 (image PQ {st['per_image_pq'][stem]:.2f})", True)
+        _overlay(row[3], gray, pred, box, f"prediction (image PQ {st['per_image_pq'][stem]:.2f})", True)
     fig.tight_layout(pad=0.2, w_pad=0.3, h_pad=0.8)
     fig.savefig(FIG / "examples.pdf", bbox_inches="tight", pad_inches=0.01, dpi=300)
 

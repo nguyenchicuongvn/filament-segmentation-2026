@@ -1,0 +1,67 @@
+{
+ "probs": "/Users/dybala/Working/Learning/kaggle/filament-segmentation-2026/outputs/ens/abl/n1n9p_oof",
+ "filter": "/Users/dybala/Working/Learning/kaggle/filament-segmentation-2026/configs/fpfilter_ens_n1n9p_orient.pkl (out-of-fold scores)",
+ "images": 707,
+ "pq": 0.4382457244970757,
+ "sq": 0.6778194687419731,
+ "tp": 4993,
+ "fp": 2253,
+ "fn": 3206,
+ "entries": 1154,
+ "dice_mean": 0.669472553539679,
+ "dice_nan_entries": 0,
+ "dice_percentiles": {
+  "10": 0.4974,
+  "25": 0.6213,
+  "50": 0.7028,
+  "75": 0.7708,
+  "90": 0.8128
+ },
+ "dice_hist": [
+  32,
+  2,
+  6,
+  21,
+  56,
+  118,
+  327,
+  430,
+  161,
+  1
+ ],
+ "gt_best_iou_hist": [
+  1787,
+  147,
+  290,
+  429,
+  552,
+  1086,
+  1759,
+  1781,
+  368,
+  0
+ ],
+ "tp_iou_mean": 0.6778194687419731,
+ "tp_iou_percentiles": {
+  "10": 0.5553,
+  "25": 0.6116,
+  "50": 0.6824,
+  "75": 0.7453,
+  "90": 0.7895
+ },
+ "one_n_rate": 0.034394438346139776,
+ "n_one_rate": 0.037819185645272604,
+ "one_n_counts": {
+  "0": 1741,
+  "1": 6176,
+  "2": 245,
+  "3": 37
+ },
+ "n_one_counts": {
+  "0": 758,
+  "1": 6213,
+  "2": 259,
+  "3": 15
+ },
+ "rq": 0.646552282292003
+}
