@@ -270,7 +270,7 @@ xong. Trên T4: `--bs 4`, ~2.3 h/fold → chỉ kịp **một** họ trước 09
 | **10/11** Thứ 3 | Weights vào `weights/` + `SHA256SUMS`: fp32 nếu tổng ≤ ~1 GB (10 model = 817 MB; mỗi file 81.7 MB < 100 MiB), quá thì fp16 (plan B, gate: \|Δ PQ OOF\| < 0.0005 và LB bằng). Không dùng Git LFS (băng thông 10 GiB/tháng). Clone sạch + pytest | 1–2. final 1 / final 2 từ **clone sạch** (loại 1) · 3–5. trống | trùng byte |
 | **11/11** Thứ 4 | Notebook chạy từ tag `freeze` trên kernel mới; ghi phiên bản torch/timm/smp của kernel vào README | 1–2. dự phòng cho sửa tái lập | – |
 | **12/11** Thứ 5 | Report 4 trang bản 1: phân rã lỗi (F52), inter-annotator 0.34, bảng thành viên / fold OOF + LB, thang suy giảm, "vì sao không tiền xử lý vật lý", các hướng đã loại có số | trống | – |
-| **13/11** Thứ 6 | Report bản cuối; **tick 2 final bằng tay** trên Kaggle (không để Kaggle tự chọn giữa 7 bài 0.37), chụp màn hình; tag `final` | không nộp sau khi tick | – |
+| **13/11** Thứ 6 | *(Chốt 12/11: final 1 = kernel `submission_final1.csv` ref 58174035; final 2 = N1 + N9' CSV local ref 58269004.)* Report bản cuối; **tick 2 final bằng tay** trên Kaggle (không để Kaggle tự chọn giữa 7 bài 0.37), chụp màn hình; tag `final` | không nộp sau khi tick | – |
 | **14/11** Thứ 7 | Không đổi code, không nộp | – | – |
 | **15/11** CN | Hạn 06:00 UTC. Sau khi đóng: repo sang public, thử clone ẩn danh, nộp Google form buổi sáng UTC | – | – |
 

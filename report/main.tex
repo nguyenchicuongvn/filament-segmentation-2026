@@ -162,7 +162,7 @@ Figure~\ref{fig:rubric} gives the rubric's distributions for the final pipeline 
 \end{figure}
 
 \subsection{Strengths, weaknesses and what did not work}
-\emph{Strengths.} The pipeline is simple (three U-Net families and four classical post-processing steps), every component was accepted by a pre-registered OOF test, and it is fully reproducible: a Kaggle kernel rebuilt both final submissions from the repository and the test images alone; the N1+N2 submission matched byte for byte, and final~1 scored the same leaderboard value.
+\emph{Strengths.} The pipeline is simple (three U-Net families and four classical post-processing steps), every component was accepted by a pre-registered OOF test, and it is fully reproducible: a Kaggle kernel rebuilt the final submissions from the repository and the test images alone; the N1+N2 submission matched byte for byte, and final~1 scored the same leaderboard value. Our second final, N1+N9$'$ with its own filter (OOF 0.4382, LB 0.38), is built by the same notebook; it was submitted from locally computed maps because the Kaggle GPU quota was used up.
 
 \emph{Weaknesses.} Decomposing $1-\mathrm{PQ}$ on OOF gives 36\% boundary error, 38\% false negatives and 26\% false positives. Most remaining error is annotator disagreement: 34\% of our false positives coincide with a filament drawn by another annotator of the same image, 38\% of false negatives are filaments that only one annotator drew, and filaments below 1{,}000~px are missed 54\% of the time (humans miss small filaments of each other at a similar rate). Turning near-misses (IoU 0.3--0.5) into matches would be worth up to $+0.055$, fixing merges $+0.028$ and splits $+0.015$; dropping every FP that touches no annotator only $+0.010$.
 

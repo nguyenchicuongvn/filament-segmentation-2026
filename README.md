@@ -127,10 +127,12 @@ kaggle datasets download nguyenchicuong/filseg-unet1024-r34 -p outputs/colab/une
 
 `notebooks/final_inference.ipynb` rebuilds both final submissions from the 15 checkpoints in `weights/`
 (fp32, `SHA256SUMS`) and the test H-alpha images only (8x-TTA maps, fold and family averages, hysteresis
-+ oriented grouping + FP filter): final 1 = N1 + N2 + N9', final 2 = N1 + N2.
++ oriented grouping + FP filter): final 1 = N1 + N2 + N9', final 2 = N1 + N9' (own FP filter).
 `kaggle/make_infer_kernel.py` builds the same notebook as a Kaggle kernel. On 2026-11-09 (T4 x2, torch
 2.11.0+cu130, maps in 90 min) final 2 matched the submitted CSV byte for byte; final 1 scored the same
 LB 0.38, with N9' maps differing from the Colab-made ones, so the kernel's CSV is the final 1 file.
+Final 2 changed to N1 + N9' on 2026-11-12 (OOF 0.4382, LB 0.38); the Kaggle GPU quota was used up, so
+its file is the CSV made locally from the same maps and code (`outputs/submission_ens_n1n9p_orient.csv`).
 
 ## License
 
