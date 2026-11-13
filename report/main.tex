@@ -131,7 +131,7 @@ Table~\ref{tab:results} builds the pipeline one step at a time. Each row's $\Del
     N2 single family & 0.4129 & $-0.005$ [$-0.010$, $-0.0003$] & 0.37 \\
     N1 + N2 & 0.4284 & $+0.011$ [$+0.007$, $+0.014$] & 0.37 \\
     N1 + N2 + N9$'$ & 0.4339 & $+0.006$ [$+0.003$, $+0.008$] & 0.38 \\
-    \quad + FP filter (second submission) & 0.4372 & CV filter & 0.38 \\
+    \quad + FP filter (not selected) & 0.4372 & CV filter & 0.38 \\
     N1 + N9$'$ $^\ddagger$ & 0.4367 & $+0.002$ [$-0.001$, $+0.004$] & 0.38 \\
     \quad + FP filter (\textbf{main}) & \textbf{0.4382} & $+0.001$ [$+0.000$, $+0.002$] & \textbf{0.38} \\
     \midrule
@@ -163,7 +163,7 @@ Figure~\ref{fig:rubric} gives the rubric's distributions for the final pipeline 
 \end{figure}
 
 \subsection{Strengths, weaknesses and what did not work}
-\emph{Strengths.} The pipeline is simple (two U-Net families and four classical post-processing steps), every component was accepted by a pre-registered OOF test, its operating point is insensitive to the annotator mix, and one notebook builds both submissions from the repository and the test images alone. A Kaggle kernel ran it for the three-family submission (same leaderboard value; N1 maps byte-identical to the local ones); the main submission was made locally with the same code after our Kaggle GPU quota ran out.
+\emph{Strengths.} The pipeline is simple (two U-Net families and four classical post-processing steps), every component was accepted by a pre-registered OOF test, its operating point is insensitive to the annotator mix, and one notebook builds both pipelines from the repository and the test images alone. A Kaggle kernel ran it for the three-family submission (same leaderboard value; N1 maps byte-identical to the local ones); the main submission was made locally with the same code after our Kaggle GPU quota ran out.
 
 \emph{Weaknesses.} Decomposing $1-\mathrm{PQ}$ on OOF (before the filter) gives 37\% boundary error, 36\% false negatives and 27\% false positives. Most remaining error is annotator disagreement: 34\% of our false positives coincide with a filament drawn by another annotator of the same image, 39\% of false negatives are filaments that only one annotator drew, and filaments below 1{,}000~px are missed 50\% of the time (humans do so at a similar rate). Turning near-misses (IoU 0.3--0.5) into matches would be worth up to $+0.051$, fixing merges $+0.027$ and splits $+0.015$; dropping every FP that touches no annotator only $+0.012$.
 

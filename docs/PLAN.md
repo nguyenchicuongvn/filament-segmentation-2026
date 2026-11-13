@@ -16,14 +16,14 @@
   30% định tính) và chỉ xét đội có report, repo public, code tái lập được. **Đòn bẩy còn lại là hồ sơ
   xét giải**, không phải PQ.
 
-Kết luận: không train, không nộp thêm bài dò. Hai final giữ nguyên (final 1 ref 58174035, final 2
-ref 58269004). Toàn bộ thời gian dành cho report, repo public và khả năng tái lập.
+Kết luận: không train, không nộp thêm bài dò. Cuộc thi chỉ cho chọn **1** bài: 13/11 đã tick **58269004** (final 2, N1 + N9', OOF
+0.4382, chọn theo OOF); 58174035 (N1 + N2 + N9') thành phương án thay thế, không được chọn. Toàn bộ thời gian dành cho report, repo public và khả năng tái lập.
 
 ### 0.2 Lịch
 
 | Khi nào (giờ VN) | Việc | Ai | Xong khi |
 |---|---|---|---|
-| 13/11 | Tick 2 final trên Kaggle (58174035, 58269004) | người dùng | trang My Submissions hiện 2 ô đã tick |
+| 13/11 | Tick final trên Kaggle (chỉ được 1 bài) | người dùng | **Xong 13/11**: tick 58269004 (N1 + N9') |
 | 13/11 | Compile report trên Overleaf, báo số dòng còn vượt 4 trang | người dùng | PDF ≤ 4 trang |
 | 13–14/11 | **R1** Dọn repo cho bản public (§ 0.3) | Claude | checklist § 0.3 xanh. **Xong 13/11** (README tiếng Anh, notebook walkthrough); còn quyết định 6 nhánh remote |
 | 14/11 | **R2** Chạy notebook `final_inference.ipynb` có output (ảnh minh hoạ, PQ trên vài ảnh val, đường dẫn CSV) | Claude (Mac) | notebook lưu kèm output, chạy lại từ clone sạch. **Xong 13/11** |

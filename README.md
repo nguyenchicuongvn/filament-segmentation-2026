@@ -6,7 +6,7 @@ The 4-page technical report is in [`report/`](report/) (LaTeX source, host templ
 
 ## Result
 
-| | Main pipeline (Kaggle final 2) | Second submission (Kaggle final 1) |
+| | Main pipeline (selected Kaggle final) | Alternative: + N2 (submitted, not selected) |
 |---|---|---|
 | Networks | N1 + N9': 10 U-Nets (2 families × 5 folds) | N1 + N2 + N9': 15 U-Nets |
 | Out-of-fold PQ, 707 train images (95% CI) | **0.4382** [0.429, 0.447] | 0.4372 |
@@ -55,7 +55,9 @@ Kaggle T4 ×2 and Colab L4 GPUs.
 
 All 15 checkpoints are in [`weights/`](weights/) (fp32, verify with `cd weights && shasum -a 256 -c SHA256SUMS`).
 [`notebooks/final_inference.ipynb`](notebooks/final_inference.ipynb) runs the whole pipeline on the test
-images and writes `outputs/final/submission_final2.csv` (main pipeline) and `submission_final1.csv`:
+images and writes `outputs/final/submission_final2.csv` (main pipeline, the selected final) and `submission_final1.csv`
+(the N1 + N2 + N9' alternative). The competition scores one selected submission; the file names keep the
+labels used during development:
 
 ```bash
 .venv/bin/jupyter nbconvert --to notebook --execute --inplace notebooks/final_inference.ipynb
@@ -64,7 +66,7 @@ images and writes `outputs/final/submission_final2.csv` (main pipeline) and `sub
 `kaggle/make_infer_kernel.py` builds the same notebook as a Kaggle kernel. On Kaggle (T4 ×2) all 15
 models took 90 min, of which N2 took 75; the main pipeline alone (10 models) takes about 25 min on a T4.
 Post-processing and the filter run on the CPU. The committed notebook output was made on a laptop (Apple M5, maps
-reused from an earlier run): ensembling and post-processing of both finals took 38 min there, mostly reading
+reused from an earlier run): ensembling and post-processing of both pipelines took 38 min there, mostly reading
 maps from an external drive. Its CSVs have the same filaments as the submitted ones; 45 of 1038 masks differ by
 a few pixels (IoU ≥ 0.997) because some maps were recomputed on MPS instead of CUDA.
 Maps are computed per checkpoint with `scripts/infer_probs.py`, averaged with `scripts/ensemble_probs.py`
@@ -80,7 +82,7 @@ Colab / Kaggle GPUs with [`colab/train_unet.ipynb`](colab/train_unet.ipynb) (cod
 |---|---|---|
 | N1 | `train_unet.py --res 1024 --bs 4 --encoder efficientnet-b4 --targets soft --epochs 30 --val-every 10 --fold k` | 2.0 h T4 |
 | N9' | `train_unet.py --res 2048 --crop 512 --bs 16 --lr 3e-4 --encoder tu-tf_efficientnetv2_s.in21k_ft_in1k --targets soft --epochs 184 --val-every 184 --fold k` | 1.3 h L4 |
-| N2 (final 1 only) | `train_unet.py --res 2048 --crop 1024 --bs 4 --encoder efficientnet-b4 --targets soft --epochs 30 --val-every 10 --fold k` | 1.8 h T4 |
+| N2 (alternative only) | `train_unet.py --res 2048 --crop 1024 --bs 4 --encoder efficientnet-b4 --targets soft --epochs 30 --val-every 10 --fold k` | 1.8 h T4 |
 
 Each run writes its checkpoint and the 8x-TTA maps of its held-out images. Then, on the CPU:
 
@@ -99,7 +101,7 @@ Each run writes its checkpoint and the 8x-TTA maps of its held-out images. Then,
 
 The filters used by the finals are versioned in `configs/` and carry their post-processing config:
 `fpfilter_ens_n1n9p_orient.pkl` (main, threshold 0.275) and `fpfilter_ens_n1n2n9p_orient.pkl`
-(final 1, threshold 0.375); both use `post_ens_n1n2n9p_hyst_orient.json`.
+(alternative, threshold 0.375); both use `post_ens_n1n2n9p_hyst_orient.json`.
 
 ## Code layout
 
@@ -117,7 +119,7 @@ The filters used by the finals are versioned in `configs/` and carry their post-
 | `scripts/make_submission.py` | maps + post config + filter → submission CSV |
 | `scripts/compare.py` | paired-bootstrap comparison of two pipelines with cross-tuning |
 | `scripts/rubric_metrics.py`, `scripts/report_figures.py` | rubric metrics and report figures |
-| `notebooks/final_inference.ipynb` | end-to-end inference of both finals |
+| `notebooks/final_inference.ipynb` | end-to-end inference of the main pipeline and the alternative |
 | `colab/train_unet.ipynb` | GPU training queue (Colab) |
 | `configs/` | fitted post-processing and filters (also of earlier experiments) |
 | `weights/` | the 15 final checkpoints |
@@ -138,8 +140,8 @@ Operational helpers: `scripts/package_colab.py`, `scripts/kaggle_upload.py`, `sc
 | U-Net ResNet34 @768, 8x TTA, FP filter | 0.389 (val split) | 0.33 |
 | N1 alone, 5 folds, hysteresis | 0.4229 (OOF) | 0.37 |
 | N1 + N2 | 0.4284 (OOF) | 0.37 |
-| N1 + N2 + N9', oriented grouping (final 1) | 0.4372 (OOF) | 0.38 |
-| **N1 + N9' (final 2, main)** | **0.4382 (OOF)** | **0.38** |
+| N1 + N2 + N9', oriented grouping (alternative) | 0.4372 (OOF) | 0.38 |
+| **N1 + N9' (main, selected final)** | **0.4382 (OOF)** | **0.38** |
 
 Every experiment, with its pre-registered acceptance rule and outcome, is in
 [`docs/EXPERIMENTS.md`](docs/EXPERIMENTS.md). The working documents in `docs/` (`PROGRESS.md`, `PLAN.md`,
