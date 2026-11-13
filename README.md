@@ -1,139 +1,151 @@
 # Solar Filament Segmentation Challenge 2026
 
-Instance segmentation of solar filaments in GONG H-alpha images (MAGFiLO dataset).
-Competition: https://www.kaggle.com/competitions/filament-segmentation-2026 (PQ metric, deadline 2026-11-15).
-Prize conditions: [PRIZE_RULES.md](PRIZE_RULES.md).
+Instance segmentation of solar filaments in GONG H-alpha full-disk images (MAGFiLO dataset), scored by
+Panoptic Quality (PQ). Competition: https://www.kaggle.com/competitions/filament-segmentation-2026.
+The 4-page technical report is in [`report/`](report/) (LaTeX source, host template).
 
-**Current best:** public LB 0.38, OOF PQ 0.4382 — main pipeline (Kaggle final 2, the one described in the report): 5-fold U-Net EfficientNet-B4 @1024 (N1) + 5-fold U-Net EfficientNetV2-S @2048 on 512 crops (N9'), map average, hysteresis + oriented fragment grouping + instance FP filter. Second submission (Kaggle final 1): the same with a third family N2 (EfficientNet-B4, 1024 crops @2048), OOF 0.4372, LB 0.38. N2 adds nothing once N9' is in (+0.002 [-0.001, +0.004] for dropping it), so the main pipeline has 10 models instead of 15.
+## Result
 
-## Documentation
+| | Main pipeline (Kaggle final 2) | Second submission (Kaggle final 1) |
+|---|---|---|
+| Networks | N1 + N9': 10 U-Nets (2 families × 5 folds) | N1 + N2 + N9': 15 U-Nets |
+| Out-of-fold PQ, 707 train images (95% CI) | **0.4382** [0.429, 0.447] | 0.4372 |
+| Public leaderboard PQ | 0.38 | 0.38 |
+| Mean Dice of matched filaments / mean IoU of TPs | 0.669 / 0.678 | – |
+| Submission file | `outputs/submission_ens_n1n9p_orient.csv` | `submission_final1.csv` (Kaggle kernel) |
 
-| Doc | What it holds |
-|---|---|
-| [docs/PROGRESS.md](docs/PROGRESS.md) | **start here**: status, submission history, dated work log |
-| [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md) | every experiment: config, val/LB, conclusion |
-| [docs/DATA_AND_METRIC.md](docs/DATA_AND_METRIC.md) | dataset facts, PQ details, validation split, val↔LB gap |
-| [docs/PLAN.md](docs/PLAN.md) | next steps, deadlines, prize-deliverables checklist |
-| [docs/RESEARCH.md](docs/RESEARCH.md) | leaderboard contamination, honest ceilings, what other teams found |
-| [docs/logs/](docs/logs/) | training / tuning / search logs |
-| [PRIZE_RULES.md](PRIZE_RULES.md) | competition rules and prize conditions |
+Out-of-fold (OOF) PQ is the selection metric throughout: every model is trained once per fold of a
+5-fold split by image, and its held-out predictions cover all 707 training images. The public
+leaderboard (~90 images, two decimals) was used only to check reproducibility. The rubric metrics
+(Dice/IoU distributions, one-to-many and many-to-one counts) are in
+[`docs/logs/final/rubric_final.json`](docs/logs/final/rubric_final.json), made by
+`scripts/rubric_metrics.py`.
 
-## Setup
+## Pipeline
+
+```
+test H-alpha image (2048², gray)
+ ├─ N1:  U-Net EfficientNet-B4, whole image resized to 1024, 5 folds, 8x TTA ─┐  average 5 folds,
+ └─ N9': U-Net EfficientNetV2-S, trained on 512 crops at 2048, 5 folds, 8x TTA ┘  upsample N1, average 1:1
+      → hysteresis: components of p > 0.5 with area ≥ 200 px and peak p > 0.99
+      → oriented grouping: merge collinear fragments (disk r 6 ∪ ±16 px segment along the major axis)
+      → false-positive filter: gradient boosting on 17 instance features, drop score < 0.275
+      → upsample instances to 2048, COCO RLE → submission.csv (masks never overlap)
+```
+
+Training targets are soft (fraction of an image's annotators covering a pixel); loss BCE + soft Dice;
+AdamW, one-cycle schedule, last checkpoint. Only masks are used for training (no bounding boxes, spines
+or chirality labels) and only the test H-alpha images at inference. Details and ablations: the report.
+
+## Reproduce
+
+### 1. Setup
 
 ```bash
 uv venv --python 3.12 .venv
 uv pip install --python .venv -r requirements.txt
 kaggle competitions download filament-segmentation-2026 -p data && (cd data && unzip -q *.zip && rm *.zip)
+.venv/bin/python -m pytest -q tests          # metric, rubric metrics, grouping and loss tests
 ```
 
-## Environment
+Tested with Python 3.12.14 and the versions pinned in `requirements.txt`, on an Apple M5 (MPS),
+Kaggle T4 ×2 and Colab L4 GPUs.
 
-| | |
-|---|---|
-| Python | 3.12 (tested 3.12.14), packages pinned in `requirements.txt` |
-| Hardware | CPU only, no GPU needed for the classical baseline |
-| Reference machine | Apple M5, 10 cores, 32 GB RAM, macOS 27 |
-| Memory | < 1 GB per worker process (2048² images processed at 1024²) |
+### 2. Inference from the weights in this repo
 
-Measured runtimes on the reference machine:
+All 15 checkpoints are in [`weights/`](weights/) (fp32, verify with `cd weights && shasum -a 256 -c SHA256SUMS`).
+[`notebooks/final_inference.ipynb`](notebooks/final_inference.ipynb) runs the whole pipeline on the test
+images and writes `outputs/final/submission_final2.csv` (main pipeline) and `submission_final1.csv`:
 
-| Step | Time |
-|---|---|
-| Segment + RLE-encode one image, single core | ~0.22 s |
-| Test set prediction (180 images, 10 processes, incl. image loading) | ~13 s |
-| Validation evaluation (213 images, 10 processes) | ~31 s |
-| One random-search iteration (160 images) | ~8–10 s |
+```bash
+.venv/bin/jupyter nbconvert --to notebook --execute --inplace notebooks/final_inference.ipynb
+```
 
-## Layout
+`kaggle/make_infer_kernel.py` builds the same notebook as a Kaggle kernel. On Kaggle (T4 ×2) all 15
+models took 90 min, of which N2 took 75; the main pipeline alone (10 models) takes about 25 min on a T4.
+Post-processing and the filter run on the CPU in about 1 min for the 180 test images.
+Maps are computed per checkpoint with `scripts/infer_probs.py`, averaged with `scripts/ensemble_probs.py`
+and turned into a CSV by `scripts/make_submission.py`, so each step can also be run by hand.
+
+### 3. Training
+
+Each family is five runs of `scripts/train_unet.py`, one per held-out fold (`--fold 0..4`). We trained on
+Colab / Kaggle GPUs with [`colab/train_unet.ipynb`](colab/train_unet.ipynb) (code bundle from
+`scripts/package_colab.py`); the notebook calls exactly these commands:
+
+| Family | Command (`k` = 0..4) | GPU time per fold |
+|---|---|---|
+| N1 | `train_unet.py --res 1024 --bs 4 --encoder efficientnet-b4 --targets soft --epochs 30 --val-every 10 --fold k` | 2.0 h T4 |
+| N9' | `train_unet.py --res 2048 --crop 512 --bs 16 --lr 3e-4 --encoder tu-tf_efficientnetv2_s.in21k_ft_in1k --targets soft --epochs 184 --val-every 184 --fold k` | 1.3 h L4 |
+| N2 (final 1 only) | `train_unet.py --res 2048 --crop 1024 --bs 4 --encoder efficientnet-b4 --targets soft --epochs 30 --val-every 10 --fold k` | 1.8 h T4 |
+
+Each run writes its checkpoint and the 8x-TTA maps of its held-out images. Then, on the CPU:
+
+```bash
+# OOF maps of a family = the held-out maps of its 5 runs in one folder (707 images);
+# the pool is the 1:1 average of the two family folders
+.venv/bin/python scripts/ensemble_probs.py --inputs outputs/oof/n1 outputs/oof/n9p --out outputs/oof/n1n9p
+# hysteresis + oriented grouping grid on the OOF maps
+.venv/bin/python scripts/tune_post.py --probs outputs/oof/n1n9p --out configs/post_n1n9p.json
+# instance filter, 5-fold CV by image, threshold = argmax of OOF PQ
+.venv/bin/python scripts/fp_filter.py --probs outputs/oof/n1n9p --post configs/post_n1n9p.json \
+    --out configs/fpfilter_n1n9p.pkl
+# paired bootstrap over images against another pipeline, post-processing cross-tuned
+.venv/bin/python scripts/compare.py n1n9p=outputs/oof/n1n9p,tune:hyst other=outputs/oof/<other>,tune:hyst
+```
+
+The filters used by the finals are versioned in `configs/` and carry their post-processing config:
+`fpfilter_ens_n1n9p_orient.pkl` (main, threshold 0.275) and `fpfilter_ens_n1n2n9p_orient.pkl`
+(final 1, threshold 0.375); both use `post_ens_n1n2n9p_hyst_orient.json`.
+
+## Code layout
 
 | Path | Purpose |
 |---|---|
-| `src/filseg/data.py` | image/annotation loading, COCO RLE helpers |
+| `src/filseg/data.py` | image and annotation loading, folds by image, COCO RLE helpers |
 | `src/filseg/metric.py` | Panoptic Quality, same rules as the host's self-evaluation notebook |
-| `src/filseg/classical.py` | classical (no-learning) baseline |
-| `src/filseg/dl.py` | U-Net model (optional group channel), dataset/augmentation, TTA inference, instance post-processing (cc / watershed / group) |
-| `src/filseg/instfilter.py` | per-instance features for the false-positive filter |
-| `scripts/eval_classical.py` | evaluate / random-search baseline params on a fixed 70/30 train/val split |
-| `scripts/predict_classical.py` | write `outputs/submission.csv` for the test set |
-| `scripts/train_unet.py` | train the U-Net (resumable), keep the best checkpoint by val PQ |
-| `scripts/infer_probs.py` | cache probability maps (val/test, optional 8x TTA, ensembles of checkpoints) |
-| `scripts/tune_post.py` | grid-search instance post-processing on cached val maps |
-| `scripts/ensemble_probs.py` | average cached maps of several models |
-| `scripts/compare.py` | paired-bootstrap comparison of pipelines, with honest cross-tuning |
-| `scripts/fp_filter.py` | train/evaluate the instance FP filter (5-fold CV on val maps) |
-| `scripts/make_submission.py` | cached test maps + post config (+ optional FP filter) → submission CSV |
-| `scripts/package_colab.py`, `scripts/kaggle_upload.py` | Colab code bundle; push results to a private Kaggle dataset |
-| `scripts/watch_colab.py` | poll for finished Colab runs; download, tune, filter and submit each automatically |
-| `colab/train_unet.ipynb` | GPU training on Colab |
-| `kaggle/make_kernel.py` | GPU training as a Kaggle kernel |
-| `configs/` | tuned parameters (classical, post-processing per model) |
-| `tests/` | metric and RLE unit tests |
+| `src/filseg/dl.py` | U-Net builder, soft targets, datasets and augmentation, TTA inference, post-processing (hysteresis, oriented grouping) |
+| `src/filseg/instfilter.py` | instance features of the false-positive filter |
+| `scripts/train_unet.py` | training (resumable); writes held-out maps |
+| `scripts/infer_probs.py` | 8x-TTA probability maps of a checkpoint (stored as uint8) |
+| `scripts/ensemble_probs.py` | average maps of several models / families |
+| `scripts/tune_post.py` | grid search of post-processing on OOF maps |
+| `scripts/fp_filter.py` | train and cross-validate the instance filter |
+| `scripts/make_submission.py` | maps + post config + filter → submission CSV |
+| `scripts/compare.py` | paired-bootstrap comparison of two pipelines with cross-tuning |
+| `scripts/rubric_metrics.py`, `scripts/report_figures.py` | rubric metrics and report figures |
+| `notebooks/final_inference.ipynb` | end-to-end inference of both finals |
+| `colab/train_unet.ipynb` | GPU training queue (Colab) |
+| `configs/` | fitted post-processing and filters (also of earlier experiments) |
+| `weights/` | the 15 final checkpoints |
+| `tests/` | unit tests |
 
-## Classical baseline
+Not part of the final pipeline, kept because the experiment log refers to them: the classical
+baseline (`src/filseg/classical.py`, `scripts/eval_classical.py`, `scripts/predict_classical.py`),
+Mask R-CNN (`scripts/train_maskrcnn.py`, `scripts/infer_detections.py`), and the analyses in
+`scripts/research/` and `scripts/post_research.py`, `scripts/res_ceiling.py`, `scripts/analyze_errors.py`.
+Operational helpers: `scripts/package_colab.py`, `scripts/kaggle_upload.py`, `scripts/watch_colab.py`,
+`scripts/kaggle_gpu.py`, `kaggle/`.
 
-Disk fit → radial limb-darkening flattening → median-background ratio → hysteresis threshold
-on dark pixels → morphology, small-blob and sunspot removal → fragment grouping by dilation →
-per-instance dilation → upsample to 2048².
+## Development history
 
-```bash
-.venv/bin/python scripts/eval_classical.py --n 160 --search 80          # tune on train split
-.venv/bin/python scripts/eval_classical.py --params outputs/best_params.json --split val
-.venv/bin/python scripts/predict_classical.py --params outputs/best_params.json
-```
+| Version | Validation PQ | Public LB |
+|---|---|---|
+| classical (no learning), tuned | 0.242 (val split) | 0.21 |
+| U-Net ResNet34 @768, 8x TTA, FP filter | 0.389 (val split) | 0.33 |
+| N1 alone, 5 folds, hysteresis | 0.4229 (OOF) | 0.37 |
+| N1 + N2 | 0.4284 (OOF) | 0.37 |
+| N1 + N2 + N9', oriented grouping (final 1) | 0.4372 (OOF) | 0.38 |
+| **N1 + N9' (final 2, main)** | **0.4382 (OOF)** | **0.38** |
 
-Tuned parameters are versioned in `configs/classical_best.json`.
-
-### Results
-
-Validation: fixed split by image (seed 42), 213 val images / 337 annotator-image entries,
-PQ pooled over all entries as in the host's notebook.
-
-| Version | val PQ | Public LB | Test inference |
-|---|---|---|---|
-| classical, tuned (`configs/classical_best.json`) | 0.242 | 0.21 | 13 s / 180 images, CPU |
-| U-Net ResNet34 @512, 8x TTA, `configs/post_unet512.json` | 0.354 | 0.29 | 80 s / 180 images, Apple M5 MPS |
-| U-Net ResNet34 @768, 8x TTA, `configs/post_unet768.json` | 0.383 | 0.31 | 130 s / 180 images, Apple M5 MPS |
-| mean of 512 + 768 maps, `configs/post_ens_512_768.json` | 0.380 | – | – |
-| U-Net @768 + watershed instances, `configs/post_unet768_ws.json` | 0.384 | – | – |
-| U-Net @768 + instance FP filter, `configs/fpfilter_unet768.pkl` | 0.389 | 0.33 | +~60 s / 180 images, CPU |
-
-## U-Net pipeline
-
-```bash
-.venv/bin/python scripts/train_unet.py --res 512 --epochs 30 --name unet512_r34       # ~1.5 h on Apple M5 (MPS)
-.venv/bin/python scripts/infer_probs.py --ckpt outputs/models/unet512_r34.pt --which val --tta
-.venv/bin/python scripts/infer_probs.py --ckpt outputs/models/unet512_r34.pt --which test --tta
-.venv/bin/python scripts/tune_post.py --probs outputs/probs/unet512_r34_val --out configs/post_unet512.json
-.venv/bin/python scripts/make_submission.py --probs outputs/probs/unet512_r34_test \
-    --post configs/post_unet512.json --out outputs/submission_unet512.csv
-```
-
-### GPU training on Colab
-
-`colab/train_unet.ipynb` trains the runs listed in its parameters cell, writes 8x-TTA val/test
-probability maps and uploads each finished run to a private Kaggle dataset
-`nguyenchicuong/filseg-<run>`. Training state is saved to Drive every epoch (`--resume`).
-
-```bash
-.venv/bin/python scripts/package_colab.py          # then upload build/colab/filseg-colab.zip to MyDrive/kaggle/filament-segmentation-2026/
-# ... run the notebook on a GPU runtime (Colab secret KAGGLE_API_TOKEN) ...
-kaggle datasets download nguyenchicuong/filseg-unet1024-r34 -p outputs/colab/unet1024_r34 --unzip
-.venv/bin/python scripts/tune_post.py --probs outputs/colab/unet1024_r34/probs_val --out configs/post_unet1024.json
-```
-
-`kaggle/make_kernel.py` does the same on a Kaggle GPU kernel (code embedded, no dataset upload).
-
-### Final inference (end to end)
-
-`notebooks/final_inference.ipynb` rebuilds both final submissions from the 15 checkpoints in `weights/`
-(fp32, `SHA256SUMS`) and the test H-alpha images only (8x-TTA maps, fold and family averages, hysteresis
-+ oriented grouping + FP filter): final 1 = N1 + N2 + N9', final 2 = N1 + N9' (own FP filter).
-`kaggle/make_infer_kernel.py` builds the same notebook as a Kaggle kernel. On 2026-11-09 (T4 x2, torch
-2.11.0+cu130, maps in 90 min) final 2 matched the submitted CSV byte for byte; final 1 scored the same
-LB 0.38, with N9' maps differing from the Colab-made ones, so the kernel's CSV is the final 1 file.
-Final 2 changed to N1 + N9' on 2026-11-12 (OOF 0.4382, LB 0.38); the Kaggle GPU quota was used up, so
-its file is the CSV made locally from the same maps and code (`outputs/submission_ens_n1n9p_orient.csv`).
+Every experiment, with its pre-registered acceptance rule and outcome, is in
+[`docs/EXPERIMENTS.md`](docs/EXPERIMENTS.md). The working documents in `docs/` (`PROGRESS.md`, `PLAN.md`,
+`EXPERIMENTS.md`, `RESEARCH.md`) are the team's day-to-day log and are written in Vietnamese; this README
+and the report are the English reference. `docs/RESEARCH.md` explains why the top of the public
+leaderboard is not comparable (test labels are available in the public MAGFiLO 1.0 release, which this
+work does not use).
 
 ## License
 
-Code: [MIT](LICENSE). The MAGFiLO data is not included and is subject to the competition's non-commercial data terms.
+Code and weights: [MIT](LICENSE). The MAGFiLO data is not included and is subject to the competition's
+non-commercial data terms.
