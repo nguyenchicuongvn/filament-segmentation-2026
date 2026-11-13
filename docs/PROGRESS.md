@@ -114,6 +114,12 @@ Val luôn cao hơn LB khoảng 0.03–0.07, nhưng thứ tự giữa các model 
 
 ## Nhật ký
 
+### 2026-11-13
+
+- Dung lượng: 109 thư mục output cũ (`outputs/colab`, phần lớn `outputs/ens`, `outputs/probs`, `outputs/wf_*`, `outputs/models`) chuyển sang SSD ngoài (`/Volumes/PortableSSD/kaggle/filament-segmentation-2026`, exFAT) sau symlink, kiểm số file + tổng byte trước khi xoá; `outputs/` 83 → 7 GB, máy trống 28 → 166 GB. Hai pool final (`outputs/ens/abl/n1n9p_*`, `outputs/ens/n1n2n9p_*`) và `weights/` giữ trên Mac. **Symlink chỉ đọc được khi SSD đang cắm.**
+- R1: README viết lại bằng tiếng Anh cho giám khảo; `weights/README.md` sửa; notebook `final_inference.ipynb` có walkthrough hậu xử lý và dùng lại thư mục map đã đủ.
+- R3 (clone sạch từ GitHub, venv mới): cài đặt OK, 15 checksum OK, `pytest` 29 passed. Notebook **thất bại**: kiểm tra "map đã đủ" đếm file `*.npy` nên không nhận thư mục trên SSD (giả thuyết: file AppleDouble `._x.npy` mà macOS để lại trên exFAT, chưa kiểm được), tính lại cả 15 checkpoint trên MPS (~16-29 phút/checkpoint), ghi đè map test N1 + N9' trong `outputs/colab/*/probs_test` trên SSD bằng map MPS, rồi lỗi I/O ở N2 vì SSD bị ngắt (~13:00). Sửa: notebook so tên file với danh sách ảnh test, `ensemble_probs.py` bỏ file `._*`. Còn phải: cắm lại SSD, kiểm giả thuyết, so map MPS với pool `n1n9p_test` local, chạy lại notebook (dùng lại map).
+
 ### 2026-11-12
 
 - Máy bị tải nặng bởi job project khác (load ~170, RAM trống 0.3 GB): lần cross-tune `hyst_soft` đầu bị treo 5 h (worker chết), chạy lại với 4–6 worker. Grid `hyst_soft` (70 combo × 707 ảnh × 3 pool) quá chậm trong điều kiện này nên thêm grid nhỏ `hyst_final` (t 0.4/0.5 × seed 0.95/0.99, area 200, gộp theo hướng r 6 L 16), khai báo trước khi xem số, giống nhau cho mọi nhánh.

@@ -23,7 +23,8 @@ def main() -> None:
     weights = np.array(args.weights or [1.0] * len(args.inputs), np.float32)
     assert len(weights) == len(args.inputs)
     weights /= weights.sum()
-    stems = sorted(p.stem for p in args.inputs[0].glob("*.npy"))
+    # skip macOS AppleDouble files ("._x.npy") that copies to exFAT/FAT drives leave behind
+    stems = sorted(p.stem for p in args.inputs[0].glob("*.npy") if not p.name.startswith("."))
     args.out.mkdir(parents=True, exist_ok=True)
     for stem in stems:
         maps = [np.load(d / f"{stem}.npy").astype(np.float32) for d in args.inputs]
