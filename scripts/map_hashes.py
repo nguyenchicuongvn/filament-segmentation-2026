@@ -27,7 +27,7 @@ def main() -> None:
             print(f"{name:12s} {same}/{len(y[name])} maps identical")
         if a.maps:
             worst, diff_px, total = 0, 0, 0
-            for f in sorted(a.maps[0].glob("*.npy")):
+            for f in sorted(f for f in a.maps[0].glob("*.npy") if not f.name.startswith(".")):
                 u = np.load(f).astype(np.int16)
                 v = np.load(a.maps[1] / f.name).astype(np.int16)
                 d = np.abs(u - v)
@@ -37,7 +37,8 @@ def main() -> None:
     out = {}
     for spec in a.dirs:
         name, d = spec.split("=", 1)
-        out[name] = {f.stem: hashlib.sha256(f.read_bytes()).hexdigest() for f in sorted(Path(d).glob("*.npy"))}
+        out[name] = {f.stem: hashlib.sha256(f.read_bytes()).hexdigest() for f in sorted(Path(d).glob("*.npy"))
+                     if not f.name.startswith(".")}  # skip AppleDouble files on exFAT
         print(f"{name}: {len(out[name])} maps")
     a.out.write_text(json.dumps(out, indent=1))
 

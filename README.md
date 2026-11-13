@@ -63,7 +63,10 @@ images and writes `outputs/final/submission_final2.csv` (main pipeline) and `sub
 
 `kaggle/make_infer_kernel.py` builds the same notebook as a Kaggle kernel. On Kaggle (T4 ×2) all 15
 models took 90 min, of which N2 took 75; the main pipeline alone (10 models) takes about 25 min on a T4.
-Post-processing and the filter run on the CPU in about 1 min for the 180 test images.
+Post-processing and the filter run on the CPU. The committed notebook output was made on a laptop (Apple M5, maps
+reused from an earlier run): ensembling and post-processing of both finals took 38 min there, mostly reading
+maps from an external drive. Its CSVs have the same filaments as the submitted ones; 45 of 1038 masks differ by
+a few pixels (IoU ≥ 0.997) because some maps were recomputed on MPS instead of CUDA.
 Maps are computed per checkpoint with `scripts/infer_probs.py`, averaged with `scripts/ensemble_probs.py`
 and turned into a CSV by `scripts/make_submission.py`, so each step can also be run by hand.
 

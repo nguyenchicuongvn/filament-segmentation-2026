@@ -25,9 +25,9 @@ ref 58269004). Toàn bộ thời gian dành cho report, repo public và khả n�
 |---|---|---|---|
 | 13/11 | Tick 2 final trên Kaggle (58174035, 58269004) | người dùng | trang My Submissions hiện 2 ô đã tick |
 | 13/11 | Compile report trên Overleaf, báo số dòng còn vượt 4 trang | người dùng | PDF ≤ 4 trang |
-| 13–14/11 | **R1** Dọn repo cho bản public (§ 0.3) | Claude | checklist § 0.3 xanh |
-| 14/11 | **R2** Chạy notebook `final_inference.ipynb` có output (ảnh minh hoạ, PQ trên vài ảnh val, đường dẫn CSV) | Claude (Mac) | notebook lưu kèm output, chạy lại từ clone sạch |
-| 14/11 | **R3** Kiểm tra tái lập từ clone sạch: venv mới, `pip install -r requirements.txt`, tests, notebook trên 3 ảnh test | Claude | CSV từng ảnh trùng byte với bản local |
+| 13–14/11 | **R1** Dọn repo cho bản public (§ 0.3) | Claude | checklist § 0.3 xanh. **Xong 13/11** (README tiếng Anh, notebook walkthrough); còn quyết định 6 nhánh remote |
+| 14/11 | **R2** Chạy notebook `final_inference.ipynb` có output (ảnh minh hoạ, PQ trên vài ảnh val, đường dẫn CSV) | Claude (Mac) | notebook lưu kèm output, chạy lại từ clone sạch. **Xong 13/11** |
+| 14/11 | **R3** Kiểm tra tái lập từ clone sạch: venv mới, `pip install -r requirements.txt`, tests, notebook trên 3 ảnh test | Claude | CSV từng ảnh trùng byte với bản local. **Xong 13/11, không trùng byte**: cùng id và số filament, 45/1038 (final 2) và 23/987 (final 1) mask lệch vài pixel (IoU ≥ 0.997) vì map N1/N9' trên SSD đã bị ghi đè bằng map MPS (PROGRESS 13/11) |
 | 14/11 | Report bản cuối: số trong report khớp `docs/logs/final/*.json`, link repo đúng | Claude + người dùng | PDF cuối |
 | 15/11 trước 13:00 | Không nộp gì thêm. Tag `final` trên commit đang chạy final 2 | Claude | tag đã push |
 | **15/11 13:00** | Kaggle đóng. **Chuyển repo sang public** ngay sau mốc này | người dùng (hoặc Claude khi được bảo) | `gh repo view` báo PUBLIC |
