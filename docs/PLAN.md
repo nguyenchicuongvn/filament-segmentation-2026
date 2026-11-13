@@ -1,4 +1,82 @@
-# Kế hoạch (bản 2026-10-29, thay mọi bản trước)
+# Kế hoạch (bản 2026-11-13, phần đầu thay mọi bản trước; § 1 trở xuống là lịch sử)
+
+## 0. Từ 13/11 đến 15/12: chặng cuối và giai đoạn xét giải
+
+### 0.1 Vì sao không còn "30 ngày cải thiện model"
+
+- Kaggle đóng **15/11 06:00 UTC (13:00 VN)**, tức còn khoảng 40 giờ. Sau mốc đó không nộp hay đổi
+  final được nữa. 30 ngày tới gồm 2 ngày thi và 4 tuần xét giải (công bố 30/11, IEEE BigData 14–17/12).
+- Không còn GPU: quota Kaggle 60 h/tuần đã hết, model đóng băng từ 09/11. Train một family 5 fold
+  cần khoảng 6 h L4. Kể cả có GPU, một cải thiện cỡ +0.005 OOF cũng không chứng minh được trong 40 h
+  với CI ±0.01, và LB không thấy (độ phân giải 0.01 trên ~90 ảnh).
+- Mọi nút hậu xử lý còn lại đều đã đo và phẳng: hedge study 12/11 (8 biến thể × 5 ngưỡng, các view
+  theo annotator), thang recall trên LB (cả ba bài 0.38), TTA 1152 (âm), size-dependent growth (≈ 0).
+- LB public 13/11: top 0.70, top-20 ≥ 0.56. Các điểm này nằm trên trần trung thực (~0.40 public,
+  ~0.46 OOF; RESEARCH § 3) nên phần lớn là nhiễm nhãn test. Giải tính bằng rubric (70% định lượng,
+  30% định tính) và chỉ xét đội có report, repo public, code tái lập được. **Đòn bẩy còn lại là hồ sơ
+  xét giải**, không phải PQ.
+
+Kết luận: không train, không nộp thêm bài dò. Hai final giữ nguyên (final 1 ref 58174035, final 2
+ref 58269004). Toàn bộ thời gian dành cho report, repo public và khả năng tái lập.
+
+### 0.2 Lịch
+
+| Khi nào (giờ VN) | Việc | Ai | Xong khi |
+|---|---|---|---|
+| 13/11 | Tick 2 final trên Kaggle (58174035, 58269004) | người dùng | trang My Submissions hiện 2 ô đã tick |
+| 13/11 | Compile report trên Overleaf, báo số dòng còn vượt 4 trang | người dùng | PDF ≤ 4 trang |
+| 13–14/11 | **R1** Dọn repo cho bản public (§ 0.3) | Claude | checklist § 0.3 xanh |
+| 14/11 | **R2** Chạy notebook `final_inference.ipynb` có output (ảnh minh hoạ, PQ trên vài ảnh val, đường dẫn CSV) | Claude (Mac) | notebook lưu kèm output, chạy lại từ clone sạch |
+| 14/11 | **R3** Kiểm tra tái lập từ clone sạch: venv mới, `pip install -r requirements.txt`, tests, notebook trên 3 ảnh test | Claude | CSV từng ảnh trùng byte với bản local |
+| 14/11 | Report bản cuối: số trong report khớp `docs/logs/final/*.json`, link repo đúng | Claude + người dùng | PDF cuối |
+| 15/11 trước 13:00 | Không nộp gì thêm. Tag `final` trên commit đang chạy final 2 | Claude | tag đã push |
+| **15/11 13:00** | Kaggle đóng. **Chuyển repo sang public** ngay sau mốc này | người dùng (hoặc Claude khi được bảo) | `gh repo view` báo PUBLIC |
+| 15/11 tối | Điền Google form: report PDF, link repo, tên/tài khoản Kaggle, tên đội | người dùng | email xác nhận của form |
+| **16/11 trước 11:00** | Hạn form "Nov 15, 11:59 pm CDT". Ngày 15/11 Mỹ đã về giờ chuẩn (CST, UTC−6) nên hạn thật là 16/11 12:59 VN; nếu hiểu theo CDT (UTC−5) là 11:59 VN. Lấy mốc sớm hơn | người dùng | – |
+| 16–29/11 | Giữ repo public, không force-push, không đổi lịch sử. Chuẩn bị hồ sơ người thắng (§ 0.4) | cả hai | – |
+| 30/11 | Công bố. Nếu được báo thắng: trả lời email **trong 1 tuần** | người dùng | – |
+| 30/11–14/12 | Ký giấy tờ **trong 2 tuần**, W-8BEN, onboarding AURA, nhận chuyển khoản từ ngân hàng Mỹ | người dùng | – |
+| 14–17/12 | IEEE BigData (Phoenix), tham dự là tuỳ chọn | người dùng | – |
+
+### 0.3 R1: dọn repo cho bản public (30% định tính chấm "code quality, modularity, documentation")
+
+1. README: viết lại phần Environment (đang ghi "CPU only, classical baseline", đã cũ), thêm mục
+   **Reproduce** ba bước: (a) inference từ weights trong repo bằng notebook, thời gian đo được;
+   (b) train lại 10 model qua `colab/train_unet.ipynb` + `scripts/package_colab.py`, khoảng 17 GPU-giờ L4;
+   (c) ghép map, hậu xử lý, lọc FP bằng `configs/` đã lưu. Thêm sơ đồ thư mục `src/` / `scripts/`
+   / `configs/` / `weights/` và bảng kết quả ngắn (OOF, LB, metric rubric).
+2. Ghi rõ trong README rằng `docs/` là nhật ký làm việc bằng tiếng Việt; report và README là bản
+   tiếng Anh dành cho ban giám khảo.
+3. Tách rõ code chính và code nghiên cứu: `scripts/research/` và các script thử nghiệm đã bỏ
+   (Mask R-CNN, classical, agree filter) được liệt kê trong README là "không nằm trong pipeline final".
+   Không xoá, vì EXPERIMENTS dẫn tới chúng.
+4. Nhánh trên remote: 6 nhánh thử nghiệm sẽ public cùng repo. Đề xuất giữ (minh bạch); nếu muốn gọn
+   thì xoá nhánh đã merge hoặc đã bỏ. **Người dùng quyết định**, vì xoá nhánh remote không hoàn tác được.
+5. Kiểm tra trước khi public: không có token, `kaggle.json`, dữ liệu thi hay MAGFiLO trong lịch sử git
+   (đã quét 13/11: chỉ hai CSV log nhỏ trong `docs/logs`, không có dữ liệu thi); file lớn nhất 89 MB
+   (`weights/effv2s_c512_f*.pt`), dưới giới hạn 100 MB của GitHub.
+6. `pytest` xanh (13/11: 29 passed), `requirements.txt` đủ gói và pin phiên bản, LICENSE MIT.
+
+### 0.4 Chuẩn bị cho vòng kiểm tra người thắng (16–29/11)
+
+- Luật: người thắng phải "hiểu, giải thích, bảo vệ và tái lập mọi thành phần chính"; dựa vào code AI mà
+  không giải thích được có thể bị loại. Viết `docs/DEFENSE.md` (tiếng Anh, 1–2 trang): mỗi thành phần
+  (U-Net 2 family, hysteresis, oriented grouping, lọc FP) trả lời ba câu: làm gì, vì sao chọn, bằng chứng
+  nào (dòng EXPERIMENTS, Δ OOF, CI). Người dùng đọc và tự trả lời được trước 30/11.
+- Đo lại thời gian end-to-end của pipeline 10 model trên GPU nếu quota Kaggle reset (hỏi người dùng
+  trước), để thay con số ước tính 25 phút trong report bằng số đo.
+- Hồ sơ nhận giải: W-8BEN; tài khoản nhận được chuyển khoản từ ngân hàng Mỹ (luật ghi: không nhận được
+  thì mất giải); kiểm tra email Kaggle hằng ngày từ 30/11.
+
+### 0.5 Việc không làm (và lý do)
+
+| Ý tưởng | Lý do bỏ |
+|---|---|
+| Train thêm family / seed / full-data refit | Không GPU; không kịp đo; lợi dự báo ≤ +0.002 (research06) |
+| Nộp thêm bài dò nút hậu xử lý | LB không phân giải Δ < 0.01; hedge study đã phẳng |
+| Đổi final theo LB | Quy tắc đăng ký trước 12/11 không kích hoạt (thang recall đều 0.38) |
+| Dùng MAGFiLO 1.0 public hay pseudo-label test | Vi phạm luật / rò nhãn test; mất tư cách xét giải |
+
 
 Tài liệu này trả lời bốn câu hỏi: còn bao nhiêu thời gian và tài nguyên; thí nghiệm nào đáng chạy
 và vì sao; chạy xong thì quyết định thế nào; đang ở đâu. Bằng chứng nằm ở

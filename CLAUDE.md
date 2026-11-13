@@ -18,7 +18,10 @@ data, never submit overlapping masks, keep final weights inside the repo (host r
   and splitting must stay by `image_id`.
 - Rules: masks only (no bbox/spine/chirality labels for training); inference uses only test
   H-alpha images; open-source deps must be OSI-licensed.
-- `data/`, `outputs/`, `build/` are git-ignored. Tuned configs go in `configs/`; cleaned logs of
+- `data/`, `outputs/`, `build/` are git-ignored. Old experiment outputs (`outputs/colab`, most of
+  `outputs/ens`, `outputs/probs`, `outputs/wf_*`, `outputs/models`) live on the external SSD at
+  `/Volumes/PortableSSD/kaggle/filament-segmentation-2026` behind symlinks; the two final pools
+  (`outputs/ens/abl/n1n9p_*`, `outputs/ens/n1n2n9p_*`) and `weights/` stay on the Mac. Tuned configs go in `configs/`; cleaned logs of
   experiments worth keeping go in `docs/logs/`.
 - Accounts: GitHub `nguyenchicuongvn`, Kaggle `nguyenchicuong` (different!).
 - The GitHub repo stays **private until the competition closes (2026-11-15)**; do not change its
