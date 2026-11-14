@@ -80,6 +80,33 @@ Kết luận: không train, không nộp thêm bài dò. Cuộc thi chỉ cho ch
 | Dùng MAGFiLO 1.0 public hay pseudo-label test | Vi phạm luật / rò nhãn test; mất tư cách xét giải |
 
 
+### 0.6 Vòng cải thiện cuối 14/11 (người dùng yêu cầu; đăng ký trước, viết TRƯỚC khi chạy)
+
+Người dùng muốn thử cải thiện một lần cuối bằng 5 lượt nộp của 14/11. Không có GPU, nên chỉ xét thay đổi
+ở khâu suy luận, đo được trên Mac. Một panel 5 hướng (biên, tạo instance, bộ lọc, ghép map, metric) đề
+xuất 19 ý tưởng, 3 giám khảo chấm; chỉ một ý tưởng mới và có số đo: **SEED-REGIME**.
+
+- **Quan sát** (đo không dùng nhãn): hậu xử lý và bộ lọc được tune trên map OOF, mỗi ảnh là trung bình
+  **2** model (1 fold N1 + 1 fold N9'); map test là trung bình **10** model. Lấy trung bình làm đỉnh
+  thấp đi, nên seed 0.99 khắt khe hơn trên test: component có đỉnh ≥ 0.99 là 6.94/ảnh (OOF) so với
+  6.27/ảnh (test), trong khi diện tích nền và số component p > 0.5 trùng nhau; bài đã nộp có 5.77
+  instance/ảnh so với 6.29 trên OOF (−8%).
+- **Thay đổi (cố định, không dò lưới)**: mask vẫn lấy từ trung bình 10 model (p > 0.5). Quyết định seed
+  theo đúng chế độ đã tune: với 5 cặp k, map cặp = (N1_fk + N9'_fk)/2; giữ component nếu đỉnh > 0.99
+  ở **≥ 3/5** cặp. Bốn đặc trưng xác suất của bộ lọc tính theo từng cặp rồi lấy trung bình. Với 1 cặp,
+  luật trùng luật hiện tại nên OOF giữ nguyên 0.4382, không tune lại gì.
+- **Phương án dự phòng (chỉ dùng nếu G1 hỏng với luật vote)**: một seed vô hướng trên map 10 model, chọn
+  sao cho tỉ lệ component p > 0.5 được giữ bằng tỉ lệ OOF (chỉ dùng thống kê không nhãn của ảnh test).
+- **Tiêu chí, phải đạt cả ba mới nộp**:
+  - G1: mật độ instance trên test sau thay đổi nằm trong 6.29 ± 2·SE gộp và gần 6.29 hơn 5.77.
+  - G2: trên OOF, mô phỏng phía khắt khe (bỏ cùng tỉ lệ component như độ lệch đo được) cho Δ PQ < 0 với
+    CI 95% ghép cặp nằm dưới 0. Nếu CI chứa 0 thì độ lệch không gây hại, **không đổi gì**.
+  - G3: với 1 cặp, CSV trùng byte với pipeline hiện tại; tests xanh; mask không chồng nhau.
+- **Sau khi nộp**: LB chỉ để kiểm tra an toàn (< 0.38 thì bỏ), không dùng để chọn. Đổi bài đã tick là
+  quyết định của người dùng; lợi ích kỳ vọng trung thực là 0 đến +0.003, không kiểm chứng được trên OOF.
+- Các ý tưởng còn lại (ghép logit, đặc trưng hàng xóm cho bộ lọc, tách component, tinh chỉnh biên…) bị
+  loại: giám khảo ước lượng ≤ +0.0005, dưới ngưỡng phát hiện, hoặc gần trùng thí nghiệm âm đã có.
+
 Tài liệu này trả lời bốn câu hỏi: còn bao nhiêu thời gian và tài nguyên; thí nghiệm nào đáng chạy
 và vì sao; chạy xong thì quyết định thế nào; đang ở đâu. Bằng chứng nằm ở
 [RESEARCH.md](RESEARCH.md) (mã nguồn `S*`, `F*`, `H*`). Kết quả đo được ghi ở
