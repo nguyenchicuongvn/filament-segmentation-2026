@@ -107,7 +107,8 @@ xuất 19 ý tưởng, 3 giám khảo chấm; chỉ một ý tưởng mới và 
 - **Kết quả 14/11**: G1 và G3 đạt, **G2 không đạt rõ ràng** (mô phỏng theo nghĩa đen có CI chứa 0; hai
   mô phỏng cùng tỉ lệ có CI dưới 0 nhưng thêm sau khi thấy số). Theo luật đã đăng ký: **không đổi gì, giữ
   final 58269004**. Chi tiết: EXPERIMENTS § SEED-REGIME. Ứng viên `outputs/submission_n1n9p_seedvote.csv`
-  chưa nộp.
+  người dùng cho nộp thử: ref 58342898, LB 0.38 (bằng final) → không đổi bài đã tick. Code vote lưu thành
+  bản vá `docs/logs/final/seed_vote.patch`, không vào `main`.
 - Các ý tưởng còn lại (ghép logit, đặc trưng hàng xóm cho bộ lọc, tách component, tinh chỉnh biên…) bị
   loại: giám khảo ước lượng ≤ +0.0005, dưới ngưỡng phát hiện, hoặc gần trùng thí nghiệm âm đã có.
 

@@ -1,0 +1,201 @@
+diff --git a/scripts/make_submission.py b/scripts/make_submission.py
+index cc1106f..0aa912a 100644
+--- a/scripts/make_submission.py
++++ b/scripts/make_submission.py
+@@ -7,6 +7,16 @@ Usage:
+       --filter configs/fpfilter_unet768.pkl --out outputs/submission_unet768_filt.csv
+ A filter trained with agreement features (fp_filter.py --agree-maps) needs --agree-maps with the
+ same models' test maps, in the same order.
++
++--seed-maps (hyst post-processing only): masks still come from --probs, but the seed test is voted
++over these maps (kept when seeded in a majority) and the filter's probability features are averaged
++over them. For a pool of 10 models whose seed threshold and filter were tuned on out-of-fold maps
++(2 models per image), pass the 5 fold-pair maps, each built with scripts/ensemble_probs.py:
++  python scripts/ensemble_probs.py --inputs outputs/final/maps/effb4_s1024_f0 \
++      outputs/final/maps/effv2s_c512_f0 --out outputs/final/maps/pair_f0     # ... f1..f4
++  python scripts/make_submission.py --probs outputs/ens/abl/n1n9p_test \
++      --filter configs/fpfilter_ens_n1n9p_orient.pkl --seed-maps outputs/final/maps/pair_f{0,1,2,3,4} \
++      --out outputs/submission_n1n9p_seedvote.csv
+ """
+ from __future__ import annotations
+ 
+@@ -32,6 +42,10 @@ def main() -> None:
+     ap.add_argument("--post", type=Path)
+     ap.add_argument("--filter", type=Path, help="FP filter from scripts/fp_filter.py (uses its own post config)")
+     ap.add_argument("--agree-maps", help="comma-separated test maps of the 4 other models (agreement filter)")
++    ap.add_argument("--seed-maps", type=Path, nargs="+",
++                    help="maps for the seed vote and the filter's probability features (see docstring)")
++    ap.add_argument("--min-votes", type=int, help="seed votes needed (default: majority of --seed-maps)")
++    ap.add_argument("--no-filter-drop", action="store_true", help="diagnostic: keep every instance")
+     ap.add_argument("--out", type=Path, required=True)
+     args = ap.parse_args()
+ 
+@@ -46,9 +60,10 @@ def main() -> None:
+     rows = []
+     for path in test_paths():
+         prob, group = load_maps(args.probs, path.stem)
+-        inst = instances_lowres(prob, p, group)
+-        if filt and inst.max() > 0:
+-            feats = instance_features(inst, prob, load_gray(path), group)
++        seed = [load_maps(d, path.stem)[0] for d in args.seed_maps] if args.seed_maps else None
++        inst = instances_lowres(prob, p, group, seed_maps=seed, min_votes=args.min_votes)
++        if filt and inst.max() > 0 and not args.no_filter_drop:
++            feats = instance_features(inst, prob, load_gray(path), group, prob_maps=seed)
+             if agree:
+                 others = [load_maps(Path(d), path.stem)[0] for d in agree]
+                 feats = np.concatenate([feats, agreement_features(inst, prob, others)], 1)
+diff --git a/src/filseg/dl.py b/src/filseg/dl.py
+index 70980af..12c0fb0 100644
+--- a/src/filseg/dl.py
++++ b/src/filseg/dl.py
+@@ -389,15 +389,34 @@ def _group_oriented(fg: np.ndarray, lab: np.ndarray, keep: np.ndarray, stats: np
+     return np.where(fg > 0, glab, 0).astype(np.int32)
+ 
+ 
+-def instances_lowres(prob: np.ndarray, p: PostParams, group: np.ndarray | None = None) -> np.ndarray:
+-    """Instance labels at the probability map's resolution."""
++def seed_votes(lab: np.ndarray, n: int, seed_maps: list[np.ndarray], seed_thresh: float) -> np.ndarray:
++    """For each of the n components of `lab`: in how many of `seed_maps` its peak exceeds seed_thresh."""
++    votes = np.zeros(n, np.int32)
++    for m in seed_maps:
++        peak = np.zeros(n, np.float32)
++        np.maximum.at(peak, lab.ravel(), m.ravel())
++        votes += peak > seed_thresh
++    return votes
++
++
++def instances_lowres(prob: np.ndarray, p: PostParams, group: np.ndarray | None = None,
++                     seed_maps: list[np.ndarray] | None = None, min_votes: int | None = None) -> np.ndarray:
++    """Instance labels at the probability map's resolution.
++
++    `seed_maps` (mode hyst only, optional): the components and their extent still come from `prob`,
++    but the seed test "peak > seed_thresh" is made on each of these maps and a component is kept
++    when it passes in at least `min_votes` of them (default: a majority, ceil(n / 2)). This is for
++    a pool of many models whose seed_thresh was tuned on maps averaging fewer models: averaging
++    lowers the peaks, so the same threshold is stricter on the pool. Pass the maps of sub-ensembles
++    of the size the threshold was tuned on. Without seed_maps (or with [prob]) the test is on `prob`.
++    """
+     fg = (prob > p.thresh).astype(np.uint8)
+     n, lab, stats, _ = cv2.connectedComponentsWithStats(fg, 8)
+     keep = stats[:, cv2.CC_STAT_AREA] >= p.min_area
+     if p.mode == "hyst":
+-        peak = np.zeros(n, np.float32)
+-        np.maximum.at(peak, lab.ravel(), prob.ravel())
+-        keep &= peak > p.seed_thresh
++        maps = seed_maps or [prob]
++        need = min_votes if min_votes is not None else (len(maps) + 1) // 2
++        keep &= seed_votes(lab, n, maps, p.seed_thresh) >= need
+     keep[0] = False
+     fg = keep[lab].astype(np.uint8)
+ 
+diff --git a/src/filseg/instfilter.py b/src/filseg/instfilter.py
+index 0eea39a..b973956 100644
+--- a/src/filseg/instfilter.py
++++ b/src/filseg/instfilter.py
+@@ -67,8 +67,15 @@ def score(filt: dict, feats: np.ndarray) -> np.ndarray:
+ 
+ 
+ def instance_features(inst: np.ndarray, prob: np.ndarray, gray_full: np.ndarray,
+-                      group: np.ndarray | None = None) -> np.ndarray:
+-    """(n_instances, len(FEATURES)) for labels 1..n of `inst` (at the map resolution)."""
++                      group: np.ndarray | None = None,
++                      prob_maps: list[np.ndarray] | None = None) -> np.ndarray:
++    """(n_instances, len(FEATURES)) for labels 1..n of `inst` (at the map resolution).
++
++    `prob_maps` (optional): the four probability features (mean_prob, max_prob, p25_prob,
++    frac_conf) are computed on each of these maps and averaged, instead of on `prob`. Used with
++    instances_lowres(seed_maps=...) so that a filter trained on maps averaging few models sees
++    probabilities of the same kind on a pool of many models.
++    """
+     res = inst.shape[0]
+     n = int(inst.max())
+     if n == 0:
+@@ -85,7 +92,9 @@ def instance_features(inst: np.ndarray, prob: np.ndarray, gray_full: np.ndarray,
+     for k in range(1, n + 1):
+         m = inst == k
+         ys, xs = np.nonzero(m)
+-        p = prob[m]
++        # probability features, one row per map (a single row = `prob` by default), then the mean
++        p_feats = np.mean([[float(p.mean()), float(p.max()), float(np.percentile(p, 25)),
++                            float((p > 0.8).mean())] for p in (q[m] for q in prob_maps or [prob])], 0)
+         y0, y1, x0, x1 = ys.min(), ys.max() + 1, xs.min(), xs.max() + 1
+         extent = len(ys) / float((y1 - y0) * (x1 - x0))
+         if len(ys) > 2:
+@@ -101,8 +110,7 @@ def instance_features(inst: np.ndarray, prob: np.ndarray, gray_full: np.ndarray,
+         g_out = float(gray[sub][ring].mean()) if ring.any() else g_in
+         cy, cx = ys.mean(), xs.mean()
+         rows.append([
+-            np.log(len(ys)), float(p.mean()), float(p.max()), float(np.percentile(p, 25)),
+-            float((p > 0.8).mean()), extent, elong, major / res,
++            np.log(len(ys)), *p_feats, extent, elong, major / res,
+             g_in / max(g_out, 1e-3), g_in, float(np.hypot(cx - res / 2, cy - res / 2) / (res / 2)),
+             float(n), float(order[k - 1]),
+             float(group[m].mean()) if group is not None else -1.0,
+diff --git a/tests/test_seed_vote.py b/tests/test_seed_vote.py
+new file mode 100644
+index 0000000..44c0daf
+--- /dev/null
++++ b/tests/test_seed_vote.py
+@@ -0,0 +1,62 @@
++"""Seed vote over sub-ensemble maps (instances_lowres seed_maps, instance_features prob_maps)."""
++import sys
++from pathlib import Path
++
++import numpy as np
++
++sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
++
++from filseg.dl import PostParams, instances_lowres  # noqa: E402
++from filseg.instfilter import FEATURES, instance_features  # noqa: E402
++
++POST = PostParams(thresh=0.5, min_area=10, mode="hyst", seed_thresh=0.9)
++
++
++def _maps() -> tuple[np.ndarray, list[np.ndarray]]:
++    """Three bars; their peaks in 5 "pair" maps exceed 0.9 in 5, 3 and 2 of them. The pool is the mean."""
++    seeded = {0: 5, 1: 3, 2: 2}
++    pairs = []
++    for k in range(5):
++        m = np.zeros((64, 64), np.float32)
++        for bar, n in seeded.items():
++            m[10 + 20 * bar:14 + 20 * bar, 8:40] = 0.7
++            m[12 + 20 * bar, 20] = 0.95 if k < n else 0.8
++        pairs.append(m)
++    return np.mean(pairs, 0), pairs
++
++
++def test_single_map_is_the_default_rule():
++    rng = np.random.default_rng(0)
++    pool, _ = _maps()
++    pool = np.clip(pool + rng.normal(0, 0.1, pool.shape), 0, 1).astype(np.float32)
++    inst = instances_lowres(pool, POST)
++    assert inst.max() > 0
++    assert np.array_equal(inst, instances_lowres(pool, POST, seed_maps=[pool]))
++    gray = rng.integers(0, 255, (128, 128), dtype=np.uint8)
++    assert np.array_equal(instance_features(inst, pool, gray),
++                          instance_features(inst, pool, gray, prob_maps=[pool]))
++
++
++def test_majority_vote_keeps_components_seeded_in_3_of_5():
++    pool, pairs = _maps()
++    # pooled peaks are 0.95, 0.89 and 0.86: on the pool itself only the first bar is seeded
++    assert instances_lowres(pool, POST).max() == 1
++    inst = instances_lowres(pool, POST, seed_maps=pairs)
++    assert inst.max() == 2 and inst[12, 20] > 0 and inst[32, 20] > 0 and inst[52, 20] == 0
++    # the extent is the pooled component, not a pair's
++    assert np.array_equal(inst > 0, (pool > 0.5) & (np.arange(64)[:, None] < 40))
++    for votes, n in [(1, 3), (2, 3), (3, 2), (4, 1), (5, 1)]:
++        assert instances_lowres(pool, POST, seed_maps=pairs, min_votes=votes).max() == n
++
++
++def test_probability_features_are_averaged_over_maps():
++    pool, pairs = _maps()
++    inst = instances_lowres(pool, POST, seed_maps=pairs)
++    gray = np.full((64, 64), 100, np.uint8)
++    f = instance_features(inst, pool, gray, prob_maps=pairs)
++    each = np.stack([instance_features(inst, m, gray) for m in pairs])
++    cols = [FEATURES.index(n) for n in ("mean_prob", "max_prob", "p25_prob", "frac_conf")]
++    rest = [i for i in range(len(FEATURES)) if i not in cols]
++    assert np.allclose(f[:, cols], each.mean(0)[:, cols], atol=1e-6)
++    assert np.array_equal(f[:, rest], each[0][:, rest])
++    assert np.isclose(f[1, FEATURES.index("max_prob")], (3 * 0.95 + 2 * 0.8) / 5)

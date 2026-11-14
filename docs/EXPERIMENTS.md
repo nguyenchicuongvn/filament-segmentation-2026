@@ -449,7 +449,7 @@ trưng sau khi xem kết quả.
 - **Ứng viên**: mask từ pool 10 model, seed theo vote ≥ 3/5 cặp, 4 đặc trưng xác suất của bộ lọc lấy trung
   bình theo cặp. 1146 instance (6.37/ảnh; bài đã nộp 1038 = 5.77; OOF 6.29): 1021 giữ nguyên, 17 đổi biên,
   108 thêm, 0 bỏ. Val PQ: với 1 cặp luật trùng luật cũ nên OOF vẫn 0.4382 (raw 0.4371 không lọc), không
-  có số OOF riêng cho ứng viên. Không nộp, không có LB.
+  có số OOF riêng cho ứng viên. Nộp thử theo yêu cầu người dùng: ref 58342898, **LB 0.38** (bằng final).
 - **G1 đạt** (6.37 nằm trong 6.29 ± 2·SE và gần 6.29 hơn 5.77; vế "trong dải" không phân biệt được vì
   5.77 cũng nằm trong dải). **G3 đạt** (1 cặp và đường mặc định trùng byte với CSV đã nộp, 32 test xanh,
   không chồng mask).
@@ -472,5 +472,7 @@ trưng sau khi xem kết quả.
   13 instance đổi kết quả nếu một đỉnh lệch 1 mức uint8, và map từng model trên test là bản tính lại bằng
   MPS (bản GPU gốc không còn), nên ứng viên khó tái lập giữa các thiết bị hơn final.
 - **Kiểm chứng độc lập** (3 agent): code không lỗi; 2 khuyên không nộp, 1 khuyên nộp.
-- **Kết luận**: giữ final 58269004. Độ lệch seed giữa OOF và test là phát hiện thật, thiệt hại ước tính 0
+- **Code**: luật vote không nằm trong `main`; bản vá kèm test ở `docs/logs/final/seed_vote.patch`
+  (`git apply` được trên commit này), để code final đúng như đã mô tả trong report.
+- **Kết luận**: giữ final 58269004. LB 0.38 không phân biệt được hai bài và không dùng để chọn. Độ lệch seed giữa OOF và test là phát hiện thật, thiệt hại ước tính 0
   đến −0.005 trên test nhưng chưa chứng minh được, và luật vote chưa được chứng minh là lấy lại phần đó.
