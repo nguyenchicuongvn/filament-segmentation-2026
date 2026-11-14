@@ -116,6 +116,7 @@ Val luôn cao hơn LB khoảng 0.03–0.07, nhưng thứ tự giữa các model 
 
 ### 2026-11-14
 
+- `docs/DEFENSE.md` (tiếng Anh): mỗi thành phần làm gì / vì sao / bằng chứng / code ở đâu, 9 câu hỏi dự kiến kèm câu trả lời, thứ tự ôn. Soát code khi viết: (1) report ghi augmentation chỉ có xoay + lật, code còn gamma 0.7–1.4 và gain/offset → report đã sửa; (2) `train_unet.py` lưu checkpoint có val PQ tốt nhất trên fold giữ lại: N1 cả 5 fold tốt nhất ở epoch 30, N9' chỉ validate epoch cuối → bài chính đúng là checkpoint cuối; N2 fold 4 chọn epoch 20 (0.362 so với 0.351), chỉ ảnh hưởng phương án thay thế; (3) đặc trưng `group_mean` của bộ lọc là hằng −1 (không model nào có group map), thực chất 16 đặc trưng.
 - Xoá 6 nhánh thử nghiệm trên remote (`exp/agree-filter`, `exp/kaggle-gpu`, `exp/maskrcnn`, `exp/rubric-metrics`, `exp/train-v2`, `research/new-solution`); cả 6 đã nằm trọn trong `main` (0 commit riêng). Remote chỉ còn `main`.
 
 ### 2026-11-13

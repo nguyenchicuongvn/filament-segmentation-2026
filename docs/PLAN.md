@@ -64,7 +64,7 @@ Kết luận: không train, không nộp thêm bài dò. Cuộc thi chỉ cho ch
 - Luật: người thắng phải "hiểu, giải thích, bảo vệ và tái lập mọi thành phần chính"; dựa vào code AI mà
   không giải thích được có thể bị loại. Viết `docs/DEFENSE.md` (tiếng Anh, 1–2 trang): mỗi thành phần
   (U-Net 2 family, hysteresis, oriented grouping, lọc FP) trả lời ba câu: làm gì, vì sao chọn, bằng chứng
-  nào (dòng EXPERIMENTS, Δ OOF, CI). Người dùng đọc và tự trả lời được trước 30/11.
+  nào (dòng EXPERIMENTS, Δ OOF, CI). Người dùng đọc và tự trả lời được trước 30/11. **Đã viết 14/11** (`docs/DEFENSE.md`, có 9 câu hỏi dự kiến); khi soát code phát hiện: augmentation có gamma/brightness (report đã sửa), checkpoint = best val PQ trên fold giữ lại (main = epoch cuối ở cả 10 model; N2 fold 4 = epoch 20), `group_mean` là cột hằng.
 - Đo lại thời gian end-to-end của pipeline 10 model trên GPU nếu quota Kaggle reset (hỏi người dùng
   trước), để thay con số ước tính 25 phút trong report bằng số đo.
 - Hồ sơ nhận giải: W-8BEN; tài khoản nhận được chuyển khoản từ ngân hàng Mỹ (luật ghi: không nhận được
