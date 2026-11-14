@@ -25,7 +25,7 @@ Kết luận: không train, không nộp thêm bài dò. Cuộc thi chỉ cho ch
 |---|---|---|---|
 | 13/11 | Tick final trên Kaggle (chỉ được 1 bài) | người dùng | **Xong 13/11**: tick 58269004 (N1 + N9') |
 | 13/11 | Compile report trên Overleaf, báo số dòng còn vượt 4 trang | người dùng | PDF ≤ 4 trang |
-| 13–14/11 | **R1** Dọn repo cho bản public (§ 0.3) | Claude | checklist § 0.3 xanh. **Xong 13/11** (README tiếng Anh, notebook walkthrough); còn quyết định 6 nhánh remote |
+| 13–14/11 | **R1** Dọn repo cho bản public (§ 0.3) | Claude | checklist § 0.3 xanh. **Xong 13/11** (README tiếng Anh, notebook walkthrough); 14/11 xoá 6 nhánh remote |
 | 14/11 | **R2** Chạy notebook `final_inference.ipynb` có output (ảnh minh hoạ, PQ trên vài ảnh val, đường dẫn CSV) | Claude (Mac) | notebook lưu kèm output, chạy lại từ clone sạch. **Xong 13/11** |
 | 14/11 | **R3** Kiểm tra tái lập từ clone sạch: venv mới, `pip install -r requirements.txt`, tests, notebook trên 3 ảnh test | Claude | CSV từng ảnh trùng byte với bản local. **Xong 13/11, không trùng byte**: cùng id và số filament, 45/1038 (final 2) và 23/987 (final 1) mask lệch vài pixel (IoU ≥ 0.997) vì map N1/N9' trên SSD đã bị ghi đè bằng map MPS (PROGRESS 13/11) |
 | 14/11 | Report bản cuối: số trong report khớp `docs/logs/final/*.json`, link repo đúng | Claude + người dùng | PDF cuối |
@@ -52,6 +52,8 @@ Kết luận: không train, không nộp thêm bài dò. Cuộc thi chỉ cho ch
    Không xoá, vì EXPERIMENTS dẫn tới chúng.
 4. Nhánh trên remote: 6 nhánh thử nghiệm sẽ public cùng repo. Đề xuất giữ (minh bạch); nếu muốn gọn
    thì xoá nhánh đã merge hoặc đã bỏ. **Người dùng quyết định**, vì xoá nhánh remote không hoàn tác được.
+   **Xong 14/11**: người dùng chọn xoá; cả 6 nhánh không có commit nào ngoài `main`, remote chỉ còn `main`
+   (nhánh local trong worktree giữ nguyên, không public).
 5. Kiểm tra trước khi public: không có token, `kaggle.json`, dữ liệu thi hay MAGFiLO trong lịch sử git
    (đã quét 13/11: chỉ hai CSV log nhỏ trong `docs/logs`, không có dữ liệu thi); file lớn nhất 89 MB
    (`weights/effv2s_c512_f*.pt`), dưới giới hạn 100 MB của GitHub.

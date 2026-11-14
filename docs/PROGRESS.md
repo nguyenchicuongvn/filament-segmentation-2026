@@ -114,6 +114,10 @@ Val luôn cao hơn LB khoảng 0.03–0.07, nhưng thứ tự giữa các model 
 
 ## Nhật ký
 
+### 2026-11-14
+
+- Xoá 6 nhánh thử nghiệm trên remote (`exp/agree-filter`, `exp/kaggle-gpu`, `exp/maskrcnn`, `exp/rubric-metrics`, `exp/train-v2`, `research/new-solution`); cả 6 đã nằm trọn trong `main` (0 commit riêng). Remote chỉ còn `main`.
+
 ### 2026-11-13
 
 - Dung lượng: 109 thư mục output cũ (`outputs/colab`, phần lớn `outputs/ens`, `outputs/probs`, `outputs/wf_*`, `outputs/models`) chuyển sang SSD ngoài (`/Volumes/PortableSSD/kaggle/filament-segmentation-2026`, exFAT) sau symlink, kiểm số file + tổng byte trước khi xoá; `outputs/` 83 → 7 GB, máy trống 28 → 166 GB. Hai pool final (`outputs/ens/abl/n1n9p_*`, `outputs/ens/n1n2n9p_*`) và `weights/` giữ trên Mac. **Symlink chỉ đọc được khi SSD đang cắm.**
