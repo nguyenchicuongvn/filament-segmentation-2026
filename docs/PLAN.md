@@ -104,6 +104,10 @@ xuất 19 ý tưởng, 3 giám khảo chấm; chỉ một ý tưởng mới và 
   - G3: với 1 cặp, CSV trùng byte với pipeline hiện tại; tests xanh; mask không chồng nhau.
 - **Sau khi nộp**: LB chỉ để kiểm tra an toàn (< 0.38 thì bỏ), không dùng để chọn. Đổi bài đã tick là
   quyết định của người dùng; lợi ích kỳ vọng trung thực là 0 đến +0.003, không kiểm chứng được trên OOF.
+- **Kết quả 14/11**: G1 và G3 đạt, **G2 không đạt rõ ràng** (mô phỏng theo nghĩa đen có CI chứa 0; hai
+  mô phỏng cùng tỉ lệ có CI dưới 0 nhưng thêm sau khi thấy số). Theo luật đã đăng ký: **không đổi gì, giữ
+  final 58269004**. Chi tiết: EXPERIMENTS § SEED-REGIME. Ứng viên `outputs/submission_n1n9p_seedvote.csv`
+  chưa nộp.
 - Các ý tưởng còn lại (ghép logit, đặc trưng hàng xóm cho bộ lọc, tách component, tinh chỉnh biên…) bị
   loại: giám khảo ước lượng ≤ +0.0005, dưới ngưỡng phát hiện, hoặc gần trùng thí nghiệm âm đã có.
 

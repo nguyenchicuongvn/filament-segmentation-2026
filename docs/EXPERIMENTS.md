@@ -436,3 +436,41 @@ trưng sau khi xem kết quả.
   chung không còn lợi (lợi +0.004 cũ đo trên cc). Cùng với H6 (cây quyết định −0.004 [−0.011,
   +0.003], dù oracle +0.125) và lỗi vị trí/limb/sunspot < 1%: tầng chọn instance trên map 1024 hiện
   tại đã cạn; phải cải thiện ở map (N1–N4). Log: `docs/logs/wf_agree_filter.txt`.
+
+## SEED-REGIME (2026-11-14): seed theo cặp fold trên test — G2 không đạt rõ ràng, giữ final
+
+Đăng ký trước ở PLAN § 0.6 (commit 5450186). Log: `docs/logs/final/seed_regime.txt`; script
+`scripts/research/seed_regime.py`, `scripts/research/seed_regime_verify.py`.
+
+- **Độ lệch có thật** (không dùng nhãn): component p > 0.5, area ≥ 200 là 8.87/ảnh (OOF) và 8.89/ảnh
+  (test), nhưng component qua seed 0.99 là 6.94 so với 6.27. Từng cặp fold trên test giống OOF
+  (7.00–7.17/ảnh); một cặp seed nhiều hơn pool 10 model +0.771 ± 0.056 component/ảnh. Nguyên nhân: OOF là
+  trung bình 2 model mỗi ảnh, test là 10.
+- **Ứng viên**: mask từ pool 10 model, seed theo vote ≥ 3/5 cặp, 4 đặc trưng xác suất của bộ lọc lấy trung
+  bình theo cặp. 1146 instance (6.37/ảnh; bài đã nộp 1038 = 5.77; OOF 6.29): 1021 giữ nguyên, 17 đổi biên,
+  108 thêm, 0 bỏ. Val PQ: với 1 cặp luật trùng luật cũ nên OOF vẫn 0.4382 (raw 0.4371 không lọc), không
+  có số OOF riêng cho ứng viên. Không nộp, không có LB.
+- **G1 đạt** (6.37 nằm trong 6.29 ± 2·SE và gần 6.29 hơn 5.77; vế "trong dải" không phân biệt được vì
+  5.77 cũng nằm trong dải). **G3 đạt** (1 cặp và đường mặc định trùng byte với CSV đã nộp, 32 test xanh,
+  không chồng mask).
+- **G2 không đạt rõ ràng.** Mô phỏng phía khắt khe trên 707 ảnh OOF, Δ PQ so với 0.4382:
+
+  | Mô phỏng | Component seed bị mất | Δ PQ | CI 95% |
+  |---|---|---|---|
+  | Seed vô hướng 255/255 (mức tối đa) | 6.5% | −0.0017 | [−0.0037, +0.0002] |
+  | Theo diện tích lõi seed ≥ 163 px (thêm sau, không đăng ký) | 9.6% | −0.0046 | [−0.0073, −0.0022] |
+  | Propensity học trên test không nhãn (thêm sau) | 9.6% | −0.0036 | [−0.0060, −0.0011] |
+  | Thêm 1 seed N9' cùng family (M3) | 2.2% | −0.0010 | [−0.0023, +0.0004] |
+  | Pool 4 model, bỏ theo thứ tự đỉnh (lẫn N2) | 10.8% | −0.0022 | [−0.0048, +0.0005] |
+  | Chiều ngược: vote so với seed trung bình (M3) | – | +0.0004 | [−0.0011, +0.0018] |
+
+  Mô phỏng đúng nghĩa đen không tới được tỉ lệ đo được (map bão hoà ở 255), hai mô phỏng đạt tiêu chí đều
+  được thiết kế sau khi thấy số, một mô phỏng cùng tỉ lệ không đạt. Tiêu chí đăng ký thiếu chi tiết; đọc
+  chặt thì không đạt.
+- **Rủi ro**: 108 instance thêm yếu hơn hẳn (diện tích trung vị 594 so với 1458 px, điểm bộ lọc 0.50 so với
+  0.80; các component tương tự trên OOF có P(match)·IoU 0.16–0.18, dưới điểm hoà vốn 0.219 khi đứng riêng).
+  13 instance đổi kết quả nếu một đỉnh lệch 1 mức uint8, và map từng model trên test là bản tính lại bằng
+  MPS (bản GPU gốc không còn), nên ứng viên khó tái lập giữa các thiết bị hơn final.
+- **Kiểm chứng độc lập** (3 agent): code không lỗi; 2 khuyên không nộp, 1 khuyên nộp.
+- **Kết luận**: giữ final 58269004. Độ lệch seed giữa OOF và test là phát hiện thật, thiệt hại ước tính 0
+  đến −0.005 trên test nhưng chưa chứng minh được, và luật vote chưa được chứng minh là lấy lại phần đó.
