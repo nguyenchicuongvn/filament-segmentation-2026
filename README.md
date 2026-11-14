@@ -2,7 +2,7 @@
 
 Instance segmentation of solar filaments in GONG H-alpha full-disk images (MAGFiLO dataset), scored by
 Panoptic Quality (PQ). Competition: https://www.kaggle.com/competitions/filament-segmentation-2026.
-The 4-page technical report is in [`report/`](report/) (LaTeX source, host template).
+The 4-page technical report: [`report/report.pdf`](report/report.pdf) (LaTeX source in [`report/`](report/), host template).
 
 ## Result
 
