@@ -115,6 +115,10 @@ Val luôn cao hơn LB khoảng 0.03–0.07, nhưng thứ tự giữa các model 
 
 ## Nhật ký
 
+### 2026-11-15
+
+- Report bản cuối: soát 2 vòng bằng agent (số so log, phương pháp so code, PDF render từng trang). Sửa Bảng 2 tràn mép trang (cột LB bị cắt), câu checkpoint, câu không dùng dữ liệu ngoài, vài số và chú thích, tham khảo [1]; tác giả "Chi-Cuong Nguyen" (cả LICENSE). PDF compile từ commit fb0a6e0: 4 trang, không dòng nào tràn lề.
+
 ### 2026-11-14
 - **Vòng cải thiện cuối (SEED-REGIME)**, theo yêu cầu người dùng. Panel 19 ý tưởng → 1 ý tưởng mới: seed
   0.99 tune trên map OOF 2 model nhưng áp lên map test 10 model, nên test giữ ít hơn ~10% component có seed
