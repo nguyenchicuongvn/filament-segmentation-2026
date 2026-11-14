@@ -29,7 +29,7 @@ Kết luận: không train, không nộp thêm bài dò. Cuộc thi chỉ cho ch
 | 14/11 | **R2** Chạy notebook `final_inference.ipynb` có output (ảnh minh hoạ, PQ trên vài ảnh val, đường dẫn CSV) | Claude (Mac) | notebook lưu kèm output, chạy lại từ clone sạch. **Xong 13/11** |
 | 14/11 | **R3** Kiểm tra tái lập từ clone sạch: venv mới, `pip install -r requirements.txt`, tests, notebook trên 3 ảnh test | Claude | CSV từng ảnh trùng byte với bản local. **Xong 13/11, không trùng byte**: cùng id và số filament, 45/1038 (final 2) và 23/987 (final 1) mask lệch vài pixel (IoU ≥ 0.997) vì map N1/N9' trên SSD đã bị ghi đè bằng map MPS (PROGRESS 13/11) |
 | 14/11 | Report bản cuối: số trong report khớp `docs/logs/final/*.json`, link repo đúng | Claude + người dùng | PDF cuối |
-| 15/11 trước 13:00 | Không nộp gì thêm. Tag `final` trên commit đang chạy final 2 | Claude | tag đã push |
+| 15/11 trước 13:00 | Không nộp gì thêm. Tag `final` trên commit đang chạy final 2 | Claude | tag đã push. **Xong 14/11**: tag `final` trên 2f17e6c |
 | **15/11 13:00** | Kaggle đóng. **Chuyển repo sang public** ngay sau mốc này | người dùng (hoặc Claude khi được bảo) | `gh repo view` báo PUBLIC |
 | 15/11 tối | Điền Google form: report PDF, link repo, tên/tài khoản Kaggle, tên đội | người dùng | email xác nhận của form |
 | **16/11 trước 11:00** | Hạn form "Nov 15, 11:59 pm CDT". Ngày 15/11 Mỹ đã về giờ chuẩn (CST, UTC−6) nên hạn thật là 16/11 12:59 VN; nếu hiểu theo CDT (UTC−5) là 11:59 VN. Lấy mốc sớm hơn | người dùng | – |
