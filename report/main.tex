@@ -78,7 +78,7 @@ The training set has 707 images ($2048\times2048$, three identical channels read
 \subsection{Targets and training}
 For each image the target is \emph{soft}: the fraction of the image's annotators whose filaments cover the pixel (0, 1/3, 1/2, 2/3, 1). Each epoch draws images with probability proportional to their number of annotators, which matches how the metric weights entries. Inputs are scaled to $[0,1]$; we apply no physical preprocessing, because the GONG images are already limb-corrected and normalised and model errors did not depend on disk position. Augmentation: random $90^\circ$ rotation, horizontal flip, gamma and brightness jitter. Crops are centred on a random filament pixel with probability 0.7, otherwise uniform.
 
-All networks are U-Nets \cite{ronneberger2015unet} from \texttt{segmentation-models-pytorch} 0.5.0 \cite{iakubovskii2019smp} with ImageNet-pretrained encoders (EfficientNet-B4 \cite{tan2019efficientnet}; EfficientNetV2-S \cite{tan2021efficientnetv2} from \texttt{timm} \cite{wightman2019timm}, ImageNet-21k$\to$1k weights), one output channel and a sigmoid. The loss is binary cross-entropy plus soft Dice on the soft target. We train with AdamW (weight decay $10^{-4}$), a one-cycle schedule with 5\% warm-up, mixed precision, and keep the checkpoint with the best held-out PQ (the last epoch for N1 and N9$'$). Table~\ref{tab:families} lists the families: N1 and N9$'$ form the main pipeline, N2 is used only in ablations and in an unselected submission. N2 and N9$'$ see native-resolution crops and are applied to the full $2048\times2048$ image at test time (the networks are fully convolutional).
+All networks are U-Nets \cite{ronneberger2015unet} from \texttt{segmentation-\allowbreak models-\allowbreak pytorch} 0.5.0 \cite{iakubovskii2019smp} with ImageNet-pretrained encoders (EfficientNet-B4 \cite{tan2019efficientnet}; EfficientNetV2-S \cite{tan2021efficientnetv2} from \texttt{timm} \cite{wightman2019timm}, ImageNet-21k$\to$1k weights), one output channel and a sigmoid. The loss is binary cross-entropy plus soft Dice on the soft target. We train with AdamW (weight decay $10^{-4}$), a one-cycle schedule with 5\% warm-up, mixed precision, and keep the checkpoint with the best held-out PQ (the last epoch for N1 and N9$'$). Table~\ref{tab:families} lists the families: N1 and N9$'$ form the main pipeline, N2 is used only in ablations and in an unselected submission. N2 and N9$'$ see native-resolution crops and are applied to the full $2048\times2048$ image at test time (the networks are fully convolutional).
 
 \begin{table}[t]
   \caption{The U-Net families (five folds each); the main pipeline uses N1 and N9$'$. Time is per fold.}
@@ -104,7 +104,7 @@ Each checkpoint predicts with 8-fold test-time augmentation (four rotations $\ti
 \begin{figure*}[t]
   \centering
   \includegraphics[width=\textwidth]{figures/examples.pdf}
-  \caption{Out-of-fold examples ($900\times900$ crops of two training images with two annotators each). Outlines: annotators' filaments; filled: predicted instances, one colour per instance. Note how much the annotators differ.}
+  \caption{Out-of-fold examples ($900\times900$ crops of two training images with two annotators each). Outlines: annotators' filaments; filled: predicted instances, one colour per instance. Note how much the annotators differ. Titles: whole-image counts and PQ.}
   \label{fig:examples}
 \end{figure*}
 
@@ -114,7 +114,7 @@ Each checkpoint predicts with 8-fold test-time augmentation (four rotations $\ti
 \section{Evaluation}\label{sec:evaluation}
 
 \subsection{Strategy}
-We report OOF PQ on all 707 training images (1{,}154 entries), with the metric of the host's self-evaluation notebook re-implemented and unit-tested, and the public leaderboard score of the same pipeline averaging the five fold models. Uncertainties are bootstrap 95\% intervals over images. The OOF PQ of the final pipeline is \pqoof{} \pqci{} (4{,}993 TP, 2{,}253 FP, 3{,}206 FN pooled over entries); the filter decisions in this number are out of fold (the filter is refitted with each image's fold held out), only its threshold was chosen on these scores. The five per-fold values range from 0.424 to 0.453, consistent with the bootstrap SD of 0.005 for 707 images and about 0.011 for one fold.
+We report OOF PQ on all 707 training images (1{,}154 entries), with the metric of the host's self-evaluation notebook re-implemented and unit-tested, and the public leaderboard score of the pipeline averaging the five fold models. Uncertainties are bootstrap 95\% intervals over images. The OOF PQ of the final pipeline is \pqoof{} \pqci{} (4{,}993 TP, 2{,}253 FP, 3{,}206 FN pooled over entries); the filter decisions in this number are out of fold (the filter is refitted with each image's fold held out), only its threshold was chosen on these scores. The five per-fold values range from 0.424 to 0.453, consistent with the bootstrap SD of 0.005 for 707 images and about 0.011 for one fold.
 
 \subsection{Results and ablations}
 Table~\ref{tab:results} builds the pipeline one step at a time. Each row's $\Delta$ is the paired difference to the row it modifies, with cross-tuned post-processing. The largest single gains came from the soft multi-annotator target with five folds (N1), from averaging families that see the image at different scales (N1+N2: FP $-222$ at almost unchanged TP), and from hysteresis (removing it costs $-0.024$ OOF and 0.02 on the leaderboard). Grouping broken pieces is the other post-processing step the leaderboard can see (without it: $-0.006$ OOF, $-0.01$ LB); a plain disk of radius 12 instead of the oriented kernel is slightly worse ($-0.001$ on three families, $-0.002$ [$-0.004$, $-0.001$] on N1+N2). \emph{Two families instead of three.} N9$'$ entered through a pre-registered test on top of N1+N2. A leave-one-family-out test then showed that N2 no longer contributes: N1+N9$'$ is $+0.002$ [$-0.001$, $+0.004$] against the three families, because N9$'$ also sees native-resolution crops. The main pipeline therefore keeps N1 and N9$'$ only: the same accuracy with a third fewer models; we submitted both pools (0.38 each). \emph{Robustness.} On OOF the chosen configuration is within 0.001 of the best of eight variants whether we score all entries, one random annotator per image, or only the two hardest annotator groups; on the test set, a much looser setting (peak 0.80, area 50, no filter; 27\% more instances) leaves the leaderboard at 0.38. The leaderboard resolves about 0.01 on 90 images (bootstrap SD 0.014); OOF and leaderboard orderings agree wherever it can resolve them.
@@ -132,9 +132,9 @@ Table~\ref{tab:results} builds the pipeline one step at a time. Each row's $\Del
     N2 single family & 0.4129 & $-0.005$ [$-0.010$, $-0.0003$] & 0.37 \\
     N1 + N2 & 0.4284 & $+0.011$ [$+0.007$, $+0.014$] & 0.37 \\
     N1 + N2 + N9$'$ & 0.4339 & $+0.006$ [$+0.003$, $+0.008$] & 0.38 \\
-    \quad + FP filter (not selected) & 0.4372 & CV filter & 0.38 \\
+    \quad + FP filter (not selected) & 0.4372 & CV filter, on 0.4354 & 0.38 \\
     N1 + N9$'$ $^\ddagger$ & 0.4367 & $+0.002$ [$-0.001$, $+0.004$] & 0.38 \\
-    \quad + FP filter (\textbf{main}) & \textbf{0.4382} & $+0.001$ [$+0.000$, $+0.002$] & \textbf{0.38} \\
+    \quad + FP filter (\textbf{main}) & \textbf{0.4382} & $+0.001$ [$+0.0002$, $+0.002$] & \textbf{0.38} \\
     \midrule
     \multicolumn{4}{@{}l}{\emph{Ablations and single families}} \\
     3 families without hysteresis$^*$ & 0.4119 & $-0.024$ vs.\ 0.4354 & 0.36 \\
