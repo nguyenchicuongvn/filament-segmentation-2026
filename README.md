@@ -11,7 +11,7 @@ The 4-page technical report is in [`report/`](report/) (LaTeX source, host templ
 | Networks | N1 + N9': 10 U-Nets (2 families × 5 folds) | N1 + N2 + N9': 15 U-Nets |
 | Out-of-fold PQ, 707 train images (95% CI) | **0.4382** [0.429, 0.447] | 0.4372 |
 | Public leaderboard PQ | 0.38 | 0.38 |
-| Mean Dice of matched filaments / mean IoU of TPs | 0.669 / 0.678 | – |
+| Mean Dice per annotator entry (union mask) / mean IoU of TPs | 0.669 / 0.678 | – |
 | Submission file | `outputs/submission_ens_n1n9p_orient.csv` | `submission_final1.csv` (Kaggle kernel) |
 
 Out-of-fold (OOF) PQ is the selection metric throughout: every model is trained once per fold of a

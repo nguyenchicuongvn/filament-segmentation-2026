@@ -156,7 +156,7 @@ masks cannot overlap.
    - The selected CSV itself was made locally with the same code after our Kaggle GPU quota ran out.
 8. **"What did not work?"** A second N9' seed, ResNet34, BCE-only and ConvNeXt families; blob-Dice
    and false-component losses; watershed splitting; Mask R-CNN fusion; multi-scale TTA; size-dependent
-   mask growth (report § 3.3).
+   mask growth (report § 3.4).
 9. **"Where is the remaining error?"**
    - Before the filter, 1 − PQ splits into 37% boundary, 36% FN and 27% FP.
    - 34% of our FP are drawn by another annotator of the same image.
