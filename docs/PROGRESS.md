@@ -12,10 +12,10 @@ Mỗi phiên làm việc thêm một mục ở **đầu** phần "Nhật ký" (m
 | Hạng | 483 / 1,260 với 0.36 (LB 2026-10-29 08:16 UTC) |
 | LB tham chiếu | #1 0.70 nhưng bị nhiễm (rò rỉ nhãn, payload 0.55 × 82 đội); tầng trung thực cao nhất 0.42 (1 đội), 0.41 (11), 0.40 (46); xem [RESEARCH S16](RESEARCH.md#3-leaderboard-và-khoảng-cách-val--lb) |
 | Submissions đã dùng | 56 (tối đa 5/ngày, reset 00:00 UTC) |
-| Deadline | Kaggle: **2026-11-15 06:00 UTC** (13:00 VN). Report + code (Google form): Nov 15 11:59 pm CDT |
+| Deadline | Kaggle: **2026-11-16 11:59:59 UTC** (18:59 VN; BTC dời từ 15/11 06:00 UTC, thấy ngày 15/11). Report + code (Google form): Nov 15 11:59 pm CDT |
 | Repo | https://github.com/nguyenchicuongvn/filament-segmentation-2026 (**private** đến khi cuộc thi đóng) |
 | GPU | Kaggle GPU (T4 ×2, `scripts/kaggle_gpu.py`), ~20 h tuần này; đã dùng ~8 h cho 4 kernel, thêm ~6 h cho kernel 5–6 đang chạy. Colab chưa dùng |
-| Đang chờ | Không có run nào đang chạy; đã đóng băng. **Final đã tick (13/11, cuộc thi chỉ cho chọn 1 bài)**: ref 58269004 = CSV local `submission_ens_n1n9p_orient.csv` (N1 + N9' + lọc FP riêng, OOF 0.4382, LB 0.38). Phương án thay thế không được chọn: ref 58174035 = CSV kernel `submission_final1.csv` (N1 + N2 + N9' + lọc FP, OOF 0.4372, LB 0.38). Còn lại: report bản cuối (Overleaf), repo public sau 15/11 13:00, Google form |
+| Đang chờ | Không có run nào đang chạy; đã đóng băng. **Final đã tick (13/11, cuộc thi chỉ cho chọn 1 bài)**: ref 58269004 = CSV local `submission_ens_n1n9p_orient.csv` (N1 + N9' + lọc FP riêng, OOF 0.4382, LB 0.38). Phương án thay thế không được chọn: ref 58174035 = CSV kernel `submission_final1.csv` (N1 + N2 + N9' + lọc FP, OOF 0.4372, LB 0.38). Còn lại: report bản cuối (Overleaf), repo public sau 16/11 18:59 VN, Google form |
 
 ## Theo dõi kế hoạch
 
@@ -117,6 +117,7 @@ Val luôn cao hơn LB khoảng 0.03–0.07, nhưng thứ tự giữa các model 
 
 ### 2026-11-15
 
+- BTC dời hạn Kaggle sang 2026-11-16 11:59:59 UTC (18:59 VN), theo `kaggle competitions list`. Final đã tick giữ nguyên; lời nhắc chuyển repo sang public dời sang 16/11 18:45 VN. Hạn Google form chưa thấy thông báo đổi.
 - Report bản cuối: soát 2 vòng bằng agent (số so log, phương pháp so code, PDF render từng trang). Sửa Bảng 2 tràn mép trang (cột LB bị cắt), câu checkpoint, câu không dùng dữ liệu ngoài, vài số và chú thích, tham khảo [1]; tác giả "Chi-Cuong Nguyen" (cả LICENSE). PDF compile từ commit fb0a6e0: 4 trang, không dòng nào tràn lề.
 
 ### 2026-11-14

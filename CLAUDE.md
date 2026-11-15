@@ -24,7 +24,7 @@ data, never submit overlapping masks, keep final weights inside the repo (host r
   (`outputs/ens/abl/n1n9p_*`, `outputs/ens/n1n2n9p_*`) and `weights/` stay on the Mac. Tuned configs go in `configs/`; cleaned logs of
   experiments worth keeping go in `docs/logs/`.
 - Accounts: GitHub `nguyenchicuongvn`, Kaggle `nguyenchicuong` (different!).
-- The GitHub repo stays **private until the competition closes (2026-11-15)**; do not change its
+- The GitHub repo stays **private until the competition closes (2026-11-16 11:59 UTC; moved by the host from 11-15 06:00)**; do not change its
   visibility before then. Max 5 Kaggle submissions/day.
 - GPU: Kaggle quota may be exhausted; GPU runs go through `colab/train_unet.ipynb` (code bundle from
   `scripts/package_colab.py`, results come back as private Kaggle datasets

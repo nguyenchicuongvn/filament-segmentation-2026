@@ -4,7 +4,7 @@
 
 ### 0.1 Vì sao không còn "30 ngày cải thiện model"
 
-- Kaggle đóng **15/11 06:00 UTC (13:00 VN)**, tức còn khoảng 40 giờ. Sau mốc đó không nộp hay đổi
+- Kaggle đóng **15/11 06:00 UTC (13:00 VN)**, tức còn khoảng 40 giờ (cập nhật 15/11: BTC dời hạn sang **16/11 11:59:59 UTC, 18:59 VN**). Sau mốc đó không nộp hay đổi
   final được nữa. 30 ngày tới gồm 2 ngày thi và 4 tuần xét giải (công bố 30/11, IEEE BigData 14–17/12).
 - Không còn GPU: quota Kaggle 60 h/tuần đã hết, model đóng băng từ 09/11. Train một family 5 fold
   cần khoảng 6 h L4. Kể cả có GPU, một cải thiện cỡ +0.005 OOF cũng không chứng minh được trong 40 h
@@ -30,7 +30,7 @@ Kết luận: không train, không nộp thêm bài dò. Cuộc thi chỉ cho ch
 | 14/11 | **R3** Kiểm tra tái lập từ clone sạch: venv mới, `pip install -r requirements.txt`, tests, notebook trên 3 ảnh test | Claude | CSV từng ảnh trùng byte với bản local. **Xong 13/11, không trùng byte**: cùng id và số filament, 45/1038 (final 2) và 23/987 (final 1) mask lệch vài pixel (IoU ≥ 0.997) vì map N1/N9' trên SSD đã bị ghi đè bằng map MPS (PROGRESS 13/11) |
 | 14/11 | Report bản cuối: số trong report khớp `docs/logs/final/*.json`, link repo đúng | Claude + người dùng | PDF cuối |
 | 15/11 trước 13:00 | Không nộp gì thêm. Tag `final` trên commit đang chạy final 2 | Claude | tag đã push. **Xong 14/11**: tag `final` trên 2f17e6c |
-| **15/11 13:00** | Kaggle đóng. **Chuyển repo sang public** ngay sau mốc này | người dùng (hoặc Claude khi được bảo) | `gh repo view` báo PUBLIC |
+| **16/11 18:59** (dời từ 15/11 13:00) | Kaggle đóng (BTC dời hạn sang 16/11 11:59:59 UTC, thấy ngày 15/11). **Chuyển repo sang public** ngay sau mốc này | người dùng (hoặc Claude khi được bảo) | `gh repo view` báo PUBLIC |
 | 15/11 tối | Điền Google form: report PDF, link repo, tên/tài khoản Kaggle, tên đội | người dùng | email xác nhận của form |
 | **16/11 trước 11:00** | Hạn form "Nov 15, 11:59 pm CDT". Ngày 15/11 Mỹ đã về giờ chuẩn (CST, UTC−6) nên hạn thật là 16/11 12:59 VN; nếu hiểu theo CDT (UTC−5) là 11:59 VN. Lấy mốc sớm hơn | người dùng | – |
 | 16–29/11 | Giữ repo public, không force-push, không đổi lịch sử. Chuẩn bị hồ sơ người thắng (§ 0.4) | cả hai | – |
