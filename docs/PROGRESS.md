@@ -9,7 +9,7 @@ Mỗi phiên làm việc thêm một mục ở **đầu** phần "Nhật ký" (m
 | | |
 |---|---|
 | Submission tốt nhất | **Public LB 0.38**: final 1 mới = N1 ×5 + N2 ×5 + N9' ×5 (EffNetV2-S crop 512 @2048) + hysteresis + gộp theo hướng + lọc FP (OOF 0.4372 in-sample, 707 ảnh), qua gate gộp 09/11. N9' 5 fold đơn cũng 0.38 |
-| Hạng | 483 / 1,260 với 0.36 (LB 2026-10-29 08:16 UTC) |
+| Hạng | **Private (cuối): 489 / 1,567 với 0.35** (public 445 với 0.38). Khoảng 103 đội đầu ở tầng rò rỉ (≥ 0.49), nên trong nhóm trung thực mình khoảng hạng 386 |
 | LB tham chiếu | #1 0.70 nhưng bị nhiễm (rò rỉ nhãn, payload 0.55 × 82 đội); tầng trung thực cao nhất 0.42 (1 đội), 0.41 (11), 0.40 (46); xem [RESEARCH S16](RESEARCH.md#3-leaderboard-và-khoảng-cách-val--lb) |
 | Submissions đã dùng | 56 (tối đa 5/ngày, reset 00:00 UTC) |
 | Deadline | Kaggle: **2026-11-16 11:59:59 UTC** (18:59 VN; BTC dời từ 15/11 06:00 UTC, thấy ngày 15/11). Report + code (Google form): Nov 15 11:59 pm CDT |
@@ -114,6 +114,14 @@ Val luôn cao hơn LB khoảng 0.03–0.07, nhưng thứ tự giữa các model 
 được để chọn model (xem [DATA_AND_METRIC.md](DATA_AND_METRIC.md#khoảng-cách-val--lb)).
 
 ## Nhật ký
+
+### 2026-11-16: kết quả private LB
+
+- Cuộc thi đóng 11:59 UTC. Final (ref 58269004) private **0.35** (public 0.38), hạng **489/1567**, tụt 44 bậc so với public. Không vào top.
+- Mọi bài của mình: private thấp hơn public 0.00–0.04 (đa số −0.02 đến −0.03). Bài private cao nhất là probe seed vote 58342898 (0.36, không chọn); các bài N1 + N9' khác đều 0.35, nên việc chọn bài không làm mất điểm đáng kể.
+- Các đội trung thực khác cũng tụt tương tự: Abderrahman Es-safi 0.44 → 0.42 (hạng 107, cao nhất nhóm trung thực mình thấy), Spaghetto99 0.41 → 0.40 (112), MMV/Guillaume/Suna 0.42 → 0.39 (117–121), adversarial looper và DeeperNet 0.41 → 0.38 (149–150), Anh-Vu Mai-Nguyen 0.41 → 0.37 (197), Dariush Afshar 0.39 → 0.37 (264), Argo Saakyan (D-FINE) 0.38 → 0.36 (383).
+- Khoảng 103 đội đầu vẫn ≥ 0.54 ở private vì nhãn MAGFiLO 1.0 lộ phủ toàn bộ test (cả nửa private), nên điểm cao không chứng minh phương pháp tốt. Host nói sẽ dọn leaderboard sau hạn.
+- Kết luận: khoảng cách giữa mình và tầng trung thực cao nhất (~0.04–0.07 private) là thật, không chỉ do nhiễu public. Đây là giới hạn của phương pháp, không phải do chọn sai bài.
 
 ### 2026-11-15
 

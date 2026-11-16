@@ -11,6 +11,7 @@ The 4-page technical report: [`report/report.pdf`](report/report.pdf) (LaTeX sou
 | Networks | N1 + N9': 10 U-Nets (2 families × 5 folds) | N1 + N2 + N9': 15 U-Nets |
 | Out-of-fold PQ, 707 train images (95% CI) | **0.4382** [0.429, 0.447] | 0.4372 |
 | Public leaderboard PQ | 0.38 | 0.38 |
+| Private leaderboard PQ (final standings, rank 489 / 1567) | 0.35 | 0.35 |
 | Mean Dice per annotator entry (union mask) / mean IoU of TPs | 0.669 / 0.678 | – |
 | Submission file | `outputs/submission_ens_n1n9p_orient.csv` | `submission_final1.csv` (Kaggle kernel) |
 
