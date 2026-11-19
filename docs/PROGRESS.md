@@ -115,6 +115,14 @@ Val luôn cao hơn LB khoảng 0.03–0.07, nhưng thứ tự giữa các model 
 
 ## Nhật ký
 
+### 2026-11-19: lưu trữ project sang SSD
+
+- Cuộc thi đã xong nên dọn ổ Mac: project 18 GB → 2.3 GB, máy trống 39 → 65 GB.
+- `data/` (2.9 GB), `build/` (1.3 GB), `outputs/final` (3.8 GB), `outputs/ens` (10.4 GB phần còn trên Mac, gồm hai pool final) và `outputs/cmp` chuyển sang `/Volumes/PortableSSD/kaggle/filament-segmentation-2026`, để lại symlink cùng tên. Kiểm tra trước khi xoá: số file và tổng byte khớp từng thư mục, kích thước khớp từng file trong `outputs/ens` (2481 file), md5 khớp 38 file mẫu.
+- exFAT không giữ được symlink, nên 6239 symlink nội bộ (các thư mục `*_oof`, `n1n2_f01`, `outputs/final/maps/*`… trỏ vào file fold) không được copy; danh sách link → đích nằm trong `SYMLINKS.tsv` trên SSD.
+- Xoá `.venv` (tạo lại bằng `uv`, xem README) và 6 git worktree trong `.claude/worktrees` (branch vẫn còn trong `.git`; bản sao đầy đủ, kể cả 1 file sửa chưa commit ở `kgpu`, nằm trong `claude_worktrees.tar` trên SSD).
+- Trên Mac còn: code, docs, report, configs, `weights/`, `.git`, các CSV submission và `outputs/final_kernel`. `.gitignore` đổi `data/`, `build/` thành `/data`, `/build` để bỏ qua cả symlink.
+
 ### 2026-11-16: kết quả private LB
 
 - Cuộc thi đóng 11:59 UTC. Final (ref 58269004) private **0.35** (public 0.38), hạng **489/1567**, tụt 44 bậc so với public. Không vào top.
